@@ -10,14 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectGroup, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ExerciseFAB } from "@/components/ExerciseFAB";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +26,9 @@ import {
 } from "@/components/ui/pagination";
 import { CommonExerciseCard } from "@/components/exercises/CommonExerciseCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MultiSelect } from "@/components/MultiSelect";
+import { FilterPresets, FilterState } from "@/components/exercises/FilterPresets";
+import { FilterChips } from "@/components/exercises/FilterChips";
 
 interface AllExercisesPageProps {
   onSelectExercise?: (exercise: string | Exercise) => void;
@@ -53,13 +48,15 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
 
-  // Search and filter states
-  const [searchQuery, setSearchQuery] = useState("");
+  // Enhanced filter state
+  const [filters, setFilters] = useState<FilterState>({
+    muscleGroups: [],
+    equipment: [],
+    difficulty: [],
+    movementPatterns: [],
+    searchQuery: ""
+  });
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<MuscleGroup | "all">("all");
-  const [selectedEquipment, setSelectedEquipment] = useState<EquipmentType | "all">("all");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "all">("all");
-  const [selectedMovement, setSelectedMovement] = useState<MovementPattern | "all">("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -94,30 +91,32 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     return Array.from(exerciseMap.values());
   }, [workouts, exercises]);
 
-  // Filter exercises based on search query and filters
+  // Enhanced filter logic with multi-select support
   const filterExercises = (exercisesList: Exercise[]) => {
     return exercisesList.filter(exercise => {
       // Search filter
-      const matchesSearch = searchQuery === "" || 
-        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        exercise.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = filters.searchQuery === "" || 
+        exercise.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        exercise.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
 
-      // Muscle group filter
-      const matchesMuscleGroup = selectedMuscleGroup === "all" || 
-        exercise.primary_muscle_groups.includes(selectedMuscleGroup as MuscleGroup) ||
-        (exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.includes(selectedMuscleGroup as MuscleGroup));
+      // Muscle group filter (AND logic - must match ALL selected groups)
+      const matchesMuscleGroup = filters.muscleGroups.length === 0 || 
+        filters.muscleGroups.every(selectedGroup => 
+          exercise.primary_muscle_groups.includes(selectedGroup) ||
+          (exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.includes(selectedGroup))
+        );
 
-      // Equipment filter
-      const matchesEquipment = selectedEquipment === "all" || 
-        exercise.equipment_type.includes(selectedEquipment as EquipmentType);
+      // Equipment filter (OR logic - must match ANY selected equipment)
+      const matchesEquipment = filters.equipment.length === 0 || 
+        filters.equipment.some(selectedEq => exercise.equipment_type.includes(selectedEq));
 
-      // Difficulty filter
-      const matchesDifficulty = selectedDifficulty === "all" || 
-        exercise.difficulty === selectedDifficulty;
+      // Difficulty filter (OR logic - must match ANY selected difficulty)
+      const matchesDifficulty = filters.difficulty.length === 0 || 
+        filters.difficulty.includes(exercise.difficulty);
 
-      // Movement pattern filter
-      const matchesMovement = selectedMovement === "all" || 
-        exercise.movement_pattern === selectedMovement;
+      // Movement pattern filter (OR logic - must match ANY selected pattern)
+      const matchesMovement = filters.movementPatterns.length === 0 || 
+        filters.movementPatterns.includes(exercise.movement_pattern);
 
       return matchesSearch && matchesMuscleGroup && matchesEquipment && 
             matchesDifficulty && matchesMovement;
@@ -143,7 +142,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedMuscleGroup, selectedEquipment, selectedDifficulty, selectedMovement]);
+  }, [filters]);
 
   const handleAdd = () => {
     setExerciseToEdit(null);
@@ -195,12 +194,40 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     }
   };
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedMuscleGroup("all");
-    setSelectedEquipment("all");
-    setSelectedDifficulty("all");
-    setSelectedMovement("all");
+  // Enhanced filter management
+  const updateFilters = (newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const applyQuickFilter = (quickFilters: Partial<FilterState>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...quickFilters
+    }));
+  };
+
+  const removeFilter = (category: keyof FilterState, value: string) => {
+    setFilters(prev => {
+      if (category === 'searchQuery') {
+        return { ...prev, searchQuery: '' };
+      }
+      
+      const currentArray = prev[category] as string[];
+      return {
+        ...prev,
+        [category]: currentArray.filter(item => item !== value)
+      };
+    });
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      muscleGroups: [],
+      equipment: [],
+      difficulty: [],
+      movementPatterns: [],
+      searchQuery: ""
+    });
   };
 
   // Add/Edit handler
@@ -271,7 +298,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   const renderExerciseList = (exercisesList: Exercise[], showPagination = false) => {
     if (exercisesList.length === 0) {
       return (
-        <div className="text-center py-6 text-gray-400">
+        <div className="text-center py-6 text-muted-foreground">
           No exercises found
         </div>
       );
@@ -427,19 +454,19 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
         
         {/* Search bar */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search exercises..."
-            className="pl-9 bg-gray-800 border-gray-700"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            value={filters.searchQuery}
+            onChange={(e) => updateFilters({ searchQuery: e.target.value })}
           />
-          {searchQuery && (
+          {filters.searchQuery && (
             <Button 
               variant="ghost" 
               size="sm" 
               className="absolute right-2 top-1.5 h-7 w-7 p-0"
-              onClick={() => setSearchQuery("")}
+              onClick={() => updateFilters({ searchQuery: "" })}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -454,6 +481,16 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
             <TabsTrigger value="browse">Browse All</TabsTrigger>
           </TabsList>
           
+          {/* Quick Filter Presets */}
+          <FilterPresets onApplyFilter={applyQuickFilter} activeFilters={filters} />
+          
+          {/* Active Filter Chips */}
+          <FilterChips 
+            filters={filters} 
+            onRemoveFilter={removeFilter} 
+            onClearAll={clearAllFilters} 
+          />
+
           {/* Filters button - only show in browse tab */}
           {activeTab === 'browse' && (
             <div className="mb-4">
@@ -461,120 +498,76 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
                 variant="outline"
                 size="sm" 
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center w-full justify-center ${showFilters ? 'bg-purple-900/50 border-purple-500' : ''}`}
+                className={`flex items-center w-full justify-center ${showFilters ? 'bg-accent border-primary' : ''}`}
               >
                 <Filter className="w-4 h-4 mr-2" />
-                Filters
-                {(selectedMuscleGroup !== "all" || selectedEquipment !== "all" || 
-                  selectedDifficulty !== "all" || selectedMovement !== "all") && (
-                  <Badge variant="secondary" className="ml-2 bg-purple-600 text-xs">
-                    {[
-                      selectedMuscleGroup !== "all" ? 1 : 0,
-                      selectedEquipment !== "all" ? 1 : 0,
-                      selectedDifficulty !== "all" ? 1 : 0,
-                      selectedMovement !== "all" ? 1 : 0
-                    ].reduce((a, b) => a + b, 0)}
+                Advanced Filters
+                {(filters.muscleGroups.length > 0 || filters.equipment.length > 0 || 
+                  filters.difficulty.length > 0 || filters.movementPatterns.length > 0) && (
+                  <Badge variant="secondary" className="ml-2 bg-primary text-primary-foreground text-xs">
+                    {filters.muscleGroups.length + filters.equipment.length + 
+                     filters.difficulty.length + filters.movementPatterns.length}
                   </Badge>
                 )}
               </Button>
             </div>
           )}
           
-          {/* Filter section */}
+          {/* Advanced Filter section */}
           {showFilters && activeTab === 'browse' && (
-            <Card className="p-4 mb-4 bg-gray-800/50 border-gray-700">
+            <Card className="p-4 mb-4 bg-card border-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-sm text-gray-300 mb-1 block">Muscle Group</label>
-                  <Select 
-                    value={selectedMuscleGroup} 
-                    onValueChange={(value) => setSelectedMuscleGroup(value as any)}
-                  >
-                    <SelectTrigger className="bg-gray-900 border-gray-700">
-                      <SelectValue placeholder="Select muscle group" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700">
-                      <SelectGroup>
-                        <SelectItem value="all">All Muscle Groups</SelectItem>
-                        {COMMON_MUSCLE_GROUPS.map((muscle) => (
-                          <SelectItem key={muscle} value={muscle}>{muscle}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-2 block">Muscle Groups</label>
+                  <MultiSelect
+                    options={COMMON_MUSCLE_GROUPS.map(muscle => ({ label: muscle, value: muscle }))}
+                    selected={filters.muscleGroups}
+                    onChange={(values) => updateFilters({ muscleGroups: values as MuscleGroup[] })}
+                    placeholder="Select muscle groups"
+                  />
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-300 mb-1 block">Equipment</label>
-                  <Select 
-                    value={selectedEquipment} 
-                    onValueChange={(value) => setSelectedEquipment(value as any)}
-                  >
-                    <SelectTrigger className="bg-gray-900 border-gray-700">
-                      <SelectValue placeholder="Select equipment" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700">
-                      <SelectGroup>
-                        <SelectItem value="all">All Equipment</SelectItem>
-                        {COMMON_EQUIPMENT.map((equipment) => (
-                          <SelectItem key={equipment} value={equipment}>{equipment}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-2 block">Equipment</label>
+                  <MultiSelect
+                    options={COMMON_EQUIPMENT.map(eq => ({ label: eq, value: eq }))}
+                    selected={filters.equipment}
+                    onChange={(values) => updateFilters({ equipment: values as EquipmentType[] })}
+                    placeholder="Select equipment"
+                  />
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-300 mb-1 block">Difficulty</label>
-                  <Select 
-                    value={selectedDifficulty} 
-                    onValueChange={(value) => setSelectedDifficulty(value as any)}
-                  >
-                    <SelectTrigger className="bg-gray-900 border-gray-700">
-                      <SelectValue placeholder="Select difficulty" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700">
-                      <SelectGroup>
-                        <SelectItem value="all">All Difficulties</SelectItem>
-                        {DIFFICULTY_LEVELS.map((difficulty) => (
-                          <SelectItem key={difficulty} value={difficulty}>{difficulty}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-2 block">Difficulty</label>
+                  <MultiSelect
+                    options={DIFFICULTY_LEVELS.map(diff => ({ label: diff, value: diff }))}
+                    selected={filters.difficulty}
+                    onChange={(values) => updateFilters({ difficulty: values as Difficulty[] })}
+                    placeholder="Select difficulty"
+                  />
                 </div>
                 
                 <div>
-                  <label className="text-sm text-gray-300 mb-1 block">Movement Pattern</label>
-                  <Select 
-                    value={selectedMovement} 
-                    onValueChange={(value) => setSelectedMovement(value as any)}
-                  >
-                    <SelectTrigger className="bg-gray-900 border-gray-700">
-                      <SelectValue placeholder="Select pattern" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-700">
-                      <SelectGroup>
-                        <SelectItem value="all">All Patterns</SelectItem>
-                        {MOVEMENT_PATTERNS.map((pattern) => (
-                          <SelectItem key={pattern} value={pattern}>{pattern}</SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-2 block">Movement Patterns</label>
+                  <MultiSelect
+                    options={MOVEMENT_PATTERNS.map(pattern => ({ label: pattern, value: pattern }))}
+                    selected={filters.movementPatterns}
+                    onChange={(values) => updateFilters({ movementPatterns: values as MovementPattern[] })}
+                    placeholder="Select patterns"
+                  />
                 </div>
               </div>
               
-              <div className="flex justify-between">
-                <div className="text-sm text-gray-400">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
                   {filteredAll.length} exercise{filteredAll.length !== 1 ? 's' : ''} found
                 </div>
                 
                 <Button
                   variant="link"
                   size="sm"
-                  onClick={clearFilters}
-                  className="text-purple-400 hover:text-purple-300"
+                  onClick={clearAllFilters}
+                  className="text-primary hover:text-primary/80"
                 >
                   Clear all filters
                 </Button>
@@ -608,19 +601,19 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
             {/* Empty state */}
             {!isLoading && !isError && filteredAll.length === 0 && activeTab === 'browse' && (
               <div className="text-center py-12">
-                <div className="bg-gray-800/50 rounded-lg py-10 px-6 max-w-md mx-auto">
-                  {searchQuery || selectedMuscleGroup !== "all" || selectedEquipment !== "all" || 
-                  selectedDifficulty !== "all" || selectedMovement !== "all" ? (
+                <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
+                  {filters.searchQuery || filters.muscleGroups.length > 0 || filters.equipment.length > 0 || 
+                  filters.difficulty.length > 0 || filters.movementPatterns.length > 0 ? (
                     <>
                       <h3 className="text-xl font-medium mb-2">No matching exercises</h3>
-                      <p className="text-gray-400 mb-6">Try adjusting your filters or search query</p>
-                      <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+                      <p className="text-muted-foreground mb-6">Try adjusting your filters or search query</p>
+                      <Button variant="outline" onClick={clearAllFilters}>Clear filters</Button>
                     </>
                   ) : (
                     <>
                       <h3 className="text-xl font-medium mb-2">No exercises found</h3>
-                      <p className="text-gray-400 mb-6">Create your first exercise to get started</p>
-                      <Button variant="gradient" onClick={handleAdd}>
+                      <p className="text-muted-foreground mb-6">Create your first exercise to get started</p>
+                      <Button variant="default" onClick={handleAdd}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Your First Exercise
                       </Button>
