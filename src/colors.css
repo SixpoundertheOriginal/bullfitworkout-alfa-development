@@ -1,0 +1,36 @@
+
+@layer utilities {
+  /* Text Utilities */
+  .text-primary-num {
+    @apply text-white font-bold font-montserrat text-xl tracking-tight drop-shadow-lg;
+  }
+  .text-numeric {
+    @apply text-sky-200 font-mono font-medium;
+  }
+  .text-positive {
+    @apply text-emerald-300 font-bold font-mono;
+  }
+  .text-negative {
+    @apply text-red-400 font-bold font-mono;
+  }
+
+  /* Button color utility classes */
+  .btn-primary {
+    @apply bg-primary text-white shadow hover:bg-primary/90 active:bg-primary/80;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-secondary/90 active:bg-secondary/80;
+  }
+  .btn-accent {
+    @apply bg-accent text-primary hover:bg-accent/90;
+  }
+  .btn-outline {
+    @apply border border-primary bg-transparent text-primary hover:bg-primary/10;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-primary hover:bg-primary/10 active:bg-primary/20;
+  }
+  .btn-disabled {
+    @apply opacity-60 cursor-not-allowed;
+  }
+}

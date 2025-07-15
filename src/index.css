@@ -1,0 +1,81 @@
+@import "./colors.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font family setup */
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    @apply font-inter bg-background text-foreground antialiased;
+  }
+  h1, h2, h3, h4, h5, h6,
+  .heading, .font-heading, .font-montserrat {
+    font-family: 'Montserrat', 'Inter', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .font-inter { font-family: 'Inter', sans-serif; }
+  .font-montserrat { font-family: 'Montserrat', sans-serif; }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  /* Remove the circular @apply reference */
+}
+.animate-checkmark {
+  /* Remove the circular @apply reference */
+}
+
+/* Grid & spacing */
+.grid-system {
+  @apply grid gap-4;
+}
+.container {
+  @apply mx-auto px-4 md:px-8;
+}
+
+/* Dark theme: Always ON */
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 253 87% 76%; /* mapped to #9b87f5 */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 31 96% 60%; /* mapped to #F97316 */
+    --secondary-foreground: 0 0% 98%;
+    --accent: 92 76% 91%; /* mapped to #F2FCE2 */
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.75rem;
+  }
+  .glass,
+  .card-gradient {
+    @apply bg-gradient-to-br from-secondary to-accent backdrop-blur-sm;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Safe-area inset utility for bottom (home-indicator / gesture nav) */
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
