@@ -13,7 +13,8 @@ import {
   Lightbulb,
   Shuffle,
   Star,
-  Heart
+  Heart,
+  Eye
 } from 'lucide-react';
 import { Exercise } from '@/types/exercise';
 
@@ -21,6 +22,7 @@ interface EnhancedExerciseCardProps {
   exercise: Exercise;
   onAddToWorkout?: (exercise: Exercise) => void;
   onToggleFavorite?: (exercise: Exercise) => void;
+  onViewDetails?: (exercise: Exercise) => void;
   isFavorite?: boolean;
   showAddToWorkout?: boolean;
 }
@@ -29,6 +31,7 @@ export function EnhancedExerciseCard({
   exercise, 
   onAddToWorkout, 
   onToggleFavorite,
+  onViewDetails,
   isFavorite = false,
   showAddToWorkout = true 
 }: EnhancedExerciseCardProps) {
@@ -100,6 +103,16 @@ export function EnhancedExerciseCard({
                 className={`p-2 ${isFavorite ? 'text-red-500' : 'text-muted-foreground'}`}
               >
                 <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+              </Button>
+            )}
+            {onViewDetails && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewDetails(exercise)}
+                className="flex items-center gap-1"
+              >
+                <Eye className="h-4 w-4" />
               </Button>
             )}
             {showAddToWorkout && onAddToWorkout && (

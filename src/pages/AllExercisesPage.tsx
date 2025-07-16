@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useExercises } from "@/hooks/useExercises";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter, X, ChevronLeft } from "lucide-react";
+import { Plus, Search, Filter, X, ChevronLeft, Heart, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ExerciseDialog } from "@/components/ExerciseDialog";
 import { MuscleGroup, EquipmentType, MovementPattern, Difficulty, Exercise } from "@/types/exercise";
@@ -26,10 +26,13 @@ import {
 } from "@/components/ui/pagination";
 import { CommonExerciseCard } from "@/components/exercises/CommonExerciseCard";
 import { EnhancedExerciseCard } from "@/components/exercises/EnhancedExerciseCard";
+import { ExerciseDetailsModal } from "@/components/exercises/ExerciseDetailsModal";
+import { SmartRecommendations } from "@/components/exercises/SmartRecommendations";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MultiSelect } from "@/components/MultiSelect";
 import { FilterPresets, FilterState } from "@/components/exercises/FilterPresets";
 import { FilterChips } from "@/components/exercises/FilterChips";
+import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
 
 interface AllExercisesPageProps {
   onSelectExercise?: (exercise: string | Exercise) => void;
@@ -40,10 +43,13 @@ interface AllExercisesPageProps {
 export default function AllExercisesPage({ onSelectExercise, standalone = true, onBack }: AllExercisesPageProps) {
   const { exercises, isLoading, isError, createExercise, isPending } = useExercises();
   const { workouts } = useWorkoutHistory();
+  const { favorites, toggleFavorite, isFavorite } = useFavoriteExercises();
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState<string>("suggested");
+  const [activeTab, setActiveTab] = useState<string>("smart");
   
   // For delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -91,6 +97,11 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     
     return Array.from(exerciseMap.values());
   }, [workouts, exercises]);
+
+  // Get favorite exercises
+  const favoriteExercises = React.useMemo(() => {
+    return exercises.filter(exercise => favorites.includes(exercise.id));
+  }, [exercises, favorites]);
 
   // Enhanced filter logic with multi-select support
   const filterExercises = (exercisesList: Exercise[]) => {
@@ -175,12 +186,6 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     setExerciseToDelete(null);
   };
   
-  const handleViewDetails = (exercise: Exercise) => {
-    toast({
-      title: "View Details",
-      description: `This feature will be implemented soon!`,
-    });
-  };
   
   const handleDuplicate = (exercise: Exercise) => {
     toast({
@@ -193,6 +198,11 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     if (onSelectExercise) {
       onSelectExercise(exercise);
     }
+  };
+
+  const handleViewDetails = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setShowDetailsModal(true);
   };
 
   // Enhanced filter management
@@ -276,6 +286,9 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
         <EnhancedExerciseCard
           exercise={exercise}
           onAddToWorkout={onSelectExercise ? () => handleSelectExercise(exercise) : undefined}
+          onToggleFavorite={toggleFavorite}
+          onViewDetails={handleViewDetails}
+          isFavorite={isFavorite(exercise.id)}
           showAddToWorkout={!!onSelectExercise}
         />
       </div>
@@ -387,6 +400,16 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
           loading={isPending}
           mode={dialogMode}
         />
+
+        <ExerciseDetailsModal
+          exercise={selectedExercise}
+          open={showDetailsModal}
+          onOpenChange={setShowDetailsModal}
+          onAddToWorkout={onSelectExercise ? handleSelectExercise : undefined}
+          onToggleFavorite={toggleFavorite}
+          isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
+          showActions={true}
+        />
         
         {/* Delete confirmation */}
         <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
@@ -462,8 +485,9 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
                 
         {/* Tabs for navigation */}
         <Tabs className="flex-1 overflow-hidden flex flex-col" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="suggested">Suggested</TabsTrigger>
+          <TabsList className="grid grid-cols-4 mb-4">
+            <TabsTrigger value="smart">Smart</TabsTrigger>
+            <TabsTrigger value="favorites">Favorites</TabsTrigger>
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="browse">Browse All</TabsTrigger>
           </TabsList>
@@ -612,15 +636,52 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
             )}
             
             {/* Tab content */}
-            <TabsContent value="suggested" className="mt-0 h-full">
+            <TabsContent value="smart" className="mt-0 h-full">
               <div className="overflow-y-auto">
-                {renderExerciseList(suggestedExercises)}
+                <SmartRecommendations
+                  exercises={exercises}
+                  recentExercises={recentExercises}
+                  favoriteExercises={favoriteExercises}
+                  onSelectExercise={onSelectExercise ? handleSelectExercise : undefined}
+                  onToggleFavorite={toggleFavorite}
+                  isFavorite={isFavorite}
+                />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="favorites" className="mt-0 h-full">
+              <div className="overflow-y-auto">
+                {favoriteExercises.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
+                      <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No favorites yet</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Heart exercises you love to add them to your favorites
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  renderExerciseList(favoriteExercises)
+                )}
               </div>
             </TabsContent>
             
             <TabsContent value="recent" className="mt-0 h-full">
               <div className="overflow-y-auto">
-                {renderExerciseList(filteredRecent)}
+                {recentExercises.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
+                      <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-medium mb-2">No recent exercises</h3>
+                      <p className="text-muted-foreground mb-6">
+                        Complete some workouts to see your recently used exercises
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  renderExerciseList(filteredRecent)
+                )}
               </div>
             </TabsContent>
             
