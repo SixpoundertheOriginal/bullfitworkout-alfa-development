@@ -481,59 +481,6 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
             <TabsTrigger value="browse">Browse All</TabsTrigger>
           </TabsList>
           
-          {/* Target Muscle Groups Filter */}
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Target Muscles</h3>
-            <MultiSelect
-              selected={filters.muscleGroups}
-              onChange={(values) => updateFilters({ muscleGroups: values as MuscleGroup[] })}
-              placeholder="Select muscle groups"
-              options={[
-                { value: 'chest', label: 'Chest' },
-                { value: 'back', label: 'Back' },
-                { value: 'shoulders', label: 'Shoulders' },
-                { value: 'arms', label: 'Arms' },
-                { value: 'biceps', label: 'Biceps' },
-                { value: 'triceps', label: 'Triceps' },
-                { value: 'legs', label: 'Legs' },
-                { value: 'quads', label: 'Quadriceps' },
-                { value: 'hamstrings', label: 'Hamstrings' },
-                { value: 'glutes', label: 'Glutes' },
-                { value: 'calves', label: 'Calves' },
-                { value: 'core', label: 'Core' },
-                { value: 'abs', label: 'Abs' },
-                { value: 'obliques', label: 'Obliques' },
-                { value: 'cardio', label: 'Cardio' },
-                { value: 'full body', label: 'Full Body' }
-              ]}
-            />
-          </div>
-
-          {/* Equipment Type Filter */}
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Equipment</h3>
-            <MultiSelect
-              selected={filters.equipment}
-              onChange={(values) => updateFilters({ equipment: values as EquipmentType[] })}
-              placeholder="Select equipment"
-              options={[
-                { value: 'bodyweight', label: 'Bodyweight' },
-                { value: 'dumbbell', label: 'Dumbbells' },
-                { value: 'barbell', label: 'Barbell' },
-                { value: 'kettlebell', label: 'Kettlebell' },
-                { value: 'resistance-band', label: 'Resistance Bands' },
-                { value: 'cable', label: 'Cable Machine' },
-                { value: 'machine', label: 'Machine' },
-                { value: 'pull-up-bar', label: 'Pull-up Bar' },
-                { value: 'medicine-ball', label: 'Medicine Ball' },
-                { value: 'foam-roller', label: 'Foam Roller' },
-                { value: 'stability-ball', label: 'Stability Ball' },
-                { value: 'suspension-trainer', label: 'Suspension Trainer' },
-                { value: 'bench', label: 'Bench' },
-                { value: 'bosu-ball', label: 'BOSU Ball' }
-              ]}
-            />
-          </div>
 
           {/* Quick Filter Presets */}
           <FilterPresets onApplyFilter={applyQuickFilter} activeFilters={filters} />
