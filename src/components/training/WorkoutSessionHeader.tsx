@@ -1,9 +1,10 @@
 
 import React, { useEffect } from 'react';
 import { WorkoutSaveStatus } from "@/components/WorkoutSaveStatus";
-import { WorkoutMetrics } from "@/components/WorkoutMetrics";
+import { WorkoutMetricsGrid } from "@/components/metrics/core/WorkoutMetricsGrid";
 import { Button } from "@/components/ui/button";
 import { WorkoutStatus } from "@/types/workout";
+import { WorkoutMetricsData } from "@/components/metrics/calculators/MetricCalculator";
 
 interface WorkoutSessionHeaderProps {
   elapsedTime: number;
@@ -21,6 +22,7 @@ interface WorkoutSessionHeaderProps {
   onRestTimerReset: () => void;
   restTimerResetSignal: number;
   currentRestTime: number;
+  exercises: any; // Add exercises prop for the new metrics system
 }
 
 export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
@@ -38,7 +40,8 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
   onShowRestTimer,
   onRestTimerReset,
   restTimerResetSignal,
-  currentRestTime
+  currentRestTime,
+  exercises
 }) => {
   useEffect(() => {
     // Ensure timer continuity by setting document title when component mounts
@@ -56,20 +59,24 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
     };
   }, [elapsedTime]);
 
+  // Prepare workout data for the new metrics system
+  const workoutData: WorkoutMetricsData = {
+    exercises,
+    elapsedTime,
+    restTimerActive,
+    currentRestTime,
+    activeExercise: null
+  };
+
   return (
     <>
-      <div className="sticky top-16 z-10 bg-gray-900/80 backdrop-blur-lg">
-        <WorkoutMetrics
-          time={elapsedTime}
-          exerciseCount={exerciseCount}
-          completedSets={completedSets}
-          totalSets={totalSets}
-          showRestTimer={restTimerActive}
+      <div className="sticky top-16 z-10 bg-gray-900/80 backdrop-blur-lg p-4">
+        <WorkoutMetricsGrid
+          workoutData={workoutData}
           onRestTimerComplete={onRestTimerComplete}
-          onManualRestStart={onShowRestTimer}
+          onRestTimerStart={onShowRestTimer}
           onRestTimerReset={onRestTimerReset}
           restTimerResetSignal={restTimerResetSignal}
-          currentRestTime={currentRestTime}
         />
       </div>
       

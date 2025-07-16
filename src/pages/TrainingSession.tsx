@@ -228,6 +228,7 @@ const TrainingSessionPage = () => {
               onRestTimerReset={triggerRestTimerReset}
               restTimerResetSignal={restTimerResetSignal}
               currentRestTime={currentRestTime}
+              exercises={storeExercises}
             />
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">

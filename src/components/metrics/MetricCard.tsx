@@ -16,7 +16,8 @@ interface MetricCardProps {
   gradientClass?: string;
   valueClass?: string;
   labelClass?: string;
-  className?: string; // Added className prop
+  className?: string;
+  onClick?: () => void;
 }
 
 export const MetricCard = ({
@@ -29,7 +30,8 @@ export const MetricCard = ({
   gradientClass,
   valueClass,
   labelClass,
-  className
+  className,
+  onClick
 }: MetricCardProps) => {
   return (
     <Tooltip>
@@ -42,8 +44,10 @@ export const MetricCard = ({
             "hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/10",
             "min-w-[100px] w-full",
             "relative overflow-hidden",
-            className // Added className to the classNames list
+            onClick && "cursor-pointer",
+            className
           )}
+          onClick={onClick}
         >
           {/* Subtle glow effect in background */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-80" />
