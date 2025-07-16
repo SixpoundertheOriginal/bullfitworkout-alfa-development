@@ -25,6 +25,7 @@ import {
   PaginationPrevious 
 } from "@/components/ui/pagination";
 import { CommonExerciseCard } from "@/components/exercises/CommonExerciseCard";
+import { EnhancedExerciseCard } from "@/components/exercises/EnhancedExerciseCard";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MultiSelect } from "@/components/MultiSelect";
 import { FilterPresets, FilterState } from "@/components/exercises/FilterPresets";
@@ -270,27 +271,13 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   };
 
   const renderExerciseCard = (exercise: Exercise) => {
-    const variant = standalone ? 'library-manage' : 'workout-add';
-    
     return (
       <div key={exercise.id} className="mb-4">
-        {standalone ? (
-          <CommonExerciseCard
-            exercise={exercise}
-            variant={variant}
-            onAdd={() => handleSelectExercise(exercise)}
-            onEdit={() => handleEdit(exercise)}
-            onDelete={() => handleDelete(exercise)}
-            onViewDetails={() => handleViewDetails(exercise)}
-            onDuplicate={() => handleDuplicate(exercise)}
-          />
-        ) : (
-          <CommonExerciseCard
-            exercise={exercise}
-            variant={variant}
-            onAdd={() => handleSelectExercise(exercise)}
-          />
-        )}
+        <EnhancedExerciseCard
+          exercise={exercise}
+          onAddToWorkout={onSelectExercise ? () => handleSelectExercise(exercise) : undefined}
+          showAddToWorkout={!!onSelectExercise}
+        />
       </div>
     );
   };
