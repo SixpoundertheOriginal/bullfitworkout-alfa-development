@@ -9,6 +9,7 @@ import { useExerciseWeight } from '@/hooks/useExerciseWeight';
 import { Exercise } from '@/types/exercise';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from "@/lib/utils";
+import { CompactRestTimer } from '@/components/CompactRestTimer';
 
 interface SetRowProps {
   setNumber: number;
@@ -36,6 +37,8 @@ interface SetRowProps {
   exerciseData?: Exercise;
   userWeight?: number;
   onAutoAdvanceNext?: () => void;
+  showRestTimer?: boolean;
+  onRestTimerComplete?: () => void;
 }
 
 export const SetRow = ({
@@ -64,6 +67,8 @@ export const SetRow = ({
   exerciseData,
   userWeight,
   onAutoAdvanceNext,
+  showRestTimer = false,
+  onRestTimerComplete
 }: SetRowProps) => {
   const { weightUnit: globalWeightUnit } = useWeightUnit();
   const isMobile = useIsMobile();
@@ -109,6 +114,7 @@ export const SetRow = ({
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipeDelta, setSwipeDelta] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [isRestTimerActive, setIsRestTimerActive] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -134,8 +140,19 @@ export const SetRow = ({
     setTimeout(() => {
       setJustCompleted(false);
       onComplete();
+      // Start rest timer after completing the set
+      if (showRestTimer && restTime && restTime > 0) {
+        setIsRestTimerActive(true);
+      }
       if (onAutoAdvanceNext) setTimeout(onAutoAdvanceNext, 300);
     }, 400);
+  };
+
+  const handleRestTimerComplete = () => {
+    setIsRestTimerActive(false);
+    if (onRestTimerComplete) {
+      onRestTimerComplete();
+    }
   };
 
   const completedAnim = justCompleted
@@ -400,6 +417,18 @@ export const SetRow = ({
             <Check size={32} className="text-white animate-scale-in" />
             <span className="ml-3 text-white font-bold text-lg animate-scale-in">Set Complete!</span>
           </div>
+        </div>
+      )}
+      
+      {/* Compact Rest Timer - Shows when set is completed and rest timer is active */}
+      {completed && isRestTimerActive && (
+        <div className="mt-3 px-2">
+          <CompactRestTimer
+            isActive={isRestTimerActive}
+            targetTime={restTime || 60}
+            onComplete={handleRestTimerComplete}
+            className="w-full"
+          />
         </div>
       )}
     </div>

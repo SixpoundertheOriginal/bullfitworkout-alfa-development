@@ -81,6 +81,8 @@ export const SetsList: React.FC<SetsListProps> = ({
               onRestTimeIncrement={onRestTimeIncrement ? (value) => onRestTimeIncrement(index, value) : undefined}
               weightUnit={weightUnit}
               currentVolume={set.weight * set.reps}
+              showRestTimer={true}
+              onRestTimerComplete={() => onResetRestTimer()}
             />
           </div>
         ))}
