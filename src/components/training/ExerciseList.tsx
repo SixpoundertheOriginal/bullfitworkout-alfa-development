@@ -3,6 +3,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { ExerciseSet } from "@/types/exercise";
 import { WorkoutExerciseCard } from '@/components/exercises/WorkoutExerciseCard';
+import { useSmartRestSuggestions } from '@/hooks/useSmartRestSuggestions';
 
 interface ExerciseListProps {
   exercises: Record<string, ExerciseSet[]>;
@@ -44,6 +45,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   onResetRestTimer,
   setExercises
 }) => {
+  const { getSuggestionForExercise } = useSmartRestSuggestions();
   const exerciseList = Object.keys(exercises);
   
   if (exerciseList.length === 0) {
@@ -55,7 +57,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   }
 
   // Function to handle adding a set that copies the previous set values
-  const handleAddSet = (exerciseName: string) => {
+  const handleAddSet = async (exerciseName: string) => {
     const existingSets = exercises[exerciseName];
     const lastSet = existingSets.length > 0 ? existingSets[existingSets.length - 1] : null;
     
@@ -65,6 +67,13 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     
     // If there's a last set, update the newly created set with its values
     if (lastSet && existingSets.length > 0) {
+      // Get smart rest suggestion
+      const suggestion = await getSuggestionForExercise(
+        exerciseName,
+        lastSet.restTime,
+        existingSets.length + 1
+      );
+      
       // We need to access the new set that was just added
       setTimeout(() => {
         setExercises(prev => {
@@ -73,12 +82,12 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
           const newSetIndex = sets.length - 1;
           
           if (newSetIndex >= 0) {
-            // Clone the last set's values to the new set
+            // Clone the last set's values to the new set with smart rest time
             sets[newSetIndex] = {
               ...sets[newSetIndex],
               weight: lastSet.weight,
               reps: lastSet.reps,
-              restTime: lastSet.restTime || 60
+              restTime: suggestion.suggestedTime || lastSet.restTime || 60
             };
           }
           

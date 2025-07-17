@@ -10,6 +10,7 @@ import { Exercise } from '@/types/exercise';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from "@/lib/utils";
 import { CompactRestTimer } from '@/components/CompactRestTimer';
+import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
 
 interface SetRowProps {
   setNumber: number;
@@ -73,6 +74,7 @@ export const SetRow = ({
   const { weightUnit: globalWeightUnit } = useWeightUnit();
   const isMobile = useIsMobile();
   const isIsometric = isIsometricExercise(exerciseName);
+  const { logRestTime } = useRestTimeAnalytics();
   
   const { 
     weight: calculatedWeight,
@@ -152,6 +154,17 @@ export const SetRow = ({
     setIsRestTimerActive(false);
     if (onRestTimerComplete) {
       onRestTimerComplete();
+    }
+  };
+
+  const handleRestTimeTracked = (actualRestTime: number) => {
+    if (restTime) {
+      logRestTime({
+        exerciseName,
+        plannedRestTime: restTime,
+        actualRestTime,
+        // Note: workoutId would need to be passed down as a prop for full analytics
+      });
     }
   };
 
@@ -427,6 +440,7 @@ export const SetRow = ({
             isActive={isRestTimerActive}
             targetTime={restTime || 60}
             onComplete={handleRestTimerComplete}
+            onRestTimeTracked={handleRestTimeTracked}
             className="w-full"
           />
         </div>

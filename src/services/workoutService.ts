@@ -20,3 +20,9 @@ export {
   recoverPartialWorkout,
   diagnoseAndFixWorkout
 } from './workoutRecoveryService';
+
+export {
+  logRestTimeAnalytics,
+  getRestTimePatterns,
+  getSuggestedRestTime
+} from './restTimeAnalyticsService';

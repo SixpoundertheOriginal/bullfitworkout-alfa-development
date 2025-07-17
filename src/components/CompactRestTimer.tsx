@@ -7,6 +7,7 @@ interface CompactRestTimerProps {
   isActive: boolean;
   targetTime: number;
   onComplete?: () => void;
+  onRestTimeTracked?: (actualRestTime: number) => void;
   className?: string;
 }
 
@@ -14,10 +15,12 @@ export const CompactRestTimer = ({
   isActive, 
   targetTime, 
   onComplete,
+  onRestTimeTracked,
   className 
 }: CompactRestTimerProps) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isOvertime, setIsOvertime] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
@@ -40,10 +43,14 @@ export const CompactRestTimer = ({
         
         if (elapsed >= targetTime && !isCompleted) {
           setIsCompleted(true);
-          clearTimerInterval();
           if (onComplete) {
             onComplete();
           }
+        }
+        
+        // Track overtime
+        if (elapsed > targetTime) {
+          setIsOvertime(true);
         }
       }
     }, 1000);
@@ -53,11 +60,17 @@ export const CompactRestTimer = ({
     if (isActive) {
       setElapsedTime(0);
       setIsCompleted(false);
+      setIsOvertime(false);
       startTimerInterval();
     } else {
+      // Track actual rest time when timer becomes inactive
+      if (elapsedTime > 0 && onRestTimeTracked) {
+        onRestTimeTracked(elapsedTime);
+      }
       clearTimerInterval();
       setElapsedTime(0);
       setIsCompleted(false);
+      setIsOvertime(false);
       startTimeRef.current = null;
     }
 
@@ -74,6 +87,7 @@ export const CompactRestTimer = ({
 
   const progress = Math.min((elapsedTime / targetTime) * 100, 100);
   const remainingTime = Math.max(targetTime - elapsedTime, 0);
+  const overtimeSeconds = Math.max(elapsedTime - targetTime, 0);
 
   if (!isActive) return null;
 
@@ -83,7 +97,8 @@ export const CompactRestTimer = ({
       "bg-gradient-to-r from-primary/5 to-primary-glow/5",
       "border border-primary/10",
       "animate-fade-in",
-      isCompleted && "from-emerald-500/10 to-emerald-400/10 border-emerald-500/20",
+      isCompleted && !isOvertime && "from-emerald-500/10 to-emerald-400/10 border-emerald-500/20",
+      isOvertime && "from-amber-500/10 to-orange-400/10 border-amber-500/20",
       className
     )}>
       <div className="flex items-center gap-1.5">
@@ -94,9 +109,12 @@ export const CompactRestTimer = ({
         )}
         <span className={cn(
           "text-xs font-mono font-medium",
-          isCompleted ? "text-emerald-400" : "text-primary"
+          isCompleted && !isOvertime ? "text-emerald-400" : 
+          isOvertime ? "text-amber-400" : "text-primary"
         )}>
-          {isCompleted ? "Ready!" : formatTime(remainingTime)}
+          {isCompleted && !isOvertime ? "Ready!" : 
+           isOvertime ? `+${formatTime(overtimeSeconds)}` : 
+           formatTime(remainingTime)}
         </span>
       </div>
       
@@ -105,9 +123,9 @@ export const CompactRestTimer = ({
           value={progress} 
           className={cn(
             "h-1.5 bg-muted/50",
-            isCompleted 
-              ? "[&>div]:bg-emerald-500" 
-              : "[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary-glow"
+            isCompleted && !isOvertime ? "[&>div]:bg-emerald-500" : 
+            isOvertime ? "[&>div]:bg-amber-500" :
+            "[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary-glow"
           )}
         />
       </div>
