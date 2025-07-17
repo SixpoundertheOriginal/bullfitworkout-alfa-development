@@ -2,7 +2,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { ExerciseSet } from "@/types/exercise";
-import ExerciseCard from '@/components/exercises/ExerciseCard';
+import { WorkoutExerciseCard } from '@/components/exercises/WorkoutExerciseCard';
 
 interface ExerciseListProps {
   exercises: Record<string, ExerciseSet[]>;
@@ -92,7 +92,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   return (
     <div className="space-y-6 mb-32">
       {exerciseList.map(exerciseName => (
-        <ExerciseCard
+        <WorkoutExerciseCard
           key={exerciseName}
           exercise={exerciseName}
           sets={exercises[exerciseName]}
