@@ -28,10 +28,7 @@ const TrainingSessionPage = () => {
     setActiveExercise,
     elapsedTime,
     resetSession,
-    restTimerActive,
-    setRestTimerActive,
-    currentRestTime,
-    setCurrentRestTime,
+    clearAllRestTimers,
     handleCompleteSet,
     workoutStatus,
     markAsSaving,
@@ -137,8 +134,8 @@ const TrainingSessionPage = () => {
     setIsAddExerciseSheetOpen(false);
   };
 
-  const handleShowRestTimer = () => { setRestTimerActive(true); setShowRestTimerModal(true); playBell(); };
-  const handleRestTimerComplete = () => { setRestTimerActive(false); setShowRestTimerModal(false); playBell(); };
+  const handleShowRestTimer = () => { setShowRestTimerModal(true); playBell(); };
+  const handleRestTimerComplete = () => { setShowRestTimerModal(false); playBell(); };
 
   const handleFinishWorkout = async () => {
     if (!hasExercises) {
@@ -166,13 +163,13 @@ const TrainingSessionPage = () => {
         notes: "",
         metrics: {
           trainingConfig: trainingConfig || null,
-          performance: { completedSets, totalSets, restTimers: { defaultTime: currentRestTime, wasUsed: restTimerActive } },
+          performance: { completedSets, totalSets, restTimers: { defaultTime: 60, wasUsed: false } },
           progression: {
             timeOfDay: startTime.getHours() < 12 ? 'morning' :
                        startTime.getHours() < 17 ? 'afternoon' : 'evening',
             totalVolume: Object.values(storeExercises).flat().reduce((acc, s) => acc + (s.completed ? s.weight * s.reps : 0), 0)
           },
-          sessionDetails: { exerciseCount, averageRestTime: currentRestTime, workoutDensity: completedSets / (elapsedTime / 60) }
+          sessionDetails: { exerciseCount, averageRestTime: 60, workoutDensity: completedSets / (elapsedTime / 60) }
         }
       };
       navigate("/workout-complete", { state: { workoutData } });
@@ -222,21 +219,21 @@ const TrainingSessionPage = () => {
               saveProgress={0}
               onRetrySave={() => workoutId && attemptRecovery()}
               onResetWorkout={resetSession}
-              restTimerActive={restTimerActive}
+              restTimerActive={false}
               onRestTimerComplete={handleRestTimerComplete}
               onShowRestTimer={handleShowRestTimer}
               onRestTimerReset={triggerRestTimerReset}
               restTimerResetSignal={restTimerResetSignal}
-              currentRestTime={currentRestTime}
+              currentRestTime={60}
               exercises={storeExercises}
             />
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">
                 <RestTimer
                   isVisible={showRestTimerModal}
-                  onClose={() => { setShowRestTimerModal(false); setRestTimerActive(false); }}
+                  onClose={() => { setShowRestTimerModal(false); }}
                   onComplete={handleRestTimerComplete}
-                  maxTime={currentRestTime || 60}
+                  maxTime={60}
                 />
               </div>
             )}

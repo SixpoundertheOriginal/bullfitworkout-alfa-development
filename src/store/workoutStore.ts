@@ -33,6 +33,15 @@ export interface WorkoutError {
   recoverable: boolean;
 }
 
+export interface RestTimerState {
+  isActive: boolean;
+  targetTime: number;
+  startTime: number;
+  elapsedTime: number;
+  isCompleted: boolean;
+  isOvertime: boolean;
+}
+
 export interface WorkoutState {
   // Core workout data
   exercises: WorkoutExercises;
@@ -45,9 +54,8 @@ export interface WorkoutState {
   // Configuration
   trainingConfig: TrainingConfig | null;
   
-  // Rest timer state
-  restTimerActive: boolean;
-  currentRestTime: number;
+  // Enhanced rest timer state - support multiple concurrent timers
+  activeRestTimers: Map<string, RestTimerState>;
   
   // Session tracking
   isActive: boolean;
@@ -63,11 +71,16 @@ export interface WorkoutState {
   setExercises: (exercises: WorkoutExercises | ((prev: WorkoutExercises) => WorkoutExercises)) => void;
   setActiveExercise: (exerciseName: string | null) => void;
   setElapsedTime: (time: number | ((prev: number) => number)) => void;
-  setRestTimerActive: (active: boolean) => void;
-  setCurrentRestTime: (time: number) => void;
   setTrainingConfig: (config: TrainingConfig | null) => void;
   updateLastActiveRoute: (route: string) => void;
   setWorkoutStatus: (status: WorkoutStatus) => void;
+  
+  // Rest timer management
+  startRestTimer: (timerId: string, targetTime: number) => void;
+  stopRestTimer: (timerId: string) => void;
+  updateRestTimerElapsed: (timerId: string, elapsedTime: number) => void;
+  getRestTimerState: (timerId: string) => RestTimerState | undefined;
+  clearAllRestTimers: () => void;
   
   // Workout lifecycle actions
   startWorkout: () => void;
@@ -103,9 +116,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       // Configuration
       trainingConfig: null,
       
-      // Rest timer state
-      restTimerActive: false,
-      currentRestTime: 60,
+      // Enhanced rest timer state
+      activeRestTimers: new Map<string, RestTimerState>(),
       
       // Session tracking
       isActive: false,
@@ -133,15 +145,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       })),
       
-      setRestTimerActive: (active) => set({ 
-        restTimerActive: active,
-        lastTabActivity: Date.now(),
-      }),
-      
-      setCurrentRestTime: (time) => set({ 
-        currentRestTime: time,
-        lastTabActivity: Date.now(),
-      }),
       
       setTrainingConfig: (config) => set({ 
         trainingConfig: config,
@@ -164,6 +167,61 @@ export const useWorkoutStore = create<WorkoutState>()(
       // New action to directly modify workout status
       setWorkoutStatus: (status) => set({ 
         workoutStatus: status,
+        lastTabActivity: Date.now(),
+      }),
+      
+      // Rest timer management
+      startRestTimer: (timerId, targetTime) => set((state) => {
+        const newTimers = new Map(state.activeRestTimers);
+        newTimers.set(timerId, {
+          isActive: true,
+          targetTime,
+          startTime: Date.now(),
+          elapsedTime: 0,
+          isCompleted: false,
+          isOvertime: false,
+        });
+        return { 
+          activeRestTimers: newTimers,
+          lastTabActivity: Date.now(),
+        };
+      }),
+      
+      stopRestTimer: (timerId) => set((state) => {
+        const newTimers = new Map(state.activeRestTimers);
+        newTimers.delete(timerId);
+        return { 
+          activeRestTimers: newTimers,
+          lastTabActivity: Date.now(),
+        };
+      }),
+      
+      updateRestTimerElapsed: (timerId, elapsedTime) => set((state) => {
+        const newTimers = new Map(state.activeRestTimers);
+        const timer = newTimers.get(timerId);
+        if (timer) {
+          const isCompleted = elapsedTime >= timer.targetTime;
+          const isOvertime = elapsedTime > timer.targetTime;
+          newTimers.set(timerId, {
+            ...timer,
+            elapsedTime,
+            isCompleted,
+            isOvertime,
+          });
+        }
+        return { 
+          activeRestTimers: newTimers,
+          lastTabActivity: Date.now(),
+        };
+      }),
+      
+      getRestTimerState: (timerId) => {
+        const state = get();
+        return state.activeRestTimers.get(timerId);
+      },
+      
+      clearAllRestTimers: () => set({ 
+        activeRestTimers: new Map(),
         lastTabActivity: Date.now(),
       }),
       
@@ -207,8 +265,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           startTime: null,
           workoutStatus: 'idle',
           trainingConfig: null,
-          restTimerActive: false,
-          currentRestTime: 60,
+          activeRestTimers: new Map(),
           isActive: false,
           explicitlyEnded: true,
           sessionId: generateSessionId(),
@@ -256,7 +313,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         
         return { 
           exercises: newExercises,
-          restTimerActive: true,
           lastTabActivity: Date.now(),
         };
       }),
@@ -293,7 +349,7 @@ export const useWorkoutStore = create<WorkoutState>()(
     {
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+        partialize: (state) => ({
         // Only persist these specific parts of the state
         exercises: state.exercises,
         activeExercise: state.activeExercise,
@@ -306,6 +362,8 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastActiveRoute: state.lastActiveRoute,
         sessionId: state.sessionId,
         explicitlyEnded: state.explicitlyEnded,
+        // Convert Map to array for serialization
+        activeRestTimers: Array.from(state.activeRestTimers.entries()) as any,
       }),
       onRehydrateStorage: () => {
         return (rehydratedState, error) => {
@@ -316,6 +374,16 @@ export const useWorkoutStore = create<WorkoutState>()(
           
           if (rehydratedState && rehydratedState.isActive) {
             console.log('Rehydrated workout state:', rehydratedState);
+            
+            // Restore rest timers from serialized format
+            if (rehydratedState.activeRestTimers) {
+              setTimeout(() => {
+                const store = useWorkoutStore.getState();
+                const timersArray = rehydratedState.activeRestTimers as [string, RestTimerState][];
+                const timersMap = new Map(timersArray) as Map<string, RestTimerState>;
+                store.activeRestTimers = timersMap;
+              }, 100);
+            }
             
             // Update elapsed time based on stored start time for active workouts
             if (rehydratedState.isActive && rehydratedState.startTime) {
@@ -349,7 +417,7 @@ export const useWorkoutStore = create<WorkoutState>()(
 
 // Create a hook for handling page visibility changes
 export const useWorkoutPageVisibility = () => {
-  const { isActive, setElapsedTime, startTime } = useWorkoutStore();
+  const { isActive, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
   
   React.useEffect(() => {
     if (!document || !isActive) return;
@@ -367,10 +435,20 @@ export const useWorkoutPageVisibility = () => {
           setElapsedTime(calculatedElapsedTime);
           console.log(`Updated elapsed time after tab switch: ${calculatedElapsedTime}s`);
         }
+        
+        // Update all active rest timers
+        const now = Date.now();
+        activeRestTimers.forEach((timer, timerId) => {
+          if (timer.isActive && timer.startTime) {
+            const elapsedSeconds = Math.floor((now - timer.startTime) / 1000);
+            updateRestTimerElapsed(timerId, elapsedSeconds);
+            console.log(`Updated rest timer ${timerId}: ${elapsedSeconds}s`);
+          }
+        });
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [isActive, setElapsedTime, startTime]);
+  }, [isActive, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed]);
 };

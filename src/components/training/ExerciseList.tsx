@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { ExerciseSet } from "@/types/exercise";
 import { WorkoutExerciseCard } from '@/components/exercises/WorkoutExerciseCard';
 import { useSmartRestSuggestions } from '@/hooks/useSmartRestSuggestions';
+import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
 
 interface ExerciseListProps {
   exercises: Record<string, ExerciseSet[]>;
@@ -46,6 +47,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   setExercises
 }) => {
   const { getSuggestionForExercise } = useSmartRestSuggestions();
+  const { generateTimerId, startTimer } = useGlobalRestTimers();
   const exerciseList = Object.keys(exercises);
   
   if (exerciseList.length === 0) {
@@ -107,7 +109,17 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
           sets={exercises[exerciseName]}
           isActive={activeExercise === exerciseName}
           onAddSet={() => handleAddSet(exerciseName)}
-          onCompleteSet={(setIndex) => onCompleteSet(exerciseName, setIndex)}
+          onCompleteSet={(setIndex) => {
+            // Call the original completion handler
+            onCompleteSet(exerciseName, setIndex);
+            
+            // Start rest timer after completing the set
+            const set = exercises[exerciseName]?.[setIndex];
+            if (set && set.restTime && set.restTime > 0) {
+              const timerId = generateTimerId(exerciseName, setIndex + 1);
+              startTimer(timerId, set.restTime);
+            }
+          }}
           onDeleteExercise={() => onDeleteExercise(exerciseName)}
           onRemoveSet={(setIndex) => onRemoveSet(exerciseName, setIndex)}
           onEditSet={(setIndex) => onEditSet(exerciseName, setIndex)}

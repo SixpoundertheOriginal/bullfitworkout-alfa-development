@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Timer, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
 
 interface CompactRestTimerProps {
-  isActive: boolean;
+  timerId: string;
   targetTime: number;
   onComplete?: () => void;
   onRestTimeTracked?: (actualRestTime: number) => void;
@@ -12,17 +13,21 @@ interface CompactRestTimerProps {
 }
 
 export const CompactRestTimer = ({ 
-  isActive, 
+  timerId,
   targetTime, 
   onComplete,
   onRestTimeTracked,
   className 
 }: CompactRestTimerProps) => {
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [isOvertime, setIsOvertime] = useState(false);
+  const { getTimer, updateTimer, stopTimer, startTimer } = useGlobalRestTimers();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number | null>(null);
+  const completedRef = useRef(false);
+
+  const timerState = getTimer(timerId);
+  const isActive = timerState?.isActive || false;
+  const elapsedTime = timerState?.elapsedTime || 0;
+  const isCompleted = timerState?.isCompleted || false;
+  const isOvertime = timerState?.isOvertime || false;
 
   const clearTimerInterval = () => {
     if (intervalRef.current) {
@@ -32,25 +37,21 @@ export const CompactRestTimer = ({
   };
 
   const startTimerInterval = () => {
-    startTimeRef.current = Date.now();
     clearTimerInterval();
     
     intervalRef.current = setInterval(() => {
-      if (startTimeRef.current) {
+      const timer = getTimer(timerId);
+      if (timer && timer.isActive && timer.startTime) {
         const now = Date.now();
-        const elapsed = Math.floor((now - startTimeRef.current) / 1000);
-        setElapsedTime(elapsed);
+        const elapsed = Math.floor((now - timer.startTime) / 1000);
+        updateTimer(timerId, elapsed);
         
-        if (elapsed >= targetTime && !isCompleted) {
-          setIsCompleted(true);
+        // Call onComplete when timer reaches target time (only once)
+        if (elapsed >= targetTime && !completedRef.current) {
+          completedRef.current = true;
           if (onComplete) {
             onComplete();
           }
-        }
-        
-        // Track overtime
-        if (elapsed > targetTime) {
-          setIsOvertime(true);
         }
       }
     }, 1000);
@@ -58,26 +59,28 @@ export const CompactRestTimer = ({
 
   useEffect(() => {
     if (isActive) {
-      setElapsedTime(0);
-      setIsCompleted(false);
-      setIsOvertime(false);
+      completedRef.current = false;
       startTimerInterval();
     } else {
+      clearTimerInterval();
+      
       // Track actual rest time when timer becomes inactive
       if (elapsedTime > 0 && onRestTimeTracked) {
         onRestTimeTracked(elapsedTime);
       }
-      clearTimerInterval();
-      setElapsedTime(0);
-      setIsCompleted(false);
-      setIsOvertime(false);
-      startTimeRef.current = null;
     }
 
     return () => {
       clearTimerInterval();
     };
-  }, [isActive, targetTime]);
+  }, [isActive, timerId]);
+
+  // Initialize timer if it doesn't exist
+  useEffect(() => {
+    if (!timerState) {
+      startTimer(timerId, targetTime);
+    }
+  }, [timerId, targetTime, timerState, startTimer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

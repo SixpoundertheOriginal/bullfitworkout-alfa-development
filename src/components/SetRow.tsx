@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from "@/lib/utils";
 import { CompactRestTimer } from '@/components/CompactRestTimer';
 import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
+import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
 
 interface SetRowProps {
   setNumber: number;
@@ -75,6 +76,7 @@ export const SetRow = ({
   const isMobile = useIsMobile();
   const isIsometric = isIsometricExercise(exerciseName);
   const { logRestTime } = useRestTimeAnalytics();
+  const { generateTimerId, isTimerActive, stopTimer } = useGlobalRestTimers();
   
   const { 
     weight: calculatedWeight,
@@ -116,8 +118,11 @@ export const SetRow = ({
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipeDelta, setSwipeDelta] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
-  const [isRestTimerActive, setIsRestTimerActive] = useState(false);
   const rowRef = useRef<HTMLDivElement>(null);
+  
+  // Generate unique timer ID for this set
+  const timerId = generateTimerId(exerciseName, setNumber);
+  const restTimerActive = isTimerActive(timerId);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setSwipeStartX(e.touches[0].clientX);
@@ -142,16 +147,12 @@ export const SetRow = ({
     setTimeout(() => {
       setJustCompleted(false);
       onComplete();
-      // Start rest timer after completing the set
-      if (showRestTimer && restTime && restTime > 0) {
-        setIsRestTimerActive(true);
-      }
       if (onAutoAdvanceNext) setTimeout(onAutoAdvanceNext, 300);
     }, 400);
   };
 
   const handleRestTimerComplete = () => {
-    setIsRestTimerActive(false);
+    stopTimer(timerId);
     if (onRestTimerComplete) {
       onRestTimerComplete();
     }
@@ -434,10 +435,10 @@ export const SetRow = ({
       )}
       
       {/* Compact Rest Timer - Shows when set is completed and rest timer is active */}
-      {completed && isRestTimerActive && (
+      {completed && restTimerActive && (
         <div className="mt-3 px-2">
           <CompactRestTimer
-            isActive={isRestTimerActive}
+            timerId={timerId}
             targetTime={restTime || 60}
             onComplete={handleRestTimerComplete}
             onRestTimeTracked={handleRestTimeTracked}
