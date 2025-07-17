@@ -49,19 +49,19 @@ export const SetsList: React.FC<SetsListProps> = ({
   return (
     <div className="space-y-1 mb-4">
       {/* Header */}
-      <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground font-medium mb-2 px-2">
-        <div className="col-span-1">Set</div>
-        <div className="col-span-3">Weight</div>
-        <div className="col-span-3">Reps</div>
-        <div className="col-span-3">Rest</div>
-        <div className="col-span-2">Actions</div>
+      <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground font-medium mb-2 px-3">
+        <div className="col-span-1 text-center">Set</div>
+        <div className="col-span-2 text-center">Weight</div>
+        <div className="col-span-2 text-center">Reps</div>
+        <div className="col-span-2 text-center">Rest</div>
+        <div className="col-span-5 text-center">Actions</div>
       </div>
 
       {/* Sets */}
       <div className="border border-border/30 rounded-lg overflow-hidden bg-muted/20">
         {sets.map((set, index) => (
           <div key={index} className={index > 0 ? "border-t border-border/20" : ""}>
-            <SetRow 
+            <SetRow
               setNumber={index + 1}
               weight={set.weight}
               reps={set.reps}

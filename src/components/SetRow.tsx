@@ -315,29 +315,26 @@ export const SetRow = ({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-12 gap-2 items-center">
+        <div className="grid grid-cols-12 gap-1 items-center px-1">
           <div className="col-span-1 text-center font-medium text-gray-400">
             #{setNumber}
           </div>
-          <div className="col-span-3">
+          <div className="col-span-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div 
                     className={cn(
-                      "flex gap-1 items-center px-3 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200",
+                      "flex flex-col items-center px-1 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200",
                       isAutoWeight && "italic text-gray-400",
                       "value-text"
                     )}
                     onClick={onEdit}
                   >
-                    <span className="font-mono font-semibold text-white value-text">
+                    <span className="font-mono font-semibold text-white text-sm">
                       {displayWeight}
                     </span>
-                    {isAutoWeight && (
-                      <span className="italic text-gray-400 value-text"> (auto)</span>
-                    )}
-                    <span className="text-xs text-gray-300 ml-1 value-text">{globalWeightUnit}</span>
+                    <span className="text-xs text-gray-300">{globalWeightUnit}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -346,35 +343,30 @@ export const SetRow = ({
               </Tooltip>
             </TooltipProvider>
           </div>
-          <div className="col-span-3">
+          <div className="col-span-2">
             <div 
-              className="flex gap-1 items-center px-3 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200"
+              className="flex flex-col items-center px-1 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200"
               onClick={onEdit}
             >
               {isIsometric ? (
-                <span className="text-sm text-white/90 value-text">
-                  {duration > 0 ? formatDuration(duration) : "Not set"} hold
+                <span className="text-xs text-white/90 value-text text-center">
+                  {duration > 0 ? formatDuration(duration) : "Not set"}
                 </span>
               ) : (
                 <>
-                  <span className="font-mono font-semibold text-white value-text">{reps}</span>
-                  <span className="text-xs text-gray-300 ml-1 value-text">reps</span>
+                  <span className="font-mono font-semibold text-white text-sm">{reps}</span>
+                  <span className="text-xs text-gray-300">reps</span>
                 </>
               )}
             </div>
           </div>
-          <div className="col-span-3 flex items-center justify-start gap-2 text-gray-400">
-            <Timer size={16} className="text-purple-400" />
-            <span className="font-mono text-sm text-white value-text">
+          <div className="col-span-2 flex flex-col items-center text-gray-400 px-1">
+            <Timer size={14} className="text-purple-400" />
+            <span className="font-mono text-xs text-white">
               {formatRestTime(restTime)}
             </span>
-            {currentVolume && (
-              <span className="ml-2 text-sm text-emerald-400 font-mono value-text">
-                Vol: {currentVolume} {weightUnit}
-              </span>
-            )}
           </div>
-          <div className="col-span-2 flex justify-end gap-2">
+          <div className="col-span-5 flex justify-center gap-1">
             {completed ? (
               <Button
                 size="icon"
