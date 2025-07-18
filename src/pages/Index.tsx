@@ -5,7 +5,6 @@ import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
 import { ConfigureTrainingDialog } from "@/components/ConfigureTrainingDialog";
 import { ExerciseFAB } from "@/components/ExerciseFAB";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
-import { WorkoutLogSection } from "@/components/workouts/WorkoutLogSection";
 import { ExploreSection } from "@/components/ExploreSection";
 import { toast } from "@/hooks/use-toast";
 import { StartTrainingButton } from "@/components/training/StartTrainingButton";
@@ -17,7 +16,6 @@ import { DateRangeProvider } from "@/context/DateRangeContext";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [showWorkouts, setShowWorkouts] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { stats } = useWorkoutStats();
   const { isActive, lastActiveRoute } = useWorkoutState();
@@ -111,10 +109,6 @@ const Index = () => {
     if (isActive && lastActiveRoute) {
       navigate(lastActiveRoute);
     }
-  };
-
-  const toggleWorkoutDisplay = () => {
-    setShowWorkouts(!showWorkouts);
   };
 
   const recommendedWorkoutType = stats?.recommendedType || "Strength";
@@ -216,11 +210,6 @@ const Index = () => {
             </div>
           </div>
         </section>
-
-        <WorkoutLogSection 
-          showWorkouts={showWorkouts}
-          onToggle={toggleWorkoutDisplay}
-        />
 
         <ExploreSection />
       </main>
