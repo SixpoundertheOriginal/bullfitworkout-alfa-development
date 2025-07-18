@@ -123,7 +123,7 @@ const Index = () => {
           <QuickStatsSection />
         </DateRangeProvider> */}
 
-        <section ref={sectionRef} className="mb-10 text-center">
+        <section ref={sectionRef} className="mb-20 text-center relative z-10">
           <div style={{ height: "12rem" }} className="relative">
             <ExerciseFAB 
               onClick={() => setDialogOpen(true)}
@@ -160,9 +160,11 @@ const Index = () => {
           </div>
         </section>
 
-        <DateRangeProvider>
-          <WeeklySummaryStats />
-        </DateRangeProvider>
+        <div className="mt-16">
+          <DateRangeProvider>
+            <WeeklySummaryStats />
+          </DateRangeProvider>
+        </div>
 
         <ExploreSection />
       </main>
