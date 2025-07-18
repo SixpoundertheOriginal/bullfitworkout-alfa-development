@@ -152,12 +152,8 @@ export const SetRow = ({
   };
 
   const handleRestTimerComplete = () => {
-    const timer = getTimer(timerId);
-    if (timer && timer.isActive) {
-      // Track the actual rest time before stopping the timer
-      handleRestTimeTracked(timer.elapsedTime);
-    }
-    stopTimer(timerId);
+    // Timer continues running past target time - no auto-stop
+    // This callback is only for UI feedback (sounds, notifications, etc.)
     if (onRestTimerComplete) {
       onRestTimerComplete();
     }
