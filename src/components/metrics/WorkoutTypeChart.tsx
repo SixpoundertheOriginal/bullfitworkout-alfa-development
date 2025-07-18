@@ -1,6 +1,6 @@
 
 import React, { useMemo, useCallback } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 interface WorkoutTypeData {
   type: string;
@@ -25,8 +25,11 @@ const WorkoutTypeChartComponent: React.FC<WorkoutTypeChartProps> = ({
   workoutTypes = [],
   height = 250
 }) => {
-  // Color palette
-  const COLORS = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+  // Premium gradient color palette
+  const GRADIENT_COLORS = [
+    'url(#gradient1)', 'url(#gradient2)', 'url(#gradient3)', 
+    'url(#gradient4)', 'url(#gradient5)', 'url(#gradient6)'
+  ];
 
   // memoize mapping to avoid unnecessary recalculations
   const chartData = useMemo(
@@ -34,7 +37,7 @@ const WorkoutTypeChartComponent: React.FC<WorkoutTypeChartProps> = ({
       workoutTypes.map((item, index) => ({
         name: item.type,
         value: item.count,
-        color: COLORS[index % COLORS.length],
+        color: GRADIENT_COLORS[index % GRADIENT_COLORS.length],
       })),
     [workoutTypes]
   );
@@ -64,6 +67,8 @@ const WorkoutTypeChartComponent: React.FC<WorkoutTypeChartProps> = ({
           textAnchor="middle"
           dominantBaseline="central"
           fontSize={12}
+          fontWeight="bold"
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.5))"
         >
           {`${(percent * 100).toFixed(0)}%`}
         </text>
@@ -76,6 +81,32 @@ const WorkoutTypeChartComponent: React.FC<WorkoutTypeChartProps> = ({
     <div className="h-full w-full">
       <ResponsiveContainer width="100%" height={height}>
         <PieChart>
+          <defs>
+            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#EC4899" />
+            </linearGradient>
+            <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#EC4899" />
+              <stop offset="100%" stopColor="#F97316" />
+            </linearGradient>
+            <linearGradient id="gradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#8B5CF6" />
+            </linearGradient>
+            <linearGradient id="gradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#10B981" />
+              <stop offset="100%" stopColor="#3B82F6" />
+            </linearGradient>
+            <linearGradient id="gradient5" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#F59E0B" />
+              <stop offset="100%" stopColor="#EF4444" />
+            </linearGradient>
+            <linearGradient id="gradient6" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#EF4444" />
+              <stop offset="100%" stopColor="#8B5CF6" />
+            </linearGradient>
+          </defs>
           <Pie
             data={chartData}
             cx="50%"
@@ -84,26 +115,36 @@ const WorkoutTypeChartComponent: React.FC<WorkoutTypeChartProps> = ({
             label={renderCustomizedLabel}
             outerRadius={80}
             dataKey="value"
-            stroke="#1A1F2C"
+            stroke="rgba(255,255,255,0.1)"
             strokeWidth={2}
           >
             {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={entry.color}
-                opacity={0.8}
+                filter="drop-shadow(0 4px 8px rgba(139, 92, 246, 0.3))"
               />
             ))}
           </Pie>
           <Tooltip
             formatter={(value: any, name: any) => [`${value} workouts`, name]}
             contentStyle={{
-              backgroundColor: '#1A1F2C',
-              border: '1px solid #333',
-              borderRadius: '4px',
-              color: 'white'
+              backgroundColor: 'rgba(17, 24, 39, 0.95)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '8px',
+              color: 'white',
+              backdropFilter: 'blur(8px)'
             }}
             itemStyle={{ color: 'white' }}
+            labelStyle={{ color: 'rgba(255,255,255,0.9)' }}
+          />
+          <Legend
+            layout="horizontal"
+            verticalAlign="bottom"
+            align="center"
+            formatter={(value: any) => (
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '12px' }}>{value}</span>
+            )}
           />
         </PieChart>
       </ResponsiveContainer>

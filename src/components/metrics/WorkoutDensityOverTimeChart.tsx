@@ -1,3 +1,4 @@
+
 // src/components/metrics/WorkoutDensityOverTimeChart.tsx
 
 import React, { useMemo } from 'react';
@@ -8,7 +9,9 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
-  CartesianGrid
+  CartesianGrid,
+  Area,
+  AreaChart
 } from 'recharts';
 import { format } from 'date-fns';
 import { Activity } from 'lucide-react';
@@ -72,60 +75,62 @@ const WorkoutDensityOverTimeChartComponent: React.FC<WorkoutDensityOverTimeChart
   }, [data, hasData]);
 
   return (
-    <div
-      className={`bg-gray-900 border-gray-800 hover:border-purple-500/50 transition-all ${className}`}
-      style={{ minHeight: `${height + 60}px` }}
-    >
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center text-sm text-gray-300">
-          <Activity className="h-4 w-4 mr-2 text-purple-400" />
-          Workout Density Over Time
+    <div className={`h-full w-full ${className}`} style={{ minHeight: `${height}px` }}>
+      {!hasData ? (
+        <div
+          className="flex items-center justify-center h-full text-gray-400"
+          style={{ height }}
+        >
+          No density data available for the selected period
         </div>
-        {hasData && (
-          <div className="text-xs text-gray-400">
-            Avg: {averages.overall} {weightUnit}/min
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 pb-4">
-        {!hasData ? (
-          <div
-            className="flex items-center justify-center h-full text-gray-400"
-            style={{ height }}
-          >
-            No density data available for the selected period
-          </div>
-        ) : (
+      ) : (
+        <>
           <ResponsiveContainer width="100%" height={height}>
-            <LineChart
+            <AreaChart
               data={formattedData}
               margin={{ top: 5, right: 5, left: 5, bottom: 20 }}
             >
+              <defs>
+                <linearGradient id="overallDensityGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity={0.05} />
+                </linearGradient>
+                <linearGradient id="activeDensityGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#0EA5E9" stopOpacity={0.05} />
+                </linearGradient>
+                <filter id="lineGlow">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                  <feMerge> 
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="#333333"
+                stroke="rgba(255,255,255,0.1)"
                 vertical={false}
               />
               <XAxis
                 dataKey="date"
-                tick={{ fill: '#888888', fontSize: 12 }}
-                axisLine={{ stroke: '#333333' }}
-                tickLine={{ stroke: '#333333' }}
+                tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                 angle={-45}
                 textAnchor="end"
                 height={50}
               />
               <YAxis
-                tick={{ fill: '#888888', fontSize: 12 }}
-                axisLine={{ stroke: '#333333' }}
-                tickLine={{ stroke: '#333333' }}
+                tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                 width={50}
                 label={{
                   value: `Density (${weightUnit}/min)`,
                   angle: -90,
                   position: 'insideLeft',
-                  fill: '#888888',
+                  fill: 'rgba(255,255,255,0.7)',
                   style: { textAnchor: 'middle' }
                 }}
               />
@@ -133,19 +138,19 @@ const WorkoutDensityOverTimeChartComponent: React.FC<WorkoutDensityOverTimeChart
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-gray-800 border border-gray-700 p-2 rounded-lg shadow-lg">
-                        <p className="text-gray-300">
+                      <div className="bg-gray-900/95 border border-purple-500/30 p-3 rounded-lg shadow-2xl backdrop-blur-sm">
+                        <p className="text-white/90 font-medium">
                           {format(
                             new Date(payload[0].payload.originalDate),
                             'MMM d, yyyy'
                           )}
                         </p>
-                        <p className="text-purple-400 font-semibold">
+                        <p className="text-purple-400 font-bold">
                           Overall: {payload[0].value} {weightUnit}/min
                         </p>
                         {payload[1] &&
                           payload[1].value !== undefined && (
-                            <p className="text-blue-400 font-semibold">
+                            <p className="text-blue-400 font-bold">
                               Active Only: {payload[1].value}{' '}
                               {weightUnit}/min
                             </p>
@@ -157,47 +162,47 @@ const WorkoutDensityOverTimeChartComponent: React.FC<WorkoutDensityOverTimeChart
                 }}
                 isAnimationActive={false}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="overallDensity"
-                stroke="#9B87F5"
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#9B87F5" }}
-                activeDot={{ r: 6 }}
+                stroke="#8B5CF6"
+                strokeWidth={3}
+                fill="url(#overallDensityGradient)"
+                filter="url(#lineGlow)"
                 isAnimationActive={false}
               />
-              <Line
+              <Area
                 type="monotone"
                 dataKey="activeOnlyDensity"
                 stroke="#0EA5E9"
-                strokeWidth={2}
-                dot={{ r: 4, fill: "#0EA5E9" }}
-                activeDot={{ r: 6 }}
+                strokeWidth={3}
+                fill="url(#activeDensityGradient)"
+                filter="url(#lineGlow)"
                 isAnimationActive={false}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
-        )}
 
-        {hasData && (
-          <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Overall Density</p>
-              <p className="text-lg font-semibold text-purple-400">
-                {averages.overall}{' '}
-                <span className="text-sm text-gray-400">{weightUnit}/min</span>
-              </p>
+          {hasData && (
+            <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="text-xs text-white/50 mb-1">Overall Density</p>
+                <p className="text-lg font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  {averages.overall}{' '}
+                  <span className="text-sm text-white/60">{weightUnit}/min</span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-white/50 mb-1">Active Density</p>
+                <p className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  {averages.activeOnly}{' '}
+                  <span className="text-sm text-white/60">{weightUnit}/min</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">Active Density</p>
-              <p className="text-lg font-semibold text-blue-400">
-                {averages.activeOnly}{' '}
-                <span className="text-sm text-gray-400">{weightUnit}/min</span>
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
