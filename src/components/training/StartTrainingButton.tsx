@@ -56,13 +56,33 @@ export const StartTrainingButton = ({
   };
   
   return (
-    <CircularGradientButton
+    <div 
       onClick={handleStartClick}
-      className={cn("hover:scale-105", className)}
-      icon={<Play size={48} className="text-white ml-1" />} 
-      size={132}
+      className={cn(
+        "relative flex items-center justify-center cursor-pointer transition-transform hover:scale-105",
+        "w-64 h-64 mx-auto", // Large size
+        className
+      )}
     >
-      {label}
-    </CircularGradientButton>
+      {/* Outer progress ring */}
+      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 p-2">
+        <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center">
+          {/* Inner content */}
+          <div className="text-center">
+            <div className="text-white text-4xl font-bold mb-2">
+              {label}
+            </div>
+            {trainingType !== "Continue" && (
+              <div className="text-white/70 text-lg">
+                {trainingType}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Subtle glow effect */}
+      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 blur-xl -z-10" />
+    </div>
   );
 };
