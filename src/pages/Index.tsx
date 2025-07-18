@@ -117,7 +117,7 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
-      <main className="flex-1 overflow-auto px-4 py-6 space-y-6 mt-20 pb-20">
+      <main className="flex-1 overflow-auto px-4 py-6 space-y-6 mt-12 pb-20">
 
         {/* <DateRangeProvider>
           <QuickStatsSection />
