@@ -379,8 +379,8 @@ export const useWorkoutStore = create<WorkoutState>()(
             if (rehydratedState.activeRestTimers) {
               setTimeout(() => {
                 const store = useWorkoutStore.getState();
-                const timersArray = rehydratedState.activeRestTimers as [string, RestTimerState][];
-                const timersMap = new Map(timersArray) as Map<string, RestTimerState>;
+                const timersArray = rehydratedState.activeRestTimers as any as [string, RestTimerState][];
+                const timersMap = new Map(timersArray);
                 store.activeRestTimers = timersMap;
               }, 100);
             }
