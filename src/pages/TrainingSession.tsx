@@ -292,20 +292,49 @@ const TrainingSessionPage = () => {
             setExercises={handleSetExercises}
           />
 
-          {/* iOS-Native Add Exercise Button */}
+          {/* Premium Add Exercise Button */}
           <div className="mt-8 mb-16 px-4">
             <Button
               onClick={() => setIsAddExerciseSheetOpen(true)}
               className="
                 w-full h-14 text-lg font-semibold rounded-xl
-                bg-blue-600 hover:bg-blue-700 active:bg-blue-800
                 text-white shadow-lg hover:shadow-xl
                 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
                 flex items-center justify-center gap-3
+                relative overflow-hidden group
               "
+              style={{
+                background: `
+                  linear-gradient(135deg, rgba(139,92,246,0.9) 0%, rgba(236,72,153,0.9) 50%, rgba(249,115,22,0.9) 100%),
+                  linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)
+                `,
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.3)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))'
+              }}
             >
-              <Plus size={24} strokeWidth={2.5} />
-              Add Exercise
+              {/* Inner highlight overlay */}
+              <div 
+                className="absolute inset-0 rounded-xl"
+                style={{
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%)'
+                }}
+              />
+              
+              {/* Premium glow effect on hover */}
+              <div 
+                className="absolute inset-0 rounded-xl transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139,92,246,0.8) 0%, rgba(236,72,153,0.8) 50%, rgba(249,115,22,0.8) 100%)',
+                  filter: 'blur(2px)'
+                }}
+              />
+              
+              {/* Content */}
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                <Plus size={24} strokeWidth={2.5} />
+                Add Exercise
+              </div>
             </Button>
           </div>
         </div>
