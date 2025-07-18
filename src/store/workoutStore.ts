@@ -372,18 +372,20 @@ export const useWorkoutStore = create<WorkoutState>()(
             return;
           }
           
-          if (rehydratedState && rehydratedState.isActive) {
+          if (rehydratedState) {
             console.log('Rehydrated workout state:', rehydratedState);
             
-            // Restore rest timers from serialized format
-            if (rehydratedState.activeRestTimers) {
-              setTimeout(() => {
-                const store = useWorkoutStore.getState();
-                const timersArray = rehydratedState.activeRestTimers as any as [string, RestTimerState][];
-                const timersMap = new Map(timersArray);
-                store.activeRestTimers = timersMap;
-              }, 100);
+            // Restore rest timers from serialized format IMMEDIATELY
+            if (rehydratedState.activeRestTimers && Array.isArray(rehydratedState.activeRestTimers)) {
+              const timersArray = rehydratedState.activeRestTimers as [string, RestTimerState][];
+              rehydratedState.activeRestTimers = new Map(timersArray) as any;
+            } else {
+              // Ensure activeRestTimers is always a Map
+              rehydratedState.activeRestTimers = new Map() as any;
             }
+          }
+          
+          if (rehydratedState && rehydratedState.isActive) {
             
             // Update elapsed time based on stored start time for active workouts
             if (rehydratedState.isActive && rehydratedState.startTime) {
