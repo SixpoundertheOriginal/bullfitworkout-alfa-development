@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
+import { WeeklySummaryStats } from "@/components/WeeklySummaryStats";
 import { ConfigureTrainingDialog } from "@/components/ConfigureTrainingDialog";
 import { ExerciseFAB } from "@/components/ExerciseFAB";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
@@ -161,9 +162,9 @@ const Index = () => {
           </div>
         </motion.div>
 
-        <DateRangeProvider>
+        {/* <DateRangeProvider>
           <QuickStatsSection />
-        </DateRangeProvider>
+        </DateRangeProvider> */}
 
         <section ref={sectionRef} className="mb-10 text-center">
           <motion.h2 
@@ -210,6 +211,10 @@ const Index = () => {
             </div>
           </div>
         </section>
+
+        <DateRangeProvider>
+          <WeeklySummaryStats />
+        </DateRangeProvider>
 
         <ExploreSection />
       </main>
