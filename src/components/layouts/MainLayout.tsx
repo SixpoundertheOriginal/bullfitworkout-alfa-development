@@ -65,10 +65,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   // Hide global bottom nav only on workout complete page
   const hideGlobalNavOn = ['/workout-complete'];
   const shouldShowGlobalNav = !noFooter && !hideGlobalNavOn.some(route => location.pathname.startsWith(route));
+  
+  // Hide global header on training session page (has its own custom header)
+  const hideGlobalHeaderOn = ['/training-session'];
+  const shouldShowGlobalHeader = !noHeader && !hideGlobalHeaderOn.some(route => location.pathname.startsWith(route));
 
   return (
     <div className="flex flex-col h-screen bg-gray-900 will-change-transform">
-      {!noHeader && (
+      {shouldShowGlobalHeader && (
         <div className="fixed top-0 left-0 right-0 z-50">
           <PageHeader title={title} showBackButton={location.pathname !== '/' && location.pathname !== '/overview'}>
             <MainMenu />
@@ -82,7 +86,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       )}
       
-      <main className="flex-grow overflow-y-auto pt-16 pb-16 will-change-transform">
+      <main className={`flex-grow overflow-y-auto ${shouldShowGlobalHeader ? 'pt-16' : 'pt-0'} pb-16 will-change-transform`}>
         <div className="content-container w-full">
           {children}
         </div>
