@@ -5,8 +5,8 @@ import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
 import { ConfigureTrainingDialog } from "@/components/ConfigureTrainingDialog";
 import { ExerciseFAB } from "@/components/ExerciseFAB";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
-import { FeaturesSection } from "@/components/features/FeaturesSection";
 import { WorkoutLogSection } from "@/components/workouts/WorkoutLogSection";
+import { ExploreSection } from "@/components/ExploreSection";
 import { toast } from "@/hooks/use-toast";
 import { StartTrainingButton } from "@/components/training/StartTrainingButton";
 import { motion } from "framer-motion";
@@ -222,7 +222,7 @@ const Index = () => {
           onToggle={toggleWorkoutDisplay}
         />
 
-        <FeaturesSection onNavigate={navigate} />
+        <ExploreSection />
       </main>
 
       <ConfigureTrainingDialog 
