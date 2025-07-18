@@ -55,38 +55,92 @@ export const WeeklySummaryStats = React.memo(() => {
 
       <div className="grid grid-cols-2 gap-4">
         {/* Workouts */}
-        <div className="bg-muted/30 p-3 rounded-xl text-start">
-          <div className="flex items-center mb-1">
-            <span className="text-lg mr-2">📅</span>
-            <span className="text-sm text-muted-foreground">Workouts</span>
+        <div 
+          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+          }}
+        >
+          {/* Subtle inner highlight */}
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+              mixBlendMode: 'overlay'
+            }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center mb-2">
+              <span className="text-lg mr-2">📅</span>
+              <span className="text-sm text-muted-foreground">Workouts</span>
+            </div>
+            <div className="text-xl font-semibold">{workoutsCount}</div>
+            <div className="text-xs text-muted-foreground opacity-80">{dateRangeText}</div>
           </div>
-          <div className="text-xl font-semibold">{workoutsCount}</div>
-          <div className="text-xs text-muted-foreground">{dateRangeText}</div>
         </div>
 
         {/* Total Volume */}
-        <div className="bg-muted/30 p-3 rounded-xl text-start">
-          <div className="flex items-center mb-1">
-            <span className="text-lg mr-2">🏋️</span>
-            <span className="text-sm text-muted-foreground">Total Volume</span>
+        <div 
+          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+          }}
+        >
+          {/* Subtle inner highlight */}
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+              mixBlendMode: 'overlay'
+            }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center mb-2">
+              <span className="text-lg mr-2">🏋️</span>
+              <span className="text-sm text-muted-foreground">Total Volume</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xl font-semibold">{totalVolume}</div>
+              {!isLoading && stats?.weeklyVolume && stats.weeklyVolume > 0 && (
+                <span className="text-xs text-green-400 font-medium bg-green-400/10 px-2 py-0.5 rounded-md">+12%</span>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground opacity-80">Weight lifted</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="text-xl font-semibold">{totalVolume}</div>
-            {!isLoading && stats?.weeklyVolume && stats.weeklyVolume > 0 && (
-              <span className="text-xs text-green-600 font-medium">+12%</span>
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground">Weight lifted</div>
         </div>
 
         {/* Most Active Day - spans both columns */}
-        <div className="col-span-2 bg-muted/30 p-3 rounded-xl text-start">
-          <div className="flex items-center mb-1">
-            <span className="text-lg mr-2">🔥</span>
-            <span className="text-sm text-muted-foreground">Most Active Day</span>
+        <div 
+          className="col-span-2 p-4 rounded-xl text-start relative overflow-hidden group"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+          }}
+        >
+          {/* Subtle inner highlight */}
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+              mixBlendMode: 'overlay'
+            }}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center mb-2">
+              <span className="text-lg mr-2">🔥</span>
+              <span className="text-sm text-muted-foreground">Most Active Day</span>
+            </div>
+            <div className="text-xl font-semibold">{mostActiveDay}</div>
+            <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
           </div>
-          <div className="text-xl font-semibold">{mostActiveDay}</div>
-          <div className="text-xs text-muted-foreground">Peak training day</div>
         </div>
       </div>
     </div>

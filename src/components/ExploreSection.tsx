@@ -30,17 +30,35 @@ export const ExploreSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Card 
-          className="rounded-2xl border-gray-700/50 bg-gray-800/50 hover:bg-gray-800/70 
-                     transition-all duration-300 cursor-pointer group
-                     hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-0.5"
+        <div
+          className="rounded-xl cursor-pointer group transition-all duration-300 hover:scale-[1.02] relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+          }}
           onClick={handleExerciseLibraryClick}
         >
-          <CardContent className="p-6">
+          {/* Subtle inner highlight */}
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={{
+              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+              mixBlendMode: 'overlay'
+            }}
+          />
+          
+          {/* Content */}
+          <div className="p-6 relative z-10">
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 
-                               flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+                  style={{
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F97316 100%)'
+                  }}
+                >
                   <Library className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -49,7 +67,7 @@ export const ExploreSection = () => {
                 <h3 className={cn(typography.text.primary, "text-lg font-semibold mb-1")}>
                   📚 Exercise Library
                 </h3>
-                <p className={cn(typography.text.secondary, "text-sm")}>
+                <p className={cn(typography.text.secondary, "text-sm opacity-80")}>
                   Browse 500+ exercises with proper form and technique
                 </p>
               </div>
@@ -70,8 +88,8 @@ export const ExploreSection = () => {
                 </svg>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
     </section>
   );
