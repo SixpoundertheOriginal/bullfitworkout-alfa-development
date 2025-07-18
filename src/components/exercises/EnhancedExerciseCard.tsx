@@ -14,17 +14,29 @@ import {
   Shuffle,
   Star,
   Heart,
-  Eye
+  Eye,
+  TrendingUp,
+  Calendar,
+  Award,
+  Sparkles,
+  Settings
 } from 'lucide-react';
 import { Exercise } from '@/types/exercise';
+import { ExerciseVariantSelector } from './ExerciseVariantSelector';
+import { AIRecommendationBadge } from './AIRecommendationBadge';
+import { useExerciseVariants } from '@/hooks/useExerciseVariants';
+import { VariantSelectionData } from '@/types/exercise-variants';
+import { formatDistanceToNow } from 'date-fns';
 
 interface EnhancedExerciseCardProps {
   exercise: Exercise;
-  onAddToWorkout?: (exercise: Exercise) => void;
+  onAddToWorkout?: (exercise: Exercise, variantData?: VariantSelectionData) => void;
   onToggleFavorite?: (exercise: Exercise) => void;
   onViewDetails?: (exercise: Exercise) => void;
   isFavorite?: boolean;
   showAddToWorkout?: boolean;
+  showVariantSelector?: boolean;
+  showAIRecommendations?: boolean;
 }
 
 export function EnhancedExerciseCard({ 
@@ -33,9 +45,38 @@ export function EnhancedExerciseCard({
   onToggleFavorite,
   onViewDetails,
   isFavorite = false,
-  showAddToWorkout = true 
+  showAddToWorkout = true,
+  showVariantSelector = true,
+  showAIRecommendations = true
 }: EnhancedExerciseCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedVariantData, setSelectedVariantData] = useState<VariantSelectionData | null>(null);
+  const { variants, recommendations, getProgressionTrend, getLastPerformed, getPersonalBest } = useExerciseVariants(exercise.id);
+
+  const progressionTrend = getProgressionTrend(exercise.id);
+  const lastPerformed = getLastPerformed(exercise.id);
+  const personalBest = getPersonalBest(exercise.id);
+
+  const handleVariantSelect = (variantData: VariantSelectionData) => {
+    setSelectedVariantData(variantData);
+  };
+
+  const handleAddToWorkout = () => {
+    if (onAddToWorkout) {
+      onAddToWorkout(exercise, selectedVariantData || undefined);
+    }
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'improving':
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case 'declining':
+        return <TrendingUp className="w-4 h-4 text-red-500 rotate-180" />;
+      default:
+        return <TrendingUp className="w-4 h-4 text-yellow-500 rotate-90" />;
+    }
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -153,7 +194,7 @@ export function EnhancedExerciseCard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onAddToWorkout(exercise)}
+                onClick={handleAddToWorkout}
                 className="flex items-center gap-1 relative overflow-hidden group/btn"
                 style={{
                   background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
@@ -212,9 +253,54 @@ export function EnhancedExerciseCard({
           )}
         </div>
 
+        {/* Smart Insights Section */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-muted/30 to-muted/20 border border-muted/50">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Last: {formatDistanceToNow(new Date(lastPerformed), { addSuffix: true })}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {getTrendIcon(progressionTrend)}
+              <span className="text-sm text-muted-foreground capitalize">
+                {progressionTrend}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                PR: {personalBest.weight}kg × {personalBest.reps}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Recommendations */}
+        {showAIRecommendations && recommendations.length > 0 && (
+          <AIRecommendationBadge recommendations={recommendations} />
+        )}
+
         {/* Expandable Content */}
         {isExpanded && (
           <div className="space-y-4 pt-4 border-t">
+            {/* Exercise Variant Selector */}
+            {showVariantSelector && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Exercise Variants & Advanced Tracking
+                </h4>
+                <ExerciseVariantSelector
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  onVariantSelect={handleVariantSelect}
+                  className="mb-4"
+                />
+              </div>
+            )}
+
             {/* Secondary Muscles */}
             {exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.length > 0 && (
               <div>
