@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseCardHeader } from './ExerciseCardHeader';
@@ -47,11 +48,12 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
   return (
     <Card className={`
       relative overflow-hidden transition-all duration-300 
-      bg-gradient-to-br from-card to-card/80
-      border border-border/50
+      bg-gradient-to-br from-gray-900/90 to-gray-900/60
+      border border-gray-800/50 rounded-xl shadow-lg
+      backdrop-blur-sm
       ${isActive ? 
-        "ring-2 ring-primary/30 shadow-lg shadow-primary/10" : 
-        "hover:shadow-md hover:border-border/80"
+        "ring-2 ring-blue-500/30 shadow-lg shadow-blue-500/10 border-blue-500/30" : 
+        "hover:shadow-xl hover:border-gray-700/60"
       }
     `}>
       <CardContent className="p-0">

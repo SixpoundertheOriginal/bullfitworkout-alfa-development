@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -8,11 +9,11 @@ import { useExercises } from "@/hooks/useExercises";
 import { WorkoutSessionHeader } from "@/components/training/WorkoutSessionHeader";
 import { ExerciseList } from "@/components/training/ExerciseList";
 import { AddExerciseSheet } from "@/components/training/AddExerciseSheet";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Plus } from "lucide-react";
 import { Exercise } from "@/types/exercise";
 import { useSound } from "@/hooks/useSound";
 import { RestTimer } from "@/components/RestTimer";
-import { WorkoutSessionFooter } from "@/components/training/WorkoutSessionFooter";
 import { adaptExerciseSets, adaptToStoreFormat } from "@/utils/exerciseAdapter";
 
 const TrainingSessionPage = () => {
@@ -65,6 +66,7 @@ const TrainingSessionPage = () => {
 
   const exerciseCount = Object.keys(exercises).length;
   const hasExercises = exerciseCount > 0;
+  const hasSubstantialProgress = completedSets >= 3 || exerciseCount >= 2;
   
   useEffect(() => { setPageLoaded(true); }, []);
 
@@ -167,7 +169,7 @@ const TrainingSessionPage = () => {
           progression: {
             timeOfDay: startTime.getHours() < 12 ? 'morning' :
                        startTime.getHours() < 17 ? 'afternoon' : 'evening',
-            totalVolume: Object.values(storeExercises).flat().reduce((acc, s) => acc + (s.completed ? s.weight * s.reps : 0), 0)
+            totalVolume: Object.values(storeExercises).flat().reduce((acc, s) => acc + (s.weight * s.reps), 0)
           },
           sessionDetails: { exerciseCount, averageRestTime: 60, workoutDensity: completedSets / (elapsedTime / 60) }
         }
@@ -205,9 +207,9 @@ const TrainingSessionPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white pt-16 pb-16">
+    <div className="flex flex-col min-h-screen bg-black text-white">
       <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6 pb-40">
+        <div className="mx-auto max-w-3xl px-4 py-6">
           <div className="mb-6 relative">
             <WorkoutSessionHeader
               elapsedTime={elapsedTime}
@@ -226,6 +228,9 @@ const TrainingSessionPage = () => {
               restTimerResetSignal={restTimerResetSignal}
               currentRestTime={60}
               exercises={storeExercises}
+              onFinishWorkout={handleFinishWorkout}
+              isSaving={isSaving}
+              hasSubstantialProgress={hasSubstantialProgress}
             />
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">
@@ -238,6 +243,7 @@ const TrainingSessionPage = () => {
               </div>
             )}
           </div>
+          
           <ExerciseList
             exercises={exercises}
             activeExercise={activeExercise}
@@ -285,16 +291,25 @@ const TrainingSessionPage = () => {
             onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
             setExercises={handleSetExercises}
           />
+
+          {/* iOS-Native Add Exercise Button */}
+          <div className="mt-8 mb-16 px-4">
+            <Button
+              onClick={() => setIsAddExerciseSheetOpen(true)}
+              className="
+                w-full h-14 text-lg font-semibold rounded-xl
+                bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+                text-white shadow-lg hover:shadow-xl
+                transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
+                flex items-center justify-center gap-3
+              "
+            >
+              <Plus size={24} strokeWidth={2.5} />
+              Add Exercise
+            </Button>
+          </div>
         </div>
       </main>
-
-      {/* Bottom drawer for Add & Finish */}
-      <WorkoutSessionFooter
-        onAddExercise={() => setIsAddExerciseSheetOpen(true)}
-        onFinishWorkout={handleFinishWorkout}
-        hasExercises={hasExercises}
-        isSaving={isSaving}
-      />
 
       <AddExerciseSheet
         open={isAddExerciseSheetOpen}
