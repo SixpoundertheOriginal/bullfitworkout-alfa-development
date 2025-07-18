@@ -76,7 +76,7 @@ export const SetRow = ({
   const isMobile = useIsMobile();
   const isIsometric = isIsometricExercise(exerciseName);
   const { logRestTime } = useRestTimeAnalytics();
-  const { generateTimerId, isTimerActive, stopTimer } = useGlobalRestTimers();
+  const { generateTimerId, isTimerActive, stopTimer, getTimer } = useGlobalRestTimers();
   
   const { 
     weight: calculatedWeight,
@@ -152,6 +152,11 @@ export const SetRow = ({
   };
 
   const handleRestTimerComplete = () => {
+    const timer = getTimer(timerId);
+    if (timer && timer.isActive) {
+      // Track the actual rest time before stopping the timer
+      handleRestTimeTracked(timer.elapsedTime);
+    }
     stopTimer(timerId);
     if (onRestTimerComplete) {
       onRestTimerComplete();
@@ -159,13 +164,20 @@ export const SetRow = ({
   };
 
   const handleRestTimeTracked = (actualRestTime: number) => {
-    if (restTime) {
+    if (restTime && actualRestTime > 0) {
       logRestTime({
         exerciseName,
         plannedRestTime: restTime,
         actualRestTime,
         // Note: workoutId would need to be passed down as a prop for full analytics
       });
+      
+      // Also update the current set's rest time with the actual time
+      if (onRestTimeChange) {
+        onRestTimeChange({
+          target: { value: actualRestTime.toString() }
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
     }
   };
 

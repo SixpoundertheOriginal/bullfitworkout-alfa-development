@@ -47,7 +47,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   setExercises
 }) => {
   const { getSuggestionForExercise } = useSmartRestSuggestions();
-  const { generateTimerId, startTimer } = useGlobalRestTimers();
+  const { generateTimerId, startTimer, getTimer, stopTimer } = useGlobalRestTimers();
   const exerciseList = Object.keys(exercises);
   
   if (exerciseList.length === 0) {
@@ -63,16 +63,31 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
     const existingSets = exercises[exerciseName];
     const lastSet = existingSets.length > 0 ? existingSets[existingSets.length - 1] : null;
     
+    // Check if there's an active rest timer for the previous set and capture actual rest time
+    let actualRestTime: number | null = null;
+    if (lastSet && existingSets.length > 0) {
+      const lastSetTimerId = generateTimerId(exerciseName, existingSets.length);
+      const timerState = getTimer(lastSetTimerId);
+      
+      if (timerState && timerState.isActive) {
+        // Capture the actual elapsed rest time
+        actualRestTime = timerState.elapsedTime;
+        // Stop the timer since we're adding a new set
+        stopTimer(lastSetTimerId);
+      }
+    }
+    
     // Call the onAddSet function that was passed as prop
     // This lets the parent component handle the actual set creation
     onAddSet(exerciseName);
     
     // If there's a last set, update the newly created set with its values
     if (lastSet && existingSets.length > 0) {
-      // Get smart rest suggestion
+      // Get smart rest suggestion based on actual or planned rest time
+      const baseRestTime = actualRestTime || lastSet.restTime;
       const suggestion = await getSuggestionForExercise(
         exerciseName,
-        lastSet.restTime,
+        baseRestTime,
         existingSets.length + 1
       );
       
@@ -82,14 +97,23 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
           const updatedExercises = { ...prev };
           const sets = [...updatedExercises[exerciseName]];
           const newSetIndex = sets.length - 1;
+          const lastSetIndex = newSetIndex - 1;
           
           if (newSetIndex >= 0) {
+            // Update the previous set with actual rest time if captured
+            if (actualRestTime && lastSetIndex >= 0) {
+              sets[lastSetIndex] = {
+                ...sets[lastSetIndex],
+                restTime: actualRestTime
+              };
+            }
+            
             // Clone the last set's values to the new set with smart rest time
             sets[newSetIndex] = {
               ...sets[newSetIndex],
               weight: lastSet.weight,
               reps: lastSet.reps,
-              restTime: suggestion.suggestedTime || lastSet.restTime || 60
+              restTime: suggestion.suggestedTime || baseRestTime || 60
             };
           }
           

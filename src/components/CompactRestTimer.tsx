@@ -47,6 +47,7 @@ export const CompactRestTimer = ({
         updateTimer(timerId, elapsed);
         
         // Call onComplete when timer reaches target time (only once)
+        // Timer continues counting past target time - no automatic stopping
         if (elapsed >= targetTime && !completedRef.current) {
           completedRef.current = true;
           if (onComplete) {
