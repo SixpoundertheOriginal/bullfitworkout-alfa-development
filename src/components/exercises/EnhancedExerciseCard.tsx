@@ -83,14 +83,48 @@ export function EnhancedExerciseCard({
   const instructions = parseInstructions(exercise.instructions);
 
   return (
-    <Card className="w-full hover:shadow-lg transition-all duration-300 group">
-      <CardHeader className="pb-3">
+    <Card 
+      className="w-full transition-all duration-300 group relative overflow-hidden"
+      style={{
+        background: `
+          linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%),
+          linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)
+        `,
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+      }}
+    >
+      {/* Inner highlight overlay */}
+      <div 
+        className="absolute inset-0 rounded-lg"
+        style={{
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)'
+        }}
+      />
+
+      {/* Premium glow effect on hover */}
+      <div 
+        className="absolute inset-0 rounded-lg transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+        style={{
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(236,72,153,0.15) 100%)',
+          filter: 'blur(1px)'
+        }}
+      />
+
+      <CardHeader className="pb-3 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
+            <CardTitle 
+              className="text-lg font-semibold transition-colors"
+              style={{ color: 'rgba(255,255,255,0.9)' }}
+            >
               {exercise.name}
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+            <p 
+              className="text-sm mt-1 line-clamp-2"
+              style={{ color: 'rgba(255,255,255,0.6)' }}
+            >
               {exercise.description}
             </p>
           </div>
@@ -120,7 +154,12 @@ export function EnhancedExerciseCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onAddToWorkout(exercise)}
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 relative overflow-hidden group/btn"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
+                  border: '1px solid rgba(139,92,246,0.3)',
+                  color: 'rgba(255,255,255,0.9)'
+                }}
               >
                 <Activity className="h-4 w-4" />
                 Add
@@ -130,7 +169,7 @@ export function EnhancedExerciseCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 relative z-10">
         {/* Key Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex items-center gap-2">

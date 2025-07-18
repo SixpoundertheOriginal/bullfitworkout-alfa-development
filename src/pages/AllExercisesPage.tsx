@@ -454,7 +454,12 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
               onClick={handleAdd}
               size="sm"
               variant="outline"
-              className="h-9 px-3 rounded-full bg-purple-900/30 border-purple-500/30 hover:bg-purple-800/50"
+              className="h-9 px-3 rounded-full relative overflow-hidden group"
+              style={{
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
+                border: '1px solid rgba(139,92,246,0.3)',
+                color: 'rgba(255,255,255,0.9)'
+              }}
             >
               <Plus size={16} className="mr-1" />
               New Exercise
@@ -462,25 +467,37 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
           )}
         </div>
         
-        {/* Search bar */}
+        {/* Premium Search bar */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search exercises..."
-            className="pl-9"
-            value={filters.searchQuery}
-            onChange={(e) => updateFilters({ searchQuery: e.target.value })}
-          />
-          {filters.searchQuery && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="absolute right-2 top-1.5 h-7 w-7 p-0"
-              onClick={() => updateFilters({ searchQuery: "" })}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+          <div
+            className="relative rounded-xl overflow-hidden"
+            style={{
+              background: `
+                linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(236,72,153,0.08) 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%)
+              `,
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            <Search className="absolute left-3 top-2.5 h-4 w-4" style={{ color: 'rgba(139,92,246,0.7)' }} />
+            <Input
+              placeholder="Search exercises..."
+              className="pl-9 bg-transparent border-none focus:ring-0 text-white placeholder:text-white/50"
+              value={filters.searchQuery}
+              onChange={(e) => updateFilters({ searchQuery: e.target.value })}
+            />
+            {filters.searchQuery && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="absolute right-2 top-1.5 h-7 w-7 p-0 text-white/60 hover:text-white"
+                onClick={() => updateFilters({ searchQuery: "" })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
                 
         {/* Tabs for navigation */}

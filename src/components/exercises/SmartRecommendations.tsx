@@ -143,15 +143,39 @@ export function SmartRecommendations({
 
   if (recommendations.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
+      <Card 
+        className="relative overflow-hidden"
+        style={{
+          background: `
+            linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%),
+            linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)
+          `,
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+        }}
+      >
+        {/* Inner highlight overlay */}
+        <div 
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)'
+          }}
+        />
+        <CardHeader className="relative z-10">
+          <CardTitle 
+            className="flex items-center gap-2"
+            style={{ color: 'rgba(255,255,255,0.9)' }}
+          >
+            <Lightbulb className="h-5 w-5" style={{ color: 'rgba(139,92,246,0.8)' }} />
             Smart Recommendations
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-4">
+        <CardContent className="relative z-10">
+          <p 
+            className="text-center py-4"
+            style={{ color: 'rgba(255,255,255,0.6)' }}
+          >
             Complete a few workouts to get personalized exercise recommendations!
           </p>
         </CardContent>
@@ -162,9 +186,22 @@ export function SmartRecommendations({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
-        <Lightbulb className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">Smart Recommendations</h3>
-        <Badge variant="secondary" className="text-xs">
+        <Lightbulb className="h-5 w-5" style={{ color: 'rgba(139,92,246,0.8)' }} />
+        <h3 
+          className="text-lg font-semibold"
+          style={{ color: 'rgba(255,255,255,0.9)' }}
+        >
+          Smart Recommendations
+        </h3>
+        <Badge 
+          variant="secondary" 
+          className="text-xs relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
+            border: '1px solid rgba(139,92,246,0.3)',
+            color: 'rgba(255,255,255,0.9)'
+          }}
+        >
           AI Powered
         </Badge>
       </div>
@@ -174,7 +211,13 @@ export function SmartRecommendations({
           <div key={exercise.id} className="relative">
             <div className="absolute -top-2 -right-2 z-10">
               <Badge 
-                className={`${getCategoryColor(category)} text-xs px-2 py-1 flex items-center gap-1`}
+                className={`text-xs px-2 py-1 flex items-center gap-1 relative overflow-hidden`}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(139,92,246,0.8) 0%, rgba(236,72,153,0.8) 100%)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: 'rgba(255,255,255,0.9)',
+                  backdropFilter: 'blur(10px)'
+                }}
               >
                 {getCategoryIcon(category)}
                 {reason}
