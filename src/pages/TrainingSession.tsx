@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -25,6 +24,7 @@ const TrainingSessionPage = () => {
   const {
     exercises: storeExercises,
     setExercises: setStoreExercises,
+    addEnhancedExercise,
     activeExercise,
     setActiveExercise,
     elapsedTime,
@@ -41,11 +41,27 @@ const TrainingSessionPage = () => {
     trainingConfig,
     isActive,
     setTrainingConfig,
-    setWorkoutStatus
+    setWorkoutStatus,
+    getExerciseDisplayName,
+    getExerciseConfig
   } = useWorkoutStore();
   
   // Convert store exercises to the format expected by components
-  const exercises = adaptExerciseSets(storeExercises);
+  const exercises = React.useMemo(() => {
+    const converted: Record<string, any[]> = {};
+    
+    Object.entries(storeExercises).forEach(([name, data]) => {
+      if (Array.isArray(data)) {
+        // Legacy format: just sets array
+        converted[name] = data;
+      } else {
+        // New format: WorkoutExerciseConfig
+        converted[name] = data.sets || [];
+      }
+    });
+    
+    return converted;
+  }, [storeExercises]);
   
   const [completedSets, totalSets] = Object.entries(exercises).reduce(
     ([completed, total], [_, sets]) => [
@@ -117,22 +133,60 @@ const TrainingSessionPage = () => {
 
   // Define the onAddSet function to add a basic set to an exercise
   const handleAddSet = (exerciseName: string) => {
-    setStoreExercises(prev => ({
-      ...prev,
-      [exerciseName]: [...prev[exerciseName], { weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false }]
-    }));
+    const exerciseConfig = getExerciseConfig(exerciseName);
+    if (!exerciseConfig) return;
+    
+    const newSet = { weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false };
+    
+    setStoreExercises(prev => {
+      const exerciseData = prev[exerciseName];
+      
+      if (Array.isArray(exerciseData)) {
+        // Legacy format
+        return { ...prev, [exerciseName]: [...exerciseData, newSet] };
+      } else if (exerciseData) {
+        // New format
+        return {
+          ...prev,
+          [exerciseName]: {
+            ...exerciseData,
+            sets: [...exerciseData.sets, newSet]
+          }
+        };
+      }
+      
+      return prev;
+    });
   };
 
+  // Enhanced exercise addition with full Exercise object support
   const handleAddExercise = (exercise: Exercise | string) => {
     const name = typeof exercise === 'string' ? exercise : exercise.name;
+    
+    // Check if exercise already exists
     if (storeExercises[name]) {
-      toast({ title: "Exercise already added", description: `${name} is already in your workout` });
+      toast({ 
+        title: "Exercise already added", 
+        description: `${name} is already in your workout` 
+      });
       return;
     }
-    setStoreExercises(prev => ({ ...prev, [name]: [{ weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false }] }));
-    setActiveExercise(name);
+    
+    // Use the enhanced store method
+    addEnhancedExercise(exercise);
+    
+    // Start workout if idle
     if (workoutStatus === 'idle') startWorkout();
+    
+    // Close the sheet
     setIsAddExerciseSheetOpen(false);
+    
+    // Show success toast with enhanced display name
+    const displayName = typeof exercise === 'string' ? exercise : getExerciseDisplayName(exercise.name);
+    toast({
+      title: "Exercise added",
+      description: `Added ${displayName} to your workout`
+    });
   };
 
   const handleShowRestTimer = () => { setShowRestTimerModal(true); playBell(); };
@@ -163,10 +217,13 @@ const TrainingSessionPage = () => {
       const startTime = new Date(now.getTime() - elapsedTime * 1000);
       const workoutData = {
         exercises: Object.fromEntries(
-          Object.entries(storeExercises).map(([name, sets]) => [
-            name,
-            sets.map(s => ({ ...s, isEditing: s.isEditing || false }))
-          ])
+          Object.entries(storeExercises).map(([name, data]) => {
+            if (Array.isArray(data)) {
+              return [name, data.map(s => ({ ...s, isEditing: s.isEditing || false }))];
+            } else {
+              return [name, data.sets.map(s => ({ ...s, isEditing: s.isEditing || false }))];
+            }
+          })
         ),
         duration: elapsedTime,
         startTime,
@@ -181,7 +238,10 @@ const TrainingSessionPage = () => {
           progression: {
             timeOfDay: startTime.getHours() < 12 ? 'morning' :
                        startTime.getHours() < 17 ? 'afternoon' : 'evening',
-            totalVolume: Object.values(storeExercises).flat().reduce((acc, s) => acc + (s.weight * s.reps), 0)
+            totalVolume: Object.values(storeExercises).flat().reduce((acc, data) => {
+              const sets = Array.isArray(data) ? data : data.sets;
+              return acc + sets.reduce((setAcc, s) => setAcc + (s.weight * s.reps), 0);
+            }, 0)
           },
           sessionDetails: { exerciseCount, averageRestTime: 60, workoutDensity: completedSets / (elapsedTime / 60) }
         }
@@ -212,9 +272,34 @@ const TrainingSessionPage = () => {
   // Set up the adapter function to convert between the different exercise formats
   const handleSetExercises = (updatedExercises) => {
     if (typeof updatedExercises === 'function') {
-      setStoreExercises(prev => adaptToStoreFormat(updatedExercises(adaptExerciseSets(prev))));
+      setStoreExercises(prev => {
+        const converted = {};
+        const adapted = updatedExercises(exercises);
+        
+        Object.entries(adapted).forEach(([name, sets]) => {
+          const existingConfig = getExerciseConfig(name);
+          if (existingConfig && !Array.isArray(existingConfig)) {
+            // Preserve enhanced configuration
+            converted[name] = { ...existingConfig, sets };
+          } else {
+            // Legacy format
+            converted[name] = sets;
+          }
+        });
+        
+        return converted;
+      });
     } else {
-      setStoreExercises(adaptToStoreFormat(updatedExercises));
+      const converted = {};
+      Object.entries(updatedExercises).forEach(([name, sets]) => {
+        const existingConfig = getExerciseConfig(name);
+        if (existingConfig && !Array.isArray(existingConfig)) {
+          converted[name] = { ...existingConfig, sets };
+        } else {
+          converted[name] = sets;
+        }
+      });
+      setStoreExercises(converted);
     }
   };
 
@@ -242,7 +327,7 @@ const TrainingSessionPage = () => {
               exercises={storeExercises}
               onFinishWorkout={handleFinishWorkout}
               isSaving={isSaving}
-              hasSubstantialProgress={true} // Always allow finishing now
+              hasSubstantialProgress={true}
             />
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">
@@ -263,39 +348,162 @@ const TrainingSessionPage = () => {
             onCompleteSet={handleCompleteSet}
             onDeleteExercise={deleteExercise}
             onRemoveSet={(name, i) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].filter((_, idx) => idx !== i) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.filter((_, idx) => idx !== i) };
+                } else if (exerciseData) {
+                  return { 
+                    ...prev, 
+                    [name]: { 
+                      ...exerciseData, 
+                      sets: exerciseData.sets.filter((_, idx) => idx !== i) 
+                    } 
+                  };
+                }
+                return prev;
+              });
             }}
             onEditSet={(name, i) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, isEditing: true } : s) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, isEditing: true } : s) };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, isEditing: true } : s)
+                    }
+                  };
+                }
+                return prev;
+              });
             }}
             onSaveSet={(name, i) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, isEditing: false } : s) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, isEditing: false } : s) };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, isEditing: false } : s)
+                    }
+                  };
+                }
+                return prev;
+              });
             }}
             onWeightChange={(name, i, v) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, weight: +v || 0 } : s) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, weight: +v || 0 } : s) };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, weight: +v || 0 } : s)
+                    }
+                  };
+                }
+                return prev;
+              });
             }}
             onRepsChange={(name, i, v) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, reps: parseInt(v) || 0 } : s) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, reps: parseInt(v) || 0 } : s) };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, reps: parseInt(v) || 0 } : s)
+                    }
+                  };
+                }
+                return prev;
+              });
             }}
             onRestTimeChange={(name, i, v) => {
-              setStoreExercises(prev => ({ ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, restTime: parseInt(v) || 60 } : s) }));
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, restTime: parseInt(v) || 60 } : s) };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, restTime: parseInt(v) || 60 } : s)
+                    }
+                  };
+                }
+                return prev;
+              });
             }}
             onWeightIncrement={(name, i, inc) => {
               setStoreExercises(prev => {
-                const set = prev[name][i];
-                return { ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, weight: Math.max(0, (set.weight || 0) + inc) } : s) };
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  const set = exerciseData[i];
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, weight: Math.max(0, (set.weight || 0) + inc) } : s) };
+                } else if (exerciseData) {
+                  const set = exerciseData.sets[i];
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, weight: Math.max(0, (set.weight || 0) + inc) } : s)
+                    }
+                  };
+                }
+                return prev;
               });
             }}
             onRepsIncrement={(name, i, inc) => {
               setStoreExercises(prev => {
-                const set = prev[name][i];
-                return { ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, reps: Math.max(0, (set.reps || 0) + inc) } : s) };
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  const set = exerciseData[i];
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, reps: Math.max(0, (set.reps || 0) + inc) } : s) };
+                } else if (exerciseData) {
+                  const set = exerciseData.sets[i];
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, reps: Math.max(0, (set.reps || 0) + inc) } : s)
+                    }
+                  };
+                }
+                return prev;
               });
             }}
             onRestTimeIncrement={(name, i, inc) => {
               setStoreExercises(prev => {
-                const set = prev[name][i];
-                return { ...prev, [name]: prev[name].map((s, idx) => idx === i ? { ...s, restTime: Math.max(0, (set.restTime || 60) + inc) } : s) };
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  const set = exerciseData[i];
+                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, restTime: Math.max(0, (set.restTime || 60) + inc) } : s) };
+                } else if (exerciseData) {
+                  const set = exerciseData.sets[i];
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, restTime: Math.max(0, (set.restTime || 60) + inc) } : s)
+                    }
+                  };
+                }
+                return prev;
               });
             }}
             onShowRestTimer={handleShowRestTimer}
@@ -304,7 +512,6 @@ const TrainingSessionPage = () => {
             setExercises={handleSetExercises}
           />
 
-          {/* Premium Add Exercise Button */}
           <div className="mt-8 mb-16 px-4">
             <Button
               onClick={() => setIsAddExerciseSheetOpen(true)}
@@ -325,7 +532,6 @@ const TrainingSessionPage = () => {
                 filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.3)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))'
               }}
             >
-              {/* Inner highlight overlay */}
               <div 
                 className="absolute inset-0 rounded-xl"
                 style={{

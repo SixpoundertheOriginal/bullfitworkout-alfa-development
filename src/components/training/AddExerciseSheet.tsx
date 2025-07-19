@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import AllExercisesPage from "@/pages/AllExercisesPage";
 
 interface AddExerciseSheetProps {
@@ -80,26 +81,49 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
   const handleAddExercise = (exercise: Exercise | string) => {
     const exerciseName = typeof exercise === 'string' ? exercise : exercise.name;
+    
+    // Pass the full Exercise object to get enhanced display
     onSelectExercise(exercise);
     
     // Close the sheet immediately after selecting an exercise
     onOpenChange(false);
     
-    // Show toast notification
+    // Enhanced success message
+    const displayName = typeof exercise === 'string' 
+      ? exercise 
+      : exercise.primary_muscle_groups?.length > 0 
+        ? `${exercise.name} • ${exercise.primary_muscle_groups[0]}`
+        : exercise.name;
+    
     toast({
       title: "Exercise added",
-      description: `Added ${exerciseName} to your workout`
+      description: `Added ${displayName} to your workout`
     });
   };
 
   const renderExerciseCard = (exercise: Exercise) => {
     const muscleGroups = exercise.primary_muscle_groups.slice(0, 2).join(', ');
+    const hasVariants = exercise.grip_types?.length > 0 || exercise.techniques?.length > 0;
     
     return (
-      <div key={exercise.id} className="flex items-center justify-between p-3 mb-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+      <div key={exercise.id} className="flex items-center justify-between p-3 mb-2 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:bg-gray-800/70 transition-colors">
         <div className="flex flex-col flex-1 mr-2">
-          <span className="font-medium text-white">{exercise.name}</span>
-          <span className="text-sm text-gray-400">{muscleGroups}</span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium text-white">{exercise.name}</span>
+            {hasVariants && (
+              <Badge variant="secondary" className="text-xs bg-purple-900/30 text-purple-300 border-purple-500/30">
+                Enhanced
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <span className="text-sm text-gray-400">{muscleGroups}</span>
+            {exercise.equipment_needed && (
+              <Badge variant="outline" className="text-xs bg-blue-900/30 text-blue-300 border-blue-500/30">
+                {exercise.equipment_needed}
+              </Badge>
+            )}
+          </div>
         </div>
         <Button
           onClick={() => handleAddExercise(exercise)}

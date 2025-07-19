@@ -1,7 +1,7 @@
-
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { TrainingConfig } from '@/hooks/useTrainingSetupPersistence';
+import { Exercise } from '@/types/exercise';
 import { toast } from "@/hooks/use-toast";
 import React from 'react';
 
@@ -13,8 +13,22 @@ export interface ExerciseSet {
   isEditing: boolean;
 }
 
+// Enhanced exercise configuration with variant data
+export interface WorkoutExerciseConfig {
+  name: string;
+  sets: ExerciseSet[];
+  // Optional variant data for enhanced display
+  exercise?: Exercise; // Full exercise object from library
+  variant?: {
+    gripType?: string;
+    technique?: string;
+    primaryModifier?: string; // "Wide Grip", "Explosive", etc.
+  };
+}
+
+// Support both legacy string-based and new object-based exercises
 export interface WorkoutExercises {
-  [key: string]: ExerciseSet[];
+  [key: string]: ExerciseSet[] | WorkoutExerciseConfig;
 }
 
 export type WorkoutStatus = 
@@ -69,6 +83,7 @@ export interface WorkoutState {
   
   // Action functions
   setExercises: (exercises: WorkoutExercises | ((prev: WorkoutExercises) => WorkoutExercises)) => void;
+  addEnhancedExercise: (exercise: Exercise | string, sets?: ExerciseSet[]) => void;
   setActiveExercise: (exerciseName: string | null) => void;
   setElapsedTime: (time: number | ((prev: number) => number)) => void;
   setTrainingConfig: (config: TrainingConfig | null) => void;
@@ -95,17 +110,45 @@ export interface WorkoutState {
   // Exercise management
   handleCompleteSet: (exerciseName: string, setIndex: number) => void;
   deleteExercise: (exerciseName: string) => void;
+  
+  // Utility functions
+  getExerciseDisplayName: (exerciseName: string) => string;
+  getExerciseConfig: (exerciseName: string) => WorkoutExerciseConfig | null;
 }
 
 // Generate a unique session ID
 const generateSessionId = () => 
   crypto.randomUUID ? crypto.randomUUID() : `session-${Date.now()}`;
 
+// Utility function to normalize exercise data
+const normalizeExerciseData = (exercises: WorkoutExercises): WorkoutExercises => {
+  const normalized: WorkoutExercises = {};
+  
+  Object.entries(exercises).forEach(([name, data]) => {
+    if (Array.isArray(data)) {
+      // Legacy format: just sets array
+      normalized[name] = data;
+    } else {
+      // New format: WorkoutExerciseConfig
+      normalized[name] = data;
+    }
+  });
+  
+  return normalized;
+};
+
+// Helper function to get sets from exercise data
+const getExerciseSets = (exerciseData: ExerciseSet[] | WorkoutExerciseConfig): ExerciseSet[] => {
+  if (Array.isArray(exerciseData)) {
+    return exerciseData;
+  }
+  return exerciseData.sets || [];
+};
+
 // Create the persistent store
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set, get) => ({
-      // Core workout data
       exercises: {},
       activeExercise: null,
       elapsedTime: 0,
@@ -131,9 +174,42 @@ export const useWorkoutStore = create<WorkoutState>()(
       
       // Action setters
       setExercises: (exercises) => set((state) => ({ 
-        exercises: typeof exercises === 'function' ? exercises(state.exercises) : exercises,
+        exercises: typeof exercises === 'function' ? normalizeExerciseData(exercises(state.exercises)) : normalizeExerciseData(exercises),
         lastTabActivity: Date.now(),
       })),
+      
+      addEnhancedExercise: (exercise, sets = [{ weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false }]) => set((state) => {
+        const exerciseName = typeof exercise === 'string' ? exercise : exercise.name;
+        
+        // Check if exercise already exists
+        if (state.exercises[exerciseName]) {
+          toast({ 
+            title: "Exercise already added", 
+            description: `${exerciseName} is already in your workout` 
+          });
+          return {};
+        }
+        
+        const exerciseConfig: WorkoutExerciseConfig = {
+          name: exerciseName,
+          sets: sets,
+          ...(typeof exercise === 'object' && {
+            exercise: exercise,
+            variant: {
+              primaryModifier: exercise.primary_muscle_groups?.[0] // Simple fallback
+            }
+          })
+        };
+        
+        return {
+          exercises: {
+            ...state.exercises,
+            [exerciseName]: exerciseConfig
+          },
+          activeExercise: exerciseName,
+          lastTabActivity: Date.now(),
+        };
+      }),
       
       setActiveExercise: (exerciseName) => set({ 
         activeExercise: exerciseName,
@@ -145,32 +221,57 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       })),
       
-      
       setTrainingConfig: (config) => set({ 
         trainingConfig: config,
         lastTabActivity: Date.now(),
       }),
       
-      // Fixed: This function was causing infinite loops by updating on every call
-      // Now we check if the route is actually different before updating state
       updateLastActiveRoute: (route) => set((state) => {
-        // Only update if the route has actually changed
         if (state.lastActiveRoute !== route) {
           return { 
             lastActiveRoute: route,
             lastTabActivity: Date.now(),
           };
         }
-        return {}; // Return empty object if no changes needed
+        return {};
       }),
       
-      // New action to directly modify workout status
       setWorkoutStatus: (status) => set({ 
         workoutStatus: status,
         lastTabActivity: Date.now(),
       }),
       
-      // Rest timer management
+      getExerciseDisplayName: (exerciseName) => {
+        const state = get();
+        const exerciseData = state.exercises[exerciseName];
+        
+        if (!exerciseData || Array.isArray(exerciseData)) {
+          return exerciseName; // Legacy format
+        }
+        
+        const config = exerciseData as WorkoutExerciseConfig;
+        const primaryModifier = config.variant?.primaryModifier;
+        
+        return primaryModifier ? `${exerciseName} • ${primaryModifier}` : exerciseName;
+      },
+      
+      getExerciseConfig: (exerciseName) => {
+        const state = get();
+        const exerciseData = state.exercises[exerciseName];
+        
+        if (!exerciseData) return null;
+        
+        if (Array.isArray(exerciseData)) {
+          // Convert legacy format to new format
+          return {
+            name: exerciseName,
+            sets: exerciseData
+          };
+        }
+        
+        return exerciseData as WorkoutExerciseConfig;
+      },
+      
       startRestTimer: (timerId, targetTime) => set((state) => {
         const newTimers = new Map(state.activeRestTimers);
         newTimers.set(timerId, {
@@ -225,7 +326,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       }),
       
-      // Workout lifecycle actions
       startWorkout: () => {
         const now = new Date();
         set({ 
@@ -238,7 +338,6 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastTabActivity: Date.now(),
         });
         
-        // Show a toast notification
         toast.success("Workout started", {
           description: "Your workout session has begun"
         });
@@ -275,7 +374,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         console.log("Workout session reset");
       },
       
-      // Status management
       markAsSaving: () => set({ 
         workoutStatus: 'saving',
         lastTabActivity: Date.now(),
@@ -289,10 +387,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastTabActivity: Date.now(),
         });
         
-        // Show success notification
         toast.success("Workout saved successfully!");
         
-        // Reset the session after a short delay
         setTimeout(() => {
           get().resetSession();
         }, 500);
@@ -304,12 +400,25 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       })),
       
-      // Exercise management
       handleCompleteSet: (exerciseName, setIndex) => set((state) => {
         const newExercises = { ...state.exercises };
-        newExercises[exerciseName] = state.exercises[exerciseName].map((set, i) => 
-          i === setIndex ? { ...set, completed: true } : set
-        );
+        const exerciseData = newExercises[exerciseName];
+        
+        if (Array.isArray(exerciseData)) {
+          // Legacy format
+          newExercises[exerciseName] = exerciseData.map((set, i) => 
+            i === setIndex ? { ...set, completed: true } : set
+          );
+        } else if (exerciseData) {
+          // New format
+          const config = exerciseData as WorkoutExerciseConfig;
+          newExercises[exerciseName] = {
+            ...config,
+            sets: config.sets.map((set, i) => 
+              i === setIndex ? { ...set, completed: true } : set
+            )
+          };
+        }
         
         return { 
           exercises: newExercises,
@@ -321,10 +430,8 @@ export const useWorkoutStore = create<WorkoutState>()(
         const newExercises = { ...state.exercises };
         delete newExercises[exerciseName];
         
-        // Show notification
         toast.success(`Removed ${exerciseName} from workout`);
         
-        // Check if this was the last exercise, and if so, ask if user wants to end workout
         setTimeout(() => {
           const exerciseCount = Object.keys(newExercises).length;
           if (exerciseCount === 0) {
@@ -349,8 +456,7 @@ export const useWorkoutStore = create<WorkoutState>()(
     {
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
-        // Only persist these specific parts of the state
+      partialize: (state) => ({
         exercises: state.exercises,
         activeExercise: state.activeExercise,
         elapsedTime: state.elapsedTime,
@@ -362,7 +468,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastActiveRoute: state.lastActiveRoute,
         sessionId: state.sessionId,
         explicitlyEnded: state.explicitlyEnded,
-        // Convert Map to array for serialization
         activeRestTimers: Array.from(state.activeRestTimers.entries()) as any,
       }),
       onRehydrateStorage: () => {
@@ -375,19 +480,21 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (rehydratedState) {
             console.log('Rehydrated workout state:', rehydratedState);
             
-            // Restore rest timers from serialized format IMMEDIATELY
+            // Restore rest timers from serialized format
             if (rehydratedState.activeRestTimers && Array.isArray(rehydratedState.activeRestTimers)) {
               const timersArray = rehydratedState.activeRestTimers as [string, RestTimerState][];
               rehydratedState.activeRestTimers = new Map(timersArray) as any;
             } else {
-              // Ensure activeRestTimers is always a Map
               rehydratedState.activeRestTimers = new Map() as any;
+            }
+            
+            // Normalize exercise data format
+            if (rehydratedState.exercises) {
+              rehydratedState.exercises = normalizeExerciseData(rehydratedState.exercises);
             }
           }
           
           if (rehydratedState && rehydratedState.isActive) {
-            
-            // Update elapsed time based on stored start time for active workouts
             if (rehydratedState.isActive && rehydratedState.startTime) {
               const storedStartTime = new Date(rehydratedState.startTime);
               const currentTime = new Date();
@@ -395,17 +502,14 @@ export const useWorkoutStore = create<WorkoutState>()(
                 (currentTime.getTime() - storedStartTime.getTime()) / 1000
               );
               
-              // Only update if calculated time is greater than stored time
               if (calculatedElapsedTime > (rehydratedState.elapsedTime || 0)) {
                 setTimeout(() => {
-                  // Using the Zustand store's set function through the get() method
                   const store = useWorkoutStore.getState();
                   store.setElapsedTime(calculatedElapsedTime);
                   console.log(`Restored elapsed time: ${calculatedElapsedTime}s`);
                 }, 100);
               }
               
-              // Show recovery notification
               setTimeout(() => {
                 toast.info("Workout session recovered");
               }, 1000);
@@ -417,7 +521,6 @@ export const useWorkoutStore = create<WorkoutState>()(
   )
 );
 
-// Create a hook for handling page visibility changes
 export const useWorkoutPageVisibility = () => {
   const { isActive, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
   
@@ -426,7 +529,6 @@ export const useWorkoutPageVisibility = () => {
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isActive) {
-        // When tab becomes visible again, update elapsed time
         if (startTime) {
           const storedStartTime = new Date(startTime);
           const currentTime = new Date();
@@ -438,7 +540,6 @@ export const useWorkoutPageVisibility = () => {
           console.log(`Updated elapsed time after tab switch: ${calculatedElapsedTime}s`);
         }
         
-        // Update all active rest timers
         const now = Date.now();
         activeRestTimers.forEach((timer, timerId) => {
           if (timer.isActive && timer.startTime) {

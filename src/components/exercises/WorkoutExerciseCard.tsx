@@ -7,6 +7,8 @@ import { ExerciseVolumeMetrics } from './ExerciseVolumeMetrics';
 import { ExerciseActions } from './ExerciseActions';
 import { useExerciseCard } from './hooks/useExerciseCard';
 import { ExerciseSet } from '@/types/exercise';
+import { useWorkoutStore } from '@/store/workoutStore';
+import { Badge } from "@/components/ui/badge";
 
 interface WorkoutExerciseCardProps {
   exercise: string;
@@ -37,6 +39,10 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
     ...restProps
   } = props;
 
+  const { getExerciseConfig, getExerciseDisplayName } = useWorkoutStore();
+  const exerciseConfig = getExerciseConfig(exercise);
+  const displayName = getExerciseDisplayName(exercise);
+
   const {
     previousSession,
     currentVolume,
@@ -44,6 +50,10 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
     volumeMetrics,
     progressData
   } = useExerciseCard(exercise, sets);
+
+  // Extract variant information for enhanced display
+  const variant = exerciseConfig?.variant;
+  const fullExercise = exerciseConfig?.exercise;
 
   return (
     <Card className={`
@@ -57,12 +67,78 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
       }
     `}>
       <CardContent className="p-0">
-        <ExerciseCardHeader
-          exerciseName={exercise}
-          previousSession={previousSession}
-          progressData={progressData}
-          onDeleteExercise={onDeleteExercise}
-        />
+        <div className="p-4 border-b border-gray-800/50">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold text-white">
+                  {displayName}
+                </h3>
+                {variant?.primaryModifier && (
+                  <Badge variant="secondary" className="text-xs bg-purple-900/30 text-purple-300 border-purple-500/30">
+                    {variant.primaryModifier}
+                  </Badge>
+                )}
+              </div>
+              
+              {/* Enhanced exercise details */}
+              {fullExercise && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {fullExercise.primary_muscle_groups?.slice(0, 2).map((muscle, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant="outline" 
+                      className="text-xs bg-gray-800/50 text-gray-300 border-gray-600/50"
+                    >
+                      {muscle}
+                    </Badge>
+                  ))}
+                  {fullExercise.equipment_needed && (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs bg-blue-900/30 text-blue-300 border-blue-500/30"
+                    >
+                      {fullExercise.equipment_needed}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              {/* Variant technique details */}
+              {variant && (variant.gripType || variant.technique) && (
+                <div className="text-sm text-gray-400 mb-2">
+                  {variant.gripType && (
+                    <span className="mr-3">Grip: {variant.gripType}</span>
+                  )}
+                  {variant.technique && (
+                    <span>Technique: {variant.technique}</span>
+                  )}
+                </div>
+              )}
+              
+              {previousSession && (
+                <p className="text-sm text-gray-400">
+                  Last session:{' '}
+                  <span className="text-gray-300 font-mono">
+                    {previousSession.weight} kg × {previousSession.reps} × {previousSession.sets}
+                  </span>
+                </p>
+              )}
+            </div>
+            
+            <button
+              onClick={onDeleteExercise}
+              className="p-2 text-gray-500 hover:text-red-400 transition-colors"
+              aria-label="Delete exercise"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+            </button>
+          </div>
+        </div>
         
         <div className="p-4">
           <SetsList
