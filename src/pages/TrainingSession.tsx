@@ -66,7 +66,6 @@ const TrainingSessionPage = () => {
 
   const exerciseCount = Object.keys(exercises).length;
   const hasExercises = exerciseCount > 0;
-  const hasSubstantialProgress = completedSets >= 3 || exerciseCount >= 2;
   
   useEffect(() => { setPageLoaded(true); }, []);
 
@@ -140,10 +139,23 @@ const TrainingSessionPage = () => {
   const handleRestTimerComplete = () => { setShowRestTimerModal(false); playBell(); };
 
   const handleFinishWorkout = async () => {
+    // Handle empty workout case
     if (!hasExercises) {
-      toast.error("Add at least one exercise before finishing your workout");
+      toast({
+        title: "Empty workout",
+        description: "You haven't added any exercises. Do you want to end this session?",
+        action: {
+          label: "End Session",
+          onClick: () => {
+            resetSession();
+            navigate('/');
+            toast.success("Workout session ended");
+          }
+        }
+      });
       return;
     }
+
     try {
       setIsSaving(true);
       markAsSaving();
@@ -230,7 +242,7 @@ const TrainingSessionPage = () => {
               exercises={storeExercises}
               onFinishWorkout={handleFinishWorkout}
               isSaving={isSaving}
-              hasSubstantialProgress={hasSubstantialProgress}
+              hasSubstantialProgress={true} // Always allow finishing now
             />
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">
@@ -321,7 +333,6 @@ const TrainingSessionPage = () => {
                 }}
               />
               
-              {/* Premium glow effect on hover */}
               <div 
                 className="absolute inset-0 rounded-xl transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                 style={{
@@ -330,7 +341,6 @@ const TrainingSessionPage = () => {
                 }}
               />
               
-              {/* Content */}
               <div className="relative z-10 flex items-center justify-center gap-3">
                 <Plus size={24} strokeWidth={2.5} />
                 Add Exercise
