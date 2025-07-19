@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { WeightUnit, convertWeight } from '@/utils/unitConversion';
+import { processWorkoutMetrics, ProcessedWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
 
 export interface VolumeDataPoint {
   date: string;            // ISO string
@@ -197,6 +198,48 @@ export function useProcessWorkoutMetrics(
     return { avgOverallDensity, avgActiveOnlyDensity, mostEfficientWorkout };
   }, [densityOverTimeData]);
 
+  // --- Process comprehensive metrics for most recent workout ---
+  const processedMetrics = useMemo<ProcessedWorkoutMetrics | null>(() => {
+    if (!Array.isArray(workouts) || workouts.length === 0) return null;
+    
+    // Get most recent workout
+    const mostRecentWorkout = workouts
+      .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
+    
+    if (!mostRecentWorkout) return null;
+
+    // Convert workout data to format expected by processor (grouped by exercise)
+    const allSets = flattenExercises(mostRecentWorkout.exercises);
+    const exerciseSetData: Record<string, any[]> = {};
+    
+    allSets.forEach(set => {
+      const exerciseName = set.exercise_name;
+      if (!exerciseSetData[exerciseName]) {
+        exerciseSetData[exerciseName] = [];
+      }
+      exerciseSetData[exerciseName].push({
+        exercise_name: exerciseName,
+        weight: set.weight || 0,
+        reps: set.reps || 0,
+        completed: set.completed || false,
+        rest_time: set.restTime || 60
+      });
+    });
+
+    const workoutTiming = {
+      start_time: mostRecentWorkout.start_time,
+      duration: mostRecentWorkout.duration || 0
+    };
+
+    return processWorkoutMetrics(
+      exerciseSetData,
+      mostRecentWorkout.duration || 0,
+      weightUnit,
+      undefined,
+      workoutTiming
+    );
+  }, [workouts, weightUnit]);
+
   return {
     volumeOverTimeData,
     densityOverTimeData,
@@ -205,6 +248,7 @@ export function useProcessWorkoutMetrics(
     durationByTimeOfDay,
     hasVolumeData: volumeOverTimeData.length > 0,
     hasDensityData: densityOverTimeData.length > 0,
-    hasTimeOfDayData: Object.values(durationByTimeOfDay).some(value => value > 0)
+    hasTimeOfDayData: Object.values(durationByTimeOfDay).some(value => value > 0),
+    processedMetrics
   };
 }

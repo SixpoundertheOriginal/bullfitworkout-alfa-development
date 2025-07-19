@@ -14,6 +14,7 @@ import { TopExercisesTable } from "@/components/workouts/WorkoutsTopExercisesTab
 import { WorkoutVolumeOverTimeChart } from '@/components/metrics/WorkoutVolumeOverTimeChart';
 import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensityOverTimeChart';
 import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
+import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { useDateRange } from '@/context/DateRangeContext';
 import { useProcessWorkoutMetrics } from '@/hooks/useProcessWorkoutMetrics';
@@ -35,7 +36,8 @@ const Overview: React.FC = () => {
     volumeOverTimeData,
     densityOverTimeData,
     volumeStats,
-    densityStats
+    densityStats,
+    processedMetrics
   } = useProcessWorkoutMetrics(workouts, weightUnit);
 
   // AI-enhanced insights
@@ -127,12 +129,25 @@ const Overview: React.FC = () => {
           />
         </div>
 
-        {/* Personal Records Card - New addition */}
-        <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-yellow-500/5 pointer-events-none" />
-          <div className="relative z-10">
-            <PersonalRecordsCard />
+        {/* Personal Records & Efficiency Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Personal Records Card */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-yellow-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <PersonalRecordsCard />
+            </div>
           </div>
+
+          {/* Efficiency Metrics Card */}
+          {processedMetrics && (
+            <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-emerald-500/5 pointer-events-none" />
+              <div className="relative z-10">
+                <EfficiencyMetricsCard metrics={processedMetrics} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Volume over time - Premium styled */}
@@ -156,12 +171,13 @@ const Overview: React.FC = () => {
           </CardContent>
         </div>
 
-        {/* KPI cards - Premium styled */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {/* KPI cards - Premium styled with Efficiency */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
             { title: "Total Volume", value: `${Math.round(volumeStats.total).toLocaleString()} ${weightUnit}`, icon: Dumbbell, color: "from-purple-500 to-pink-600" },
-            { title: "Avg Volume Rate", value: `${densityStats.avgOverallDensity.toFixed(1)} ${weightUnit}/min`, icon: Activity, color: "from-pink-500 to-orange-600" }
+            { title: "Avg Volume Rate", value: `${densityStats.avgOverallDensity.toFixed(1)} ${weightUnit}/min`, icon: Activity, color: "from-pink-500 to-orange-600" },
+            { title: "Efficiency Score", value: processedMetrics ? `${processedMetrics.efficiencyMetrics.efficiencyScore.toFixed(0)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
               {/* Subtle inner highlight */}
