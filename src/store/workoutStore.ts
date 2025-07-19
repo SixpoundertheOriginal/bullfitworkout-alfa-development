@@ -11,6 +11,14 @@ export interface ExerciseSet {
   restTime: number;
   completed: boolean;
   isEditing: boolean;
+  // Enhanced timing metadata
+  metadata?: {
+    startTime?: string;
+    endTime?: string;
+    actualRestTime?: number;
+    exerciseTransitionTime?: number;
+    [key: string]: any;
+  };
 }
 
 // Enhanced exercise configuration with variant data

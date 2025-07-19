@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -14,12 +13,17 @@ import { Loader2, Plus } from "lucide-react";
 import { Exercise } from "@/types/exercise";
 import { useSound } from "@/hooks/useSound";
 import { RestTimer } from "@/components/RestTimer";
+import { RealTimeEfficiencyMonitor } from "@/components/training/RealTimeEfficiencyMonitor";
+import { WorkoutPredictionEngine } from "@/components/training/WorkoutPredictionEngine";
+import { useEnhancedRestAnalytics } from "@/hooks/useEnhancedRestAnalytics";
+import { useWeightUnit } from "@/context/WeightUnitContext";
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { exercises: allExercises, isLoading: loadingExercises } = useExercises();
+  const { weightUnit } = useWeightUnit();
   
   const {
     exercises: storeExercises,
@@ -45,6 +49,14 @@ const TrainingSessionPage = () => {
     getExerciseDisplayName,
     getExerciseConfig
   } = useWorkoutStore();
+
+  const {
+    startRestTimer: startEnhancedRestTimer,
+    endRestTimer: endEnhancedRestTimer,
+    getRestAnalytics,
+    getCurrentRestTime,
+    getOptimalRestSuggestion,
+  } = useEnhancedRestAnalytics();
   
   const [completedSets, totalSets] = Object.entries(storeExercises).reduce(
     ([completed, total], [_, data]) => {
@@ -143,6 +155,69 @@ const TrainingSessionPage = () => {
       
       return prev;
     });
+  };
+
+  // Enhanced exercise completion with timing data
+  const handleCompleteSetWithTiming = (exerciseName: string, setIndex: number, timingData?: {
+    startTime: string;
+    endTime: string;
+    actualRestTime?: number;
+  }) => {
+    // Update the exercise with timing metadata
+    if (timingData) {
+      setStoreExercises(prev => {
+        const exerciseData = prev[exerciseName];
+        const newExercises = { ...prev };
+        
+        if (Array.isArray(exerciseData)) {
+          // Legacy format
+          const updatedSets = exerciseData.map((set, i) => 
+            i === setIndex ? { 
+              ...set, 
+              completed: true,
+              metadata: {
+                ...set.metadata,
+                startTime: timingData.startTime,
+                endTime: timingData.endTime,
+                actualRestTime: timingData.actualRestTime,
+              }
+            } : set
+          );
+          newExercises[exerciseName] = updatedSets;
+        } else if (exerciseData) {
+          // New format
+          const updatedSets = exerciseData.sets.map((set, i) => 
+            i === setIndex ? { 
+              ...set, 
+              completed: true,
+              metadata: {
+                ...set.metadata,
+                startTime: timingData.startTime,
+                endTime: timingData.endTime,
+                actualRestTime: timingData.actualRestTime,
+              }
+            } : set
+          );
+          newExercises[exerciseName] = {
+            ...exerciseData,
+            sets: updatedSets
+          };
+        }
+        
+        return newExercises;
+      });
+
+      // Start rest timer for next set if there is one
+      const exerciseData = storeExercises[exerciseName];
+      const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
+      if (setIndex < sets.length - 1) {
+        const nextSetRestTime = sets[setIndex + 1]?.restTime || 60;
+        startEnhancedRestTimer(exerciseName, setIndex + 2, nextSetRestTime);
+      }
+    }
+
+    // Call original completion handler
+    handleCompleteSet(exerciseName, setIndex);
   };
 
   // Enhanced exercise addition with full Exercise object support
@@ -281,6 +356,22 @@ const TrainingSessionPage = () => {
               isSaving={isSaving}
               hasSubstantialProgress={true}
             />
+            
+            {/* Enhanced monitoring section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <RealTimeEfficiencyMonitor
+                exercises={storeExercises}
+                elapsedTime={elapsedTime}
+                weightUnit={weightUnit}
+              />
+              
+              <WorkoutPredictionEngine
+                exercises={storeExercises}
+                elapsedTime={elapsedTime}
+                targetDuration={trainingConfig?.duration || 60}
+              />
+            </div>
+            
             {showRestTimerModal && (
               <div className="absolute right-4 top-full z-50 mt-2 w-72">
                 <RestTimer
@@ -297,7 +388,7 @@ const TrainingSessionPage = () => {
             exercises={storeExercises}
             activeExercise={activeExercise}
             onAddSet={handleAddSet}
-            onCompleteSet={handleCompleteSet}
+            onCompleteSet={handleCompleteSetWithTiming}
             onDeleteExercise={deleteExercise}
             onRemoveSet={(name, i) => {
               setStoreExercises(prev => {
@@ -463,6 +554,25 @@ const TrainingSessionPage = () => {
             onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
             setExercises={setStoreExercises}
           />
+
+          {/* Enhanced rest analytics display */}
+          {Object.keys(storeExercises).length > 0 && (
+            <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
+              <h3 className="text-sm font-medium mb-3">Session Analytics</h3>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <div className="text-gray-400">Current Rest</div>
+                  <div className="font-mono text-white">{getCurrentRestTime()}s</div>
+                </div>
+                <div>
+                  <div className="text-gray-400">Rest Efficiency</div>
+                  <div className="font-mono text-white">
+                    {getRestAnalytics().restEfficiencyScore.toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 mb-16 px-4">
             <Button
