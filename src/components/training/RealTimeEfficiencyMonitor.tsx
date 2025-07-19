@@ -43,9 +43,30 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
       elapsedTime,
       weightUnit,
       { weight: 70, unit: 'kg' },
-      new Date().toISOString()
+      { start_time: new Date().toISOString(), duration: elapsedTime }
     );
   }, [exercises, elapsedTime, weightUnit]);
+
+  // Calculate derived efficiency metrics from the processed metrics
+  const efficiencyData = useMemo(() => {
+    const efficiencyScore = metrics.efficiencyMetrics?.efficiencyScore || 0;
+    const workoutDensityScore = efficiencyScore;
+    const volumePerHour = (metrics.efficiencyMetrics?.volumePerActiveMinute || 0) * 60;
+    const setsPerMinute = metrics.densityMetrics?.setsPerMinute || 0;
+    const workToRestRatio = metrics.efficiencyMetrics?.workToRestRatio || 0;
+    
+    const efficiencyRating = efficiencyScore >= 80 ? 'excellent' :
+                           efficiencyScore >= 60 ? 'good' :
+                           efficiencyScore >= 40 ? 'average' : 'poor';
+
+    return {
+      efficiencyRating,
+      workoutDensityScore,
+      volumePerHour,
+      setsPerMinute,
+      workToRestRatio
+    };
+  }, [metrics]);
 
   const getEfficiencyColor = (rating: string) => {
     switch (rating) {
@@ -67,7 +88,7 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
     }
   };
 
-  if (!metrics.efficiency) return null;
+  if (!metrics || !efficiencyData) return null;
 
   return (
     <Card className={`bg-gray-900/80 border-gray-800 ${className}`}>
@@ -76,10 +97,10 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
           <h3 className="text-sm font-medium text-white">Real-Time Efficiency</h3>
           <Badge 
             variant="outline" 
-            className={`${getEfficiencyColor(metrics.efficiency.efficiencyRating)} capitalize`}
+            className={`${getEfficiencyColor(efficiencyData.efficiencyRating)} capitalize`}
           >
-            {getEfficiencyIcon(metrics.efficiency.efficiencyRating)}
-            <span className="ml-1">{metrics.efficiency.efficiencyRating}</span>
+            {getEfficiencyIcon(efficiencyData.efficiencyRating)}
+            <span className="ml-1">{efficiencyData.efficiencyRating}</span>
           </Badge>
         </div>
 
@@ -88,13 +109,13 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
             <div className="flex justify-between">
               <span className="text-gray-400">Density Score</span>
               <span className="font-mono text-white">
-                {metrics.efficiency.workoutDensityScore.toFixed(0)}/100
+                {efficiencyData.workoutDensityScore.toFixed(0)}/100
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Volume/Hour</span>
               <span className="font-mono text-white">
-                {metrics.efficiency.volumePerHour.toFixed(0)} {weightUnit}/hr
+                {efficiencyData.volumePerHour.toFixed(0)} {weightUnit}/hr
               </span>
             </div>
           </div>
@@ -103,13 +124,13 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
             <div className="flex justify-between">
               <span className="text-gray-400">Sets/Min</span>
               <span className="font-mono text-white">
-                {metrics.efficiency.setsPerMinute.toFixed(1)}
+                {efficiencyData.setsPerMinute.toFixed(1)}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Work:Rest</span>
               <span className="font-mono text-white">
-                {metrics.efficiency.workToRestRatio.toFixed(1)}:1
+                {efficiencyData.workToRestRatio.toFixed(1)}:1
               </span>
             </div>
           </div>
@@ -119,17 +140,17 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
         <div className="mt-3">
           <div className="flex justify-between text-xs mb-1">
             <span className="text-gray-400">Efficiency Progress</span>
-            <span className="text-gray-300">{metrics.efficiency.workoutDensityScore.toFixed(0)}%</span>
+            <span className="text-gray-300">{efficiencyData.workoutDensityScore.toFixed(0)}%</span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-2">
             <div 
               className={`h-2 rounded-full transition-all duration-300 ${
-                metrics.efficiency.workoutDensityScore >= 80 ? 'bg-green-500' :
-                metrics.efficiency.workoutDensityScore >= 60 ? 'bg-blue-500' :
-                metrics.efficiency.workoutDensityScore >= 40 ? 'bg-yellow-500' :
+                efficiencyData.workoutDensityScore >= 80 ? 'bg-green-500' :
+                efficiencyData.workoutDensityScore >= 60 ? 'bg-blue-500' :
+                efficiencyData.workoutDensityScore >= 40 ? 'bg-yellow-500' :
                 'bg-red-500'
               }`}
-              style={{ width: `${Math.min(metrics.efficiency.workoutDensityScore, 100)}%` }}
+              style={{ width: `${Math.min(efficiencyData.workoutDensityScore, 100)}%` }}
             />
           </div>
         </div>
