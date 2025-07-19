@@ -62,6 +62,11 @@ export interface Exercise {
   is_isometric?: boolean; // Flag to identify isometric exercises
   is_bodyweight?: boolean; // Flag for bodyweight exercises
   energy_cost_factor?: number; // Relative energy expenditure factor
+  
+  // Add missing properties for compatibility
+  equipment_needed?: string;
+  grip_types?: string[];
+  techniques?: string[];
 }
 
 export const COMMON_MUSCLE_GROUPS: MuscleGroup[] = [

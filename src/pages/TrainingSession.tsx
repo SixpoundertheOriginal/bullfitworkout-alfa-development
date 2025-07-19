@@ -238,7 +238,7 @@ const TrainingSessionPage = () => {
           progression: {
             timeOfDay: startTime.getHours() < 12 ? 'morning' :
                        startTime.getHours() < 17 ? 'afternoon' : 'evening',
-            totalVolume: Object.values(storeExercises).flat().reduce((acc, data) => {
+            totalVolume: Object.values(storeExercises).reduce((acc, data) => {
               const sets = Array.isArray(data) ? data : data.sets;
               return acc + sets.reduce((setAcc, s) => setAcc + (s.weight * s.reps), 0);
             }, 0)

@@ -68,7 +68,12 @@ export const WorkoutCompletePage = () => {
     workoutId,
     handleCompleteWorkout,
   } = useWorkoutSave(
-    workoutData?.exercises || exercises,
+    workoutData?.exercises || Object.fromEntries(
+      Object.entries(exercises).map(([name, config]) => [
+        name,
+        Array.isArray(config) ? config : config.sets
+      ])
+    ),
     workoutData?.duration || elapsedTime,
     resetSession
   );

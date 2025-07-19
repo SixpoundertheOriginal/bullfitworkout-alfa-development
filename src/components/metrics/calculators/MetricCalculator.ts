@@ -75,7 +75,9 @@ export class MetricCalculator {
   }
 
   private calculateSetsProgress(exercises: WorkoutExercises): MetricValue {
-    const allSets = Object.values(exercises).flat();
+    const allSets = Object.values(exercises).flatMap(config => 
+      Array.isArray(config) ? config : config.sets
+    );
     const completedSets = allSets.filter(set => set.completed).length;
     const totalSets = allSets.length;
     
@@ -90,13 +92,14 @@ export class MetricCalculator {
   }
 
   private calculateRepsCount(exercises: WorkoutExercises): MetricValue {
-    const completedReps = Object.values(exercises)
-      .flat()
+    const allSets = Object.values(exercises).flatMap(config => 
+      Array.isArray(config) ? config : config.sets
+    );
+    const completedReps = allSets
       .filter(set => set.completed)
       .reduce((total, set) => total + set.reps, 0);
 
-    const targetReps = Object.values(exercises)
-      .flat()
+    const targetReps = allSets
       .reduce((total, set) => total + set.reps, 0);
 
     return {
@@ -108,8 +111,10 @@ export class MetricCalculator {
   }
 
   private calculateTotalVolume(exercises: WorkoutExercises): MetricValue {
-    const totalVolume = Object.values(exercises)
-      .flat()
+    const allSets = Object.values(exercises).flatMap(config => 
+      Array.isArray(config) ? config : config.sets
+    );
+    const totalVolume = allSets
       .filter(set => set.completed)
       .reduce((total, set) => total + (set.weight * set.reps), 0);
 

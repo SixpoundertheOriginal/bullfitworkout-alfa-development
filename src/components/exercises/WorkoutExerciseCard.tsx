@@ -93,12 +93,12 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
                       {muscle}
                     </Badge>
                   ))}
-                  {fullExercise.equipment_needed && (
+                  {fullExercise.equipment_type?.[0] && (
                     <Badge 
                       variant="outline" 
                       className="text-xs bg-blue-900/30 text-blue-300 border-blue-500/30"
                     >
-                      {fullExercise.equipment_needed}
+                      {fullExercise.equipment_type[0]}
                     </Badge>
                   )}
                 </div>

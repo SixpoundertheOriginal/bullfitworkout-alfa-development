@@ -103,7 +103,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
 
   const renderExerciseCard = (exercise: Exercise) => {
     const muscleGroups = exercise.primary_muscle_groups.slice(0, 2).join(', ');
-    const hasVariants = exercise.grip_types?.length > 0 || exercise.techniques?.length > 0;
+    const hasVariants = exercise.variations?.length > 0;
     
     return (
       <div key={exercise.id} className="flex items-center justify-between p-3 mb-2 bg-gray-800/50 rounded-lg border border-gray-700/50 hover:bg-gray-800/70 transition-colors">
@@ -118,9 +118,9 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
           </div>
           <div className="flex flex-wrap gap-1">
             <span className="text-sm text-gray-400">{muscleGroups}</span>
-            {exercise.equipment_needed && (
+            {exercise.equipment_type?.[0] && (
               <Badge variant="outline" className="text-xs bg-blue-900/30 text-blue-300 border-blue-500/30">
-                {exercise.equipment_needed}
+                {exercise.equipment_type[0]}
               </Badge>
             )}
           </div>
