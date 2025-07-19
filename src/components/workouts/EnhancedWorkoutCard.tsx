@@ -12,12 +12,14 @@ import {
   BarChart3,
   Award,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Check
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,11 +89,31 @@ export const EnhancedWorkoutCard: React.FC<EnhancedWorkoutCardProps> = ({
         "bg-gradient-to-br from-gray-900/90 to-gray-900/60 border-gray-800/50",
         isSelected && "ring-2 ring-purple-500/50 border-purple-500/30",
         workout.quality.hasIncompleteData && "border-yellow-700/50",
-        compact ? "p-3" : "p-4"
+        compact ? "p-3" : "p-4",
+        onSelect ? "cursor-pointer" : ""
       )}
       onClick={handleCardClick}
     >
-      <CardContent className="p-0 space-y-3">
+      {/* Selection Checkbox */}
+      {onSelect && (
+        <div className="absolute top-3 left-3 z-10">
+          <div 
+            className={cn(
+              "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
+              isSelected 
+                ? "bg-purple-600 border-purple-600" 
+                : "bg-gray-800/80 border-gray-600 hover:border-purple-400"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(workout.id, !isSelected);
+            }}
+          >
+            {isSelected && <Check className="w-3 h-3 text-white" />}
+          </div>
+        </div>
+      )}
+      <CardContent className={cn("p-0 space-y-3", onSelect && "pl-8")}>
         {/* Header */}
         <div className="flex justify-between items-start">
           <div className="flex-1">
