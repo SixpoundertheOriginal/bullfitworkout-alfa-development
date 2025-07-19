@@ -1,4 +1,3 @@
-
 // src/pages/workout/WorkoutDetailsPage.tsx
 
 import React, { useState, useMemo } from "react";
@@ -17,6 +16,8 @@ import { WorkoutDensityChart } from "@/components/metrics/WorkoutDensityChart";
 import { TimeOfDayChart } from "@/components/metrics/TimeOfDayChart";
 import { MuscleGroupChart } from "@/components/metrics/MuscleGroupChart";
 import { TopExercisesTable } from "@/components/metrics/TopExercisesTable";
+import { EfficiencyMetricsCard } from "@/components/metrics/EfficiencyMetricsCard";
+import { WorkoutEfficiencyScore } from "@/components/metrics/WorkoutEfficiencyScore";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { EditWorkoutModal } from "@/components/EditWorkoutModal";
 import { EditExerciseSetModal } from "@/components/EditExerciseSetModal";
@@ -24,7 +25,8 @@ import { ExerciseDialog } from "@/components/ExerciseDialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { useDeleteOperation } from "@/hooks/useAsyncOperation";
 import { deleteWorkout } from "@/services/workoutService";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar, Clock, Dumbbell, BarChart3, Target, Activity, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { WeightUnit } from "@/utils/unitConversion";
 
 const WorkoutDetailsPage: React.FC = () => {
@@ -135,6 +137,15 @@ const WorkoutDetailsPage: React.FC = () => {
           afternoon: 0,
           evening: 0,
           night: 0
+        },
+        efficiencyMetrics: {
+          efficiencyScore: 0,
+          workToRestRatio: 0,
+          formattedWorkToRestRatio: "0:1",
+          movementEfficiency: 0,
+          recoveryEfficiency: 0,
+          paceConsistency: 0,
+          volumePerActiveMinute: 0
         }
       } as ProcessedWorkoutMetrics;
     }
@@ -220,23 +231,101 @@ const WorkoutDetailsPage: React.FC = () => {
             onDeleteClick={() => setDeleteDialogOpen(true)}
           />
 
-          {/* Summary row - Added Max Load card */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-            {[
-              { label: "Date", value: new Date(workoutDetails.start_time).toLocaleDateString(), colSpan: "md:col-span-1" },
-              { label: "Duration", value: `${workoutDetails.duration} min`, colSpan: "md:col-span-1" },
-              { label: "Exercises", value: metricValues.exerciseCount, colSpan: "md:col-span-1" },
-              { label: "Sets", value: metricValues.setCount.total, colSpan: "md:col-span-1" },
-              { label: "Volume", value: `${Math.round(totalVolume).toLocaleString()} ${weightUnit}`, colSpan: "md:col-span-1" },
-              { label: "Max Load", value: `${Math.round(sessionMax)} ${weightUnit}`, colSpan: "md:col-span-1" },
-            ].map((item, idx) => (
-              <Card key={idx} className={`bg-gray-900 border-gray-800 ${item.colSpan}`}>
-                <CardHeader className="py-3"><CardTitle className="text-sm">{item.label}</CardTitle></CardHeader>
-                <CardContent className="py-1">
-                  <div className="text-lg">{item.value}</div>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Enhanced Summary Cards with Advanced KPIs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-purple-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Calendar className="h-4 w-4 mr-2 text-purple-400" />
+                  Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-lg font-semibold">{new Date(workoutDetails.start_time).toLocaleDateString()}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-purple-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-purple-400" />
+                  Duration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-lg font-semibold">{workoutDetails.duration} min</div>
+                <div className="text-xs text-gray-500">Active: {activeTime.toFixed(0)} min</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-purple-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Dumbbell className="h-4 w-4 mr-2 text-purple-400" />
+                  Exercises
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-lg font-semibold">{metricValues.exerciseCount}</div>
+                <div className="text-xs text-gray-500">{metricValues.setCount.total} sets total</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-purple-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-2 text-purple-400" />
+                  Volume
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-lg font-semibold">{Math.round(totalVolume).toLocaleString()} {weightUnit}</div>
+                <div className="text-xs text-gray-500">Max: {Math.round(sessionMax)} {weightUnit}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-green-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Target className="h-4 w-4 mr-2 text-green-400" />
+                  Efficiency Score
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="flex items-center gap-2">
+                  <div className="text-lg font-semibold text-green-400">
+                    {Math.round(metricValues.efficiencyMetrics?.efficiencyScore || 0)}/100
+                  </div>
+                  <Badge variant="outline" className="text-green-400 border-green-400">
+                    {metricValues.efficiencyMetrics?.efficiencyScore >= 80 ? 'Excellent' :
+                     metricValues.efficiencyMetrics?.efficiencyScore >= 60 ? 'Good' : 'Fair'}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/80 border-gray-800 hover:border-blue-500/50 transition-all">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Activity className="h-4 w-4 mr-2 text-blue-400" />
+                  Work:Rest Ratio
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-lg font-semibold text-blue-400">
+                  {metricValues.efficiencyMetrics?.formattedWorkToRestRatio || "1:1"}
+                </div>
+                <div className="text-xs text-gray-500">Recovery: {Math.round((metricValues.efficiencyMetrics?.recoveryEfficiency || 0) * 100)}%</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Efficiency Metrics Card - New Addition */}
+          <div className="mb-6">
+            <EfficiencyMetricsCard 
+              metrics={metricValues}
+              className="bg-gray-900/60 backdrop-blur-sm border-gray-800/50"
+            />
           </div>
 
           {/* Workout Density & Time Distribution */}
@@ -256,15 +345,29 @@ const WorkoutDetailsPage: React.FC = () => {
                 />
               </div>
               
-              {/* Intensity & Efficiency metrics */}
-              <div className="grid grid-cols-2 gap-4 mt-2">
+              {/* Enhanced Density metrics display */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                 <div className="p-4 rounded-md bg-gray-800/50 border border-gray-700">
-                  <div className="text-sm text-gray-400 mb-1">Intensity</div>
-                  <div className="text-lg font-medium">{intensity.toFixed(1)}%</div>
+                  <div className="text-sm text-gray-400 mb-1">Volume/Active Min</div>
+                  <div className="text-lg font-medium text-purple-400">
+                    {(metricValues.efficiencyMetrics?.volumePerActiveMinute || 0).toFixed(1)} {weightUnit}/min
+                  </div>
                 </div>
                 <div className="p-4 rounded-md bg-gray-800/50 border border-gray-700">
-                  <div className="text-sm text-gray-400 mb-1">Efficiency</div>
-                  <div className="text-lg font-medium">{efficiency.toFixed(1)}%</div>
+                  <div className="text-sm text-gray-400 mb-1">Movement Efficiency</div>
+                  <div className="text-lg font-medium text-blue-400">
+                    {(metricValues.efficiencyMetrics?.movementEfficiency || 0).toFixed(1)}
+                  </div>
+                </div>
+                <div className="p-4 rounded-md bg-gray-800/50 border border-gray-700">
+                  <div className="text-sm text-gray-400 mb-1">Pace Consistency</div>
+                  <div className="text-lg font-medium text-green-400">
+                    {Math.round((metricValues.efficiencyMetrics?.paceConsistency || 0) * 100)}%
+                  </div>
+                </div>
+                <div className="p-4 rounded-md bg-gray-800/50 border border-gray-700">
+                  <div className="text-sm text-gray-400 mb-1">Intensity</div>
+                  <div className="text-lg font-medium text-yellow-400">{intensity.toFixed(1)}%</div>
                 </div>
               </div>
             </CardContent>
@@ -291,7 +394,7 @@ const WorkoutDetailsPage: React.FC = () => {
               </CardContent>
             </Card>
             
-            {/* Workout Composition Card - FIX HERE */}
+            {/* Workout Composition Card */}
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader><CardTitle>Workout Composition</CardTitle></CardHeader>
               <CardContent className="h-60">
