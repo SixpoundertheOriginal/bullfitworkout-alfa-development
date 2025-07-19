@@ -1,230 +1,278 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { IntelligentMetricsDisplay } from '@/components/metrics/IntelligentMetricsDisplay';
-import { ExerciseVolumeChart } from '@/components/metrics/ExerciseVolumeChart';
-import { PRCelebration } from '@/components/personalRecords/PRCelebration';
-import { ExerciseSet } from "@/types/exercise";
-import { useWeightUnit } from "@/context/WeightUnitContext";
-import { useWorkoutStore } from "@/store/workoutStore";
-import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { usePersonalRecords } from "@/hooks/usePersonalRecords";
-import { PRDetectionResult } from "@/services/personalRecordsService";
+import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Trophy, 
+  Clock, 
+  Dumbbell, 
+  Target, 
+  TrendingUp, 
+  Award,
+  Star,
+  Home,
+  BarChart3,
+  Zap
+} from 'lucide-react';
+import { useWorkoutStore } from '@/store/workoutStore';
+import { processWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
+import { useWeightUnit } from '@/context/WeightUnitContext';
+import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
 
-// Define a local version of ExerciseSet to match what's used in the workout state
-interface LocalExerciseSet {
+interface ExerciseSet {
   weight: number;
   reps: number;
-  restTime: number;
   completed: boolean;
-  isEditing: boolean;
+  restTime?: number;
 }
 
-export interface WorkoutCompletionEnhancedProps {
-  exercises?: Record<string, LocalExerciseSet[]>;
-  duration?: number;
-  intensity?: number;
-  efficiency?: number;
-  onComplete?: () => void;
+interface CompletedWorkout {
+  startTime: number;
+  endTime: number;
+  exercises: Record<string, ExerciseSet[]>;
 }
 
-export const WorkoutCompletionEnhanced = ({
-  exercises = {},
-  duration = 0,
-  intensity = 0,
-  efficiency = 0,
-  onComplete = () => {}
-}: WorkoutCompletionEnhancedProps = {}) => {
-  const { weightUnit } = useWeightUnit();
-  const { resetSession } = useWorkoutStore();
+export const WorkoutCompletionEnhanced = () => {
   const navigate = useNavigate();
-  const { detectPRs, savePRs } = usePersonalRecords();
-  
-  const [detectedPRs, setDetectedPRs] = useState<Record<string, PRDetectionResult[]>>({});
-  const [showPRCelebration, setShowPRCelebration] = useState<Record<string, boolean>>({});
+  const { completedWorkout, clearWorkout, getExerciseConfig, getWorkoutSummary } = useWorkoutStore();
+  const { weightUnit } = useWeightUnit();
+  const [showCelebration, setShowCelebration] = useState(true);
 
-  // Convert LocalExerciseSet to ExerciseSet for the chart components
-  const convertedExercises = Object.entries(exercises).reduce((acc, [exerciseName, sets]) => {
-    acc[exerciseName] = sets.map((set, index) => ({
-      id: `temp-${exerciseName}-${index}`,
-      weight: set.weight,
-      reps: set.reps,
-      completed: set.completed,
-      set_number: index + 1,
-      exercise_name: exerciseName,
-      workout_id: 'temp-workout',
-      ...(set.restTime !== undefined && { restTime: set.restTime })
-    })) as ExerciseSet[];
-    return acc;
-  }, {} as Record<string, ExerciseSet[]>);
-
-  // Detect PRs on component mount
   useEffect(() => {
-    const detectAllPRs = async () => {
-      console.log('🎯 Starting PR detection for workout completion...');
-      const prResults: Record<string, PRDetectionResult[]> = {};
-      const celebrationStates: Record<string, boolean> = {};
+    if (!completedWorkout) return;
 
-      for (const [exerciseName, sets] of Object.entries(exercises)) {
-        const completedSets = sets.filter(set => set.completed);
-        if (completedSets.length === 0) {
-          console.log(`⏭️ Skipping ${exerciseName} - no completed sets`);
-          continue;
-        }
+    // Clear workout after 5 seconds
+    const timer = setTimeout(() => {
+      clearWorkout();
+    }, 5000);
 
-        console.log(`🔍 Checking PRs for ${exerciseName} with ${completedSets.length} completed sets`);
+    return () => clearTimeout(timer);
+  }, [completedWorkout, clearWorkout]);
 
-        // Check each completed set for PRs
-        for (const set of completedSets) {
-          try {
-            const prs = await detectPRs.mutateAsync({
-              exerciseName,
-              weight: set.weight,
-              reps: set.reps
-            });
-
-            if (prs.some(pr => pr.isNewPR)) {
-              if (!prResults[exerciseName]) {
-                prResults[exerciseName] = [];
-              }
-              
-              // Merge PRs, keeping the best ones
-              prs.forEach(newPR => {
-                if (newPR.isNewPR) {
-                  const existingPR = prResults[exerciseName].find(pr => pr.prType === newPR.prType);
-                  if (!existingPR || newPR.currentValue > existingPR.currentValue) {
-                    prResults[exerciseName] = prResults[exerciseName].filter(pr => pr.prType !== newPR.prType);
-                    prResults[exerciseName].push(newPR);
-                  }
-                }
-              });
-              
-              celebrationStates[exerciseName] = true;
-            }
-          } catch (error) {
-            console.error(`❌ Error detecting PRs for ${exerciseName}:`, error);
-          }
-        }
-      }
-
-      console.log('✅ PR detection complete:', prResults);
-      setDetectedPRs(prResults);
-      setShowPRCelebration(celebrationStates);
-    };
-
-    if (Object.keys(exercises).length > 0) {
-      detectAllPRs();
+  useEffect(() => {
+    if (showCelebration) {
+      const timer = setTimeout(() => setShowCelebration(false), 3000);
+      return () => clearTimeout(timer);
     }
-  }, [exercises, detectPRs]);
-  
-  const handleDiscard = () => {
-    // Fully terminate the workout session
-    resetSession();
-    
-    // Show confirmation toast
-    toast({
-      title: "Workout discarded",
-      description: "Your workout session has been terminated"
-    });
-    
-    // Navigate to main dashboard
-    navigate('/');
-  };
+  }, [showCelebration]);
 
-  const handleComplete = async () => {
-    console.log('💾 Saving PRs before workout completion...');
-    
-    // Save all detected PRs before completing workout
-    for (const [exerciseName, prs] of Object.entries(detectedPRs)) {
-      if (prs.some(pr => pr.isNewPR)) {
-        try {
-          await savePRs.mutateAsync({
-            exerciseName,
-            prResults: prs,
-            equipmentType: 'barbell' // Could be made dynamic based on exercise
-          });
-          console.log(`✅ Saved PRs for ${exerciseName}`);
-        } catch (error) {
-          console.error(`❌ Error saving PRs for ${exerciseName}:`, error);
-        }
-      }
-    }
-
-    // Show success toast for PRs
-    const totalPRs = Object.values(detectedPRs).reduce((total, prs) => 
-      total + prs.filter(pr => pr.isNewPR).length, 0
+  if (!completedWorkout) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-400">No completed workout found</p>
+            <Button onClick={() => navigate('/')} className="mt-4">
+              Go Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
+  }
 
-    if (totalPRs > 0) {
-      toast({
-        title: `🎉 ${totalPRs} New Personal Record${totalPRs > 1 ? 's' : ''}!`,
-        description: "Your progress has been recorded"
-      });
-    } else {
-      toast({
-        title: "Workout Complete! 💪",
-        description: "Great work - keep pushing for those PRs!"
-      });
-    }
+  const summary = getWorkoutSummary();
+  const duration = Math.round((completedWorkout.endTime - completedWorkout.startTime) / (1000 * 60));
+  
+  // Enhanced metrics processing with efficiency calculations
+  const processedMetrics = useMemo(() => {
+    return processWorkoutMetrics(
+      completedWorkout.exercises,
+      duration,
+      weightUnit,
+      { weight: 70, unit: 'kg' }, // You might want to get this from user profile
+      {
+        start_time: new Date(completedWorkout.startTime).toISOString(),
+        duration: duration
+      }
+    );
+  }, [completedWorkout.exercises, duration, weightUnit]);
 
-    // Complete the workout
-    onComplete();
-  };
+  const totalSets = Object.values(completedWorkout.exercises).flat().length;
+  const completedSets = Object.values(completedWorkout.exercises).flat().filter(set => set.completed).length;
+  const totalVolume = Object.values(completedWorkout.exercises).flat()
+    .filter(set => set.completed)
+    .reduce((sum, set) => sum + (set.weight * set.reps), 0);
 
-  const closePRCelebration = (exerciseName: string) => {
-    setShowPRCelebration(prev => ({
-      ...prev,
-      [exerciseName]: false
-    }));
-  };
+  const completionRate = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   return (
-    <div className="mt-8 flex flex-col items-center">
-      {/* PR Celebrations */}
-      {Object.entries(detectedPRs).map(([exerciseName, prs]) => (
-        <PRCelebration
-          key={exerciseName}
-          prs={prs}
-          exerciseName={exerciseName}
-          isVisible={showPRCelebration[exerciseName] || false}
-          onClose={() => closePRCelebration(exerciseName)}
-        />
-      ))}
-
-      <div className="flex w-full justify-between gap-3 mb-4">
-        <Button
-          variant="outline"
-          className="w-1/2 py-3 border-gray-700 hover:bg-gray-800"
-          onClick={handleDiscard}
-        >
-          Discard
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
+      {showCelebration && (
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-50">
+          <div className="confetti-container">
+            {[...Array(100)].map((_, i) => (
+              <div
+                key={i}
+                className="confetti"
+                style={{
+                  left: `${Math.random() * 100}vw`,
+                  animationDelay: `${Math.random() * 5}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
         
-        <Button
-          className="w-1/2 py-3 bg-gradient-to-r from-green-600 to-emerald-500 
-            hover:from-green-700 hover:to-emerald-600 text-white font-medium 
-            rounded-full shadow-lg hover:shadow-xl"
-          onClick={handleComplete}
-          disabled={savePRs.isPending}
-        >
-          {savePRs.isPending ? 'Saving PRs...' : 'Complete Workout'}
-        </Button>
-      </div>
-      
-      <IntelligentMetricsDisplay 
-        exercises={convertedExercises}
-        intensity={intensity}
-        efficiency={efficiency}
-      />
-      
-      <div className="mt-4 bg-gray-900/50 p-4 rounded-xl border border-gray-800 w-full">
-        <ExerciseVolumeChart 
-          exercises={convertedExercises} 
-          weightUnit={weightUnit}
-        />
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full">
+              <Trophy className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Workout Complete!</h1>
+          <p className="text-gray-400">Outstanding work! Here's your performance summary.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          
+          <Card className="bg-gray-900/40 border-gray-800/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <BarChart3 className="h-5 w-5 text-blue-400" />
+                Quick Stats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <Clock className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{duration}m</p>
+                  <p className="text-xs text-gray-400">Duration</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <Dumbbell className="h-5 w-5 text-green-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{totalVolume.toFixed(0)}</p>
+                  <p className="text-xs text-gray-400">Total Volume ({weightUnit})</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <Target className="h-5 w-5 text-purple-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{completedSets}/{totalSets}</p>
+                  <p className="text-xs text-gray-400">Sets Completed</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-orange-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{completionRate.toFixed(0)}%</p>
+                  <p className="text-xs text-gray-400">Completion Rate</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* New Enhanced Efficiency Metrics Card */}
+          <EfficiencyMetricsCard metrics={processedMetrics} />
+        </div>
+
+        {/* Exercises Completed Section */}
+        <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
+          <CardHeader>
+            <CardTitle className="text-white">Exercises Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-none space-y-2">
+              {Object.entries(completedWorkout.exercises).map(([exerciseName, sets]) => {
+                const exerciseConfig = getExerciseConfig(exerciseName);
+                const displayName = exerciseConfig?.displayName || exerciseName;
+                const completedSetsCount = sets.filter(set => set.completed).length;
+                return (
+                  <li key={exerciseName} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
+                    <span className="text-gray-300">{displayName}</span>
+                    <Badge variant="secondary" className="bg-purple-900/30 text-purple-300 border-purple-500/30">
+                      {completedSetsCount} / {sets.length} Sets
+                    </Badge>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Achievements Section */}
+        <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Award className="h-5 w-5 text-yellow-400" />
+              Achievements
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-300">Consistency</span>
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-400" />
+                  <span className="text-sm text-gray-300">3-Day Streak</span>
+                </div>
+              </div>
+              <Progress value={75} className="h-2" />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-300">Total Volume</span>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-400" />
+                  <span className="text-sm text-gray-300">+15% from last week</span>
+                </div>
+              </div>
+              <Progress value={60} className="h-2" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Advanced Metrics Section */}
+        <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap className="h-5 w-5 text-yellow-400" />
+              Advanced Metrics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                <p className="text-lg font-bold text-cyan-400">
+                  {processedMetrics.densityMetrics.formattedOverallDensity}
+                </p>
+                <p className="text-xs text-gray-400">Workout Density</p>
+              </div>
+              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                <p className="text-lg font-bold text-pink-400">
+                  {processedMetrics.intensityMetrics.averageLoad.toFixed(1)} {weightUnit}
+                </p>
+                <p className="text-xs text-gray-400">Average Load</p>
+              </div>
+              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                <p className="text-lg font-bold text-emerald-400">
+                  {processedMetrics.estimatedEnergyExpenditure} cal
+                </p>
+                <p className="text-xs text-gray-400">Est. Calories</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          <Button
+            onClick={() => navigate('/workouts')}
+            variant="outline"
+            className="border-gray-600 text-gray-300 hover:bg-gray-800"
+          >
+            View Workout History
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
-
-export default WorkoutCompletionEnhanced;

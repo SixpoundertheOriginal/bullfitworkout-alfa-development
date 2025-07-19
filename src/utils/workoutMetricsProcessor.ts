@@ -3,7 +3,7 @@
 import { ExerciseSet } from '@/types/exercise';
 import { calculateEffectiveWeight, getExerciseLoadFactor, isBodyweightExercise } from '@/types/exercise';
 
-// Enhanced ProcessedWorkoutMetrics with more detailed information
+// Enhanced ProcessedWorkoutMetrics with advanced efficiency metrics
 export interface ProcessedWorkoutMetrics {
   duration: number;
   exerciseCount: number;
@@ -13,7 +13,7 @@ export interface ProcessedWorkoutMetrics {
     failed: number;
   };
   totalVolume: number;
-  adjustedVolume: number; // Volume adjusted for bodyweight exercises
+  adjustedVolume: number;
   intensity: number;
   density: number;
   efficiency: number;
@@ -30,6 +30,16 @@ export interface ProcessedWorkoutMetrics {
     peakLoad: number;
     averageLoad: number;
   };
+  // Enhanced efficiency metrics
+  efficiencyMetrics: {
+    workToRestRatio: number;
+    movementEfficiency: number;
+    recoveryEfficiency: number;
+    paceConsistency: number;
+    volumePerActiveMinute: number;
+    efficiencyScore: number; // 0-100 composite score
+    formattedWorkToRestRatio: string;
+  };
   muscleFocus: Record<string, number>;
   estimatedEnergyExpenditure: number;
   movementPatterns: Record<string, number>;
@@ -45,6 +55,8 @@ export interface ProcessedWorkoutMetrics {
     restTime: number;
     activeTimePercentage: number;
     restTimePercentage: number;
+    averageRestPeriod: number;
+    restVariability: number;
   };
   durationByTimeOfDay: {
     morning: number;
@@ -69,7 +81,7 @@ function categorizeTimeOfDay(date: Date): 'morning' | 'afternoon' | 'evening' | 
   return 'night';
 }
 
-// Main function to process workout metrics
+// Enhanced main function to process workout metrics with efficiency calculations
 export const processWorkoutMetrics = (
   exercises: Record<string, ExerciseSet[]>,
   duration: number,
@@ -77,7 +89,7 @@ export const processWorkoutMetrics = (
   userBodyInfo?: { weight: number; unit: string },
   workoutTiming?: WorkoutTiming
 ): ProcessedWorkoutMetrics => {
-  // Initialize metrics
+  // Initialize metrics with enhanced efficiency structure
   const metrics: ProcessedWorkoutMetrics = {
     duration,
     exerciseCount: 0,
@@ -104,6 +116,15 @@ export const processWorkoutMetrics = (
       peakLoad: 0,
       averageLoad: 0,
     },
+    efficiencyMetrics: {
+      workToRestRatio: 0,
+      movementEfficiency: 0,
+      recoveryEfficiency: 0,
+      paceConsistency: 0,
+      volumePerActiveMinute: 0,
+      efficiencyScore: 0,
+      formattedWorkToRestRatio: '0:1'
+    },
     muscleFocus: {},
     estimatedEnergyExpenditure: 0,
     movementPatterns: {},
@@ -118,7 +139,9 @@ export const processWorkoutMetrics = (
       activeTime: 0,
       restTime: 0,
       activeTimePercentage: 0,
-      restTimePercentage: 0
+      restTimePercentage: 0,
+      averageRestPeriod: 0,
+      restVariability: 0
     },
     durationByTimeOfDay: {
       morning: 0,
@@ -138,7 +161,7 @@ export const processWorkoutMetrics = (
     ? userBodyInfo.unit === 'lb' 
       ? userBodyInfo.weight * 0.453592 
       : userBodyInfo.weight
-    : 70; // Default weight if not provided
+    : 70;
 
   // Track exercise data for processing
   const exerciseNames = Object.keys(exercises);
@@ -157,6 +180,11 @@ export const processWorkoutMetrics = (
   let isometricCount = 0;
   let totalRestTime = 0;
   let totalActiveTime = 0;
+
+  // Enhanced efficiency tracking
+  const restPeriods: number[] = [];
+  const setVolumes: number[] = [];
+  const exerciseTransitions: number[] = [];
 
   // Process each exercise
   exerciseNames.forEach(exerciseName => {
@@ -183,31 +211,29 @@ export const processWorkoutMetrics = (
       isolationCount++;
     }
     
-    // Calculate rest time and active time
+    // Calculate rest time and active time with enhanced efficiency tracking
     let exerciseRestTime = 0;
-    const exerciseStartTime = 0;
 
     // Process each set in the exercise
-    sets.forEach(set => {
+    sets.forEach((set, setIndex) => {
       if (set.completed) {
         metrics.setCount.completed += 1;
         
         // Calculate volume (weight x reps)
         const standardVolume = set.weight * set.reps;
         metrics.totalVolume += standardVolume;
+        setVolumes.push(standardVolume);
 
-        // Handle adjusted volume for bodyweight exercises if we have exercise data and user weight
+        // Handle adjusted volume for bodyweight exercises
         if (set.weightCalculation?.isAuto && userBodyInfo) {
-          // This is a bodyweight exercise with auto-calculated weight
           const effectiveWeight = set.weightCalculation.value;
           const adjustedVolume = effectiveWeight * set.reps;
           metrics.adjustedVolume += adjustedVolume;
         } else {
-          // Regular weighted exercise or no auto calculation
           metrics.adjustedVolume += standardVolume;
         }
         
-        // Track RPE if available - ensure we check if metadata exists first
+        // Track RPE if available
         if (set.metadata && typeof set.metadata === 'object' && 'rpe' in set.metadata) {
           const rpe = Number(set.metadata.rpe);
           if (!isNaN(rpe) && rpe > 0) {
@@ -225,26 +251,20 @@ export const processWorkoutMetrics = (
         metrics.setCount.failed += 1;
       }
       
-      // Add rest time
-      if (set.restTime) {
-        exerciseRestTime += set.restTime;
-        totalRestTime += set.restTime;
-      } else {
-        // Default rest time of 60 seconds if not specified
-        exerciseRestTime += 60;
-        totalRestTime += 60;
-      }
+      // Enhanced rest time tracking for efficiency calculations
+      const restTime = set.restTime || 60;
+      exerciseRestTime += restTime;
+      totalRestTime += restTime;
+      restPeriods.push(restTime);
     });
 
     // Update muscle focus data
-    // This is a simplified approach - in a production app, you would look up the exercise
-    // in a database to get accurate muscle group data
     const muscleGroup = getExerciseMainMuscleGroup(exerciseName);
     if (muscleGroup) {
       metrics.muscleFocus[muscleGroup] = (metrics.muscleFocus[muscleGroup] || 0) + sets.length;
     }
 
-    // Update movement pattern data (simplified)
+    // Update movement pattern data
     const movementPattern = getExerciseMovementPattern(exerciseName);
     if (movementPattern) {
       metrics.movementPatterns[movementPattern] = 
@@ -252,15 +272,65 @@ export const processWorkoutMetrics = (
     }
   });
 
-  // Calculate time distribution
+  // Enhanced time distribution calculations
   const totalRestTimeMinutes = totalRestTime / 60;
   const totalActiveTimeMinutes = Math.max(0, duration - totalRestTimeMinutes);
   
+  // Calculate rest period statistics
+  const averageRestPeriod = restPeriods.length > 0 ? 
+    restPeriods.reduce((sum, rest) => sum + rest, 0) / restPeriods.length : 0;
+  
+  const restVariance = restPeriods.length > 1 ? 
+    restPeriods.reduce((sum, rest) => sum + Math.pow(rest - averageRestPeriod, 2), 0) / (restPeriods.length - 1) : 0;
+  const restVariability = Math.sqrt(restVariance) / averageRestPeriod;
+
   metrics.timeDistribution = {
     activeTime: totalActiveTimeMinutes,
     restTime: totalRestTimeMinutes,
     activeTimePercentage: (totalActiveTimeMinutes / duration) * 100,
-    restTimePercentage: (totalRestTimeMinutes / duration) * 100
+    restTimePercentage: (totalRestTimeMinutes / duration) * 100,
+    averageRestPeriod: averageRestPeriod / 60, // Convert to minutes
+    restVariability: isNaN(restVariability) ? 0 : restVariability
+  };
+
+  // Enhanced efficiency metrics calculations
+  const workToRestRatio = totalRestTimeMinutes > 0 ? totalActiveTimeMinutes / totalRestTimeMinutes : 0;
+  
+  // Movement efficiency: volume per active minute normalized by user weight
+  const movementEfficiency = totalActiveTimeMinutes > 0 && userWeightKg > 0 ? 
+    (metrics.totalVolume / totalActiveTimeMinutes) / userWeightKg : 0;
+  
+  // Recovery efficiency: inverse of rest variability (more consistent = more efficient)
+  const recoveryEfficiency = restVariability > 0 ? Math.max(0, 1 - Math.min(restVariability, 1)) : 1;
+  
+  // Pace consistency: coefficient of variation of set volumes (lower = more consistent)
+  const averageSetVolume = setVolumes.length > 0 ? 
+    setVolumes.reduce((sum, vol) => sum + vol, 0) / setVolumes.length : 0;
+  const volumeVariance = setVolumes.length > 1 ? 
+    setVolumes.reduce((sum, vol) => sum + Math.pow(vol - averageSetVolume, 2), 0) / (setVolumes.length - 1) : 0;
+  const paceConsistency = averageSetVolume > 0 ? 
+    Math.max(0, 1 - (Math.sqrt(volumeVariance) / averageSetVolume)) : 0;
+  
+  // Volume per active minute
+  const volumePerActiveMinute = totalActiveTimeMinutes > 0 ? metrics.totalVolume / totalActiveTimeMinutes : 0;
+  
+  // Composite efficiency score (0-100)
+  const efficiencyComponents = [
+    Math.min(workToRestRatio / 2, 1) * 25, // Work:rest ratio (optimal around 2:1)
+    Math.min(movementEfficiency / 10, 1) * 25, // Movement efficiency
+    recoveryEfficiency * 25, // Recovery efficiency
+    paceConsistency * 25 // Pace consistency
+  ];
+  const efficiencyScore = efficiencyComponents.reduce((sum, score) => sum + score, 0);
+
+  metrics.efficiencyMetrics = {
+    workToRestRatio,
+    movementEfficiency,
+    recoveryEfficiency,
+    paceConsistency,
+    volumePerActiveMinute,
+    efficiencyScore,
+    formattedWorkToRestRatio: `${workToRestRatio.toFixed(1)}:1`
   };
 
   // Calculate real intensity and efficiency
