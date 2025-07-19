@@ -19,6 +19,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import SaveTemplateSection from "@/components/workouts/SaveTemplateSection";
+import { SmartWorkoutNaming } from "@/components/ai/SmartWorkoutNaming";
+import { useAIWorkoutRecommendations } from "@/hooks/useAIWorkoutRecommendations";
 import { useEffect as useEffectState } from 'react';
 
 export interface WorkoutPageState {
@@ -56,6 +58,12 @@ export const WorkoutCompletePage = () => {
   const [templateDescription, setTemplateDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [workoutName, setWorkoutName] = useState(workoutData?.name || "");
+  
+  // AI-enhanced features
+  const { generateWorkoutNameSuggestions, recordUserFeedback } = useAIWorkoutRecommendations();
+  const [namingSuggestions, setNamingSuggestions] = useState([]);
+  const [loadingNameSuggestions, setLoadingNameSuggestions] = useState(false);
   
   // State from the route transition
   const state = location.state as WorkoutPageState;
@@ -276,6 +284,19 @@ export const WorkoutCompletePage = () => {
           intensity={75} // Default values for required props
           efficiency={80} // Default values for required props
           onComplete={handleSave}
+        />
+        
+        <SmartWorkoutNaming
+          suggestions={namingSuggestions}
+          defaultName={workoutData.name}
+          onNameSelected={setWorkoutName}
+          onFeedback={(suggestionId, action, userChoice) => {
+            if (user?.id) {
+              recordUserFeedback('naming', suggestionId, action, userChoice);
+            }
+          }}
+          loading={loadingNameSuggestions}
+          className="mb-6"
         />
         
         <NotesSection 
