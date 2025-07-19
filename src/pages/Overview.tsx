@@ -10,7 +10,7 @@ import { WorkoutTypeChart } from "@/components/metrics/WorkoutTypeChart";
 import { MuscleGroupChart } from "@/components/metrics/MuscleGroupChart";
 import { TimeOfDayChart } from "@/components/metrics/TimeOfDayChart";
 import { WorkoutDaysChart } from "@/components/metrics/WorkoutDaysChart";
-import { TopExercisesTable } from "@/components/metrics/TopExercisesTable";
+import { TopExercisesTable } from "@/components/workouts/WorkoutsTopExercisesTable";
 import { WorkoutVolumeOverTimeChart } from '@/components/metrics/WorkoutVolumeOverTimeChart';
 import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensityOverTimeChart';
 import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
@@ -93,7 +93,19 @@ const Overview: React.FC = () => {
     {
       title: "Top Exercises",
       icon: Flame,
-      renderComponent: (data: any) => <TopExercisesTable exerciseVolumeHistory={data} />,
+      renderComponent: (data: any) => {
+        console.log('Top Exercises Data:', data); // Debug logging
+        // Transform exerciseVolumeHistory to TopExerciseStats format
+        const topExercises = data.map((exercise: any) => ({
+          exerciseName: exercise.exerciseName || exercise.name,
+          totalVolume: exercise.totalVolume || 0,
+          totalSets: exercise.totalSets || 0,
+          averageWeight: exercise.averageWeight || 0,
+          trend: exercise.trend || 'stable',
+          percentChange: exercise.percentChange || 0
+        }));
+        return <TopExercisesTable exercises={topExercises} />;
+      },
       data: stats.exerciseVolumeHistory || []
     }
   ]), [stats, weightUnit]);
