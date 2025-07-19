@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,22 +36,66 @@ interface CompletedWorkout {
   exercises: Record<string, ExerciseSet[]>;
 }
 
+// Helper function to extract sets from workout store data
+const getExerciseSets = (exerciseData: any): ExerciseSet[] => {
+  if (Array.isArray(exerciseData)) {
+    return exerciseData;
+  }
+  if (exerciseData && exerciseData.sets) {
+    return exerciseData.sets;
+  }
+  return [];
+};
+
 export const WorkoutCompletionEnhanced = () => {
   const navigate = useNavigate();
-  const { completedWorkout, clearWorkout, getExerciseConfig, getWorkoutSummary } = useWorkoutStore();
+  const { 
+    exercises, 
+    startTime, 
+    elapsedTime, 
+    resetSession, 
+    getExerciseDisplayName,
+    isActive,
+    workoutStatus 
+  } = useWorkoutStore();
   const { weightUnit } = useWeightUnit();
   const [showCelebration, setShowCelebration] = useState(true);
+
+  // Check if we have a completed workout based on store state
+  const hasCompletedWorkout = workoutStatus === 'saved' || (!isActive && Object.keys(exercises).length > 0);
+  
+  // Create completed workout data from store
+  const completedWorkout: CompletedWorkout | null = useMemo(() => {
+    if (!hasCompletedWorkout || !startTime) return null;
+    
+    const exerciseData: Record<string, ExerciseSet[]> = {};
+    Object.entries(exercises).forEach(([name, data]) => {
+      const sets = getExerciseSets(data);
+      exerciseData[name] = sets.map(set => ({
+        weight: set.weight || 0,
+        reps: set.reps || 0,
+        completed: set.completed || false,
+        restTime: set.restTime || 60
+      }));
+    });
+
+    return {
+      startTime: new Date(startTime).getTime(),
+      endTime: new Date(startTime).getTime() + (elapsedTime * 1000),
+      exercises: exerciseData
+    };
+  }, [hasCompletedWorkout, startTime, elapsedTime, exercises]);
 
   useEffect(() => {
     if (!completedWorkout) return;
 
     // Clear workout after 5 seconds
     const timer = setTimeout(() => {
-      clearWorkout();
+      resetSession();
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [completedWorkout, clearWorkout]);
+  }, [completedWorkout, resetSession]);
 
   useEffect(() => {
     if (showCelebration) {
@@ -74,7 +119,6 @@ export const WorkoutCompletionEnhanced = () => {
     );
   }
 
-  const summary = getWorkoutSummary();
   const duration = Math.round((completedWorkout.endTime - completedWorkout.startTime) / (1000 * 60));
   
   // Enhanced metrics processing with efficiency calculations
@@ -82,7 +126,7 @@ export const WorkoutCompletionEnhanced = () => {
     return processWorkoutMetrics(
       completedWorkout.exercises,
       duration,
-      weightUnit,
+      weightUnit as 'kg' | 'lb',
       { weight: 70, unit: 'kg' }, // You might want to get this from user profile
       {
         start_time: new Date(completedWorkout.startTime).toISOString(),
@@ -92,8 +136,11 @@ export const WorkoutCompletionEnhanced = () => {
   }, [completedWorkout.exercises, duration, weightUnit]);
 
   const totalSets = Object.values(completedWorkout.exercises).flat().length;
-  const completedSets = Object.values(completedWorkout.exercises).flat().filter(set => set.completed).length;
-  const totalVolume = Object.values(completedWorkout.exercises).flat()
+  const completedSets = Object.values(completedWorkout.exercises)
+    .flat()
+    .filter(set => set.completed).length;
+  const totalVolume = Object.values(completedWorkout.exercises)
+    .flat()
     .filter(set => set.completed)
     .reduce((sum, set) => sum + (set.weight * set.reps), 0);
 
@@ -119,7 +166,6 @@ export const WorkoutCompletionEnhanced = () => {
       )}
       
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 rounded-full">
@@ -131,7 +177,6 @@ export const WorkoutCompletionEnhanced = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          
           <Card className="bg-gray-900/40 border-gray-800/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-white">
@@ -165,7 +210,7 @@ export const WorkoutCompletionEnhanced = () => {
             </CardContent>
           </Card>
 
-          {/* New Enhanced Efficiency Metrics Card */}
+          {/* Enhanced Efficiency Metrics Card */}
           <EfficiencyMetricsCard metrics={processedMetrics} />
         </div>
 
@@ -177,8 +222,7 @@ export const WorkoutCompletionEnhanced = () => {
           <CardContent>
             <ul className="list-none space-y-2">
               {Object.entries(completedWorkout.exercises).map(([exerciseName, sets]) => {
-                const exerciseConfig = getExerciseConfig(exerciseName);
-                const displayName = exerciseConfig?.displayName || exerciseName;
+                const displayName = getExerciseDisplayName(exerciseName);
                 const completedSetsCount = sets.filter(set => set.completed).length;
                 return (
                   <li key={exerciseName} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
@@ -255,7 +299,6 @@ export const WorkoutCompletionEnhanced = () => {
           </CardContent>
         </Card>
 
-        
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             onClick={() => navigate('/')}
