@@ -6,18 +6,15 @@ export interface PersonalRecord {
   user_id: string;
   exercise_id: string;
   exercise_name: string;
-  type: 'weight' | 'reps' | 'volume' | 'duration';
+  type: string; // Database returns string, not enum
   value: number;
   unit: string;
   date: string;
   workout_id?: string;
-  previous_record?: {
-    value: number;
-    date: string;
-    improvement: number;
-  };
+  previous_record?: any; // Database returns Json type
   equipment_type: string;
   notes?: string;
+  created_at: string;
 }
 
 export interface PRDetectionResult {

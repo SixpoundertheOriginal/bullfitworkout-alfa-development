@@ -22,20 +22,20 @@ interface LocalExerciseSet {
 }
 
 export interface WorkoutCompletionEnhancedProps {
-  exercises: Record<string, LocalExerciseSet[]>;
-  duration: number;
-  intensity: number;
-  efficiency: number;
-  onComplete: () => void;
+  exercises?: Record<string, LocalExerciseSet[]>;
+  duration?: number;
+  intensity?: number;
+  efficiency?: number;
+  onComplete?: () => void;
 }
 
 export const WorkoutCompletionEnhanced = ({
-  exercises,
-  duration,
-  intensity,
-  efficiency,
-  onComplete
-}: WorkoutCompletionEnhancedProps) => {
+  exercises = {},
+  duration = 0,
+  intensity = 0,
+  efficiency = 0,
+  onComplete = () => {}
+}: WorkoutCompletionEnhancedProps = {}) => {
   const { weightUnit } = useWeightUnit();
   const { resetSession } = useWorkoutStore();
   const navigate = useNavigate();
