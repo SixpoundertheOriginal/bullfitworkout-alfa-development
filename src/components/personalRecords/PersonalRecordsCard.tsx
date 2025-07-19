@@ -2,13 +2,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp, Calendar, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, TrendingUp, Calendar, Award, RefreshCw } from "lucide-react";
 import { usePersonalRecords } from "@/hooks/usePersonalRecords";
+import { usePRBootstrap } from "@/hooks/usePRBootstrap";
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const PersonalRecordsCard: React.FC = () => {
   const { recentRecords, isLoading } = usePersonalRecords();
+  const { runBootstrap, isBootstrapping } = usePRBootstrap();
   const { weightUnit } = useWeightUnit();
 
   const getPRIcon = (type: string) => {
@@ -76,10 +79,24 @@ export const PersonalRecordsCard: React.FC = () => {
   return (
     <Card className="bg-gray-900 border-gray-800">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-400" />
-          Recent Personal Records
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-yellow-400" />
+            Recent Personal Records
+          </CardTitle>
+          {recentRecords.length === 0 && (
+            <Button
+              onClick={runBootstrap}
+              disabled={isBootstrapping}
+              size="sm"
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isBootstrapping ? 'animate-spin' : ''}`} />
+              {isBootstrapping ? 'Calculating...' : 'Calculate PRs'}
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {displayRecords.length > 0 ? (
@@ -118,7 +135,7 @@ export const PersonalRecordsCard: React.FC = () => {
           <div className="text-center py-8">
             <Trophy className="h-12 w-12 text-gray-600 mx-auto mb-3" />
             <p className="text-gray-400 text-sm">No personal records yet</p>
-            <p className="text-gray-500 text-xs mt-1">Complete workouts to start tracking PRs!</p>
+            <p className="text-gray-500 text-xs mt-1">Click "Calculate PRs" to populate from your workout history!</p>
           </div>
         )}
       </CardContent>

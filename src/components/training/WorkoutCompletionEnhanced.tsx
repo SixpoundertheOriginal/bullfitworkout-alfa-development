@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { IntelligentMetricsDisplay } from '@/components/metrics/IntelligentMetricsDisplay';
@@ -62,41 +61,60 @@ export const WorkoutCompletionEnhanced = ({
   // Detect PRs on component mount
   useEffect(() => {
     const detectAllPRs = async () => {
+      console.log('🎯 Starting PR detection for workout completion...');
       const prResults: Record<string, PRDetectionResult[]> = {};
       const celebrationStates: Record<string, boolean> = {};
 
       for (const [exerciseName, sets] of Object.entries(exercises)) {
         const completedSets = sets.filter(set => set.completed);
-        if (completedSets.length === 0) continue;
+        if (completedSets.length === 0) {
+          console.log(`⏭️ Skipping ${exerciseName} - no completed sets`);
+          continue;
+        }
 
-        // Find the best set for PR detection (highest weight * reps)
-        const bestSet = completedSets.reduce((best, current) => {
-          const bestVolume = best.weight * best.reps;
-          const currentVolume = current.weight * current.reps;
-          return currentVolume > bestVolume ? current : best;
-        });
+        console.log(`🔍 Checking PRs for ${exerciseName} with ${completedSets.length} completed sets`);
 
-        try {
-          const prs = await detectPRs.mutateAsync({
-            exerciseName,
-            weight: bestSet.weight,
-            reps: bestSet.reps
-          });
+        // Check each completed set for PRs
+        for (const set of completedSets) {
+          try {
+            const prs = await detectPRs.mutateAsync({
+              exerciseName,
+              weight: set.weight,
+              reps: set.reps
+            });
 
-          if (prs.some(pr => pr.isNewPR)) {
-            prResults[exerciseName] = prs;
-            celebrationStates[exerciseName] = true;
+            if (prs.some(pr => pr.isNewPR)) {
+              if (!prResults[exerciseName]) {
+                prResults[exerciseName] = [];
+              }
+              
+              // Merge PRs, keeping the best ones
+              prs.forEach(newPR => {
+                if (newPR.isNewPR) {
+                  const existingPR = prResults[exerciseName].find(pr => pr.prType === newPR.prType);
+                  if (!existingPR || newPR.currentValue > existingPR.currentValue) {
+                    prResults[exerciseName] = prResults[exerciseName].filter(pr => pr.prType !== newPR.prType);
+                    prResults[exerciseName].push(newPR);
+                  }
+                }
+              });
+              
+              celebrationStates[exerciseName] = true;
+            }
+          } catch (error) {
+            console.error(`❌ Error detecting PRs for ${exerciseName}:`, error);
           }
-        } catch (error) {
-          console.error(`Error detecting PRs for ${exerciseName}:`, error);
         }
       }
 
+      console.log('✅ PR detection complete:', prResults);
       setDetectedPRs(prResults);
       setShowPRCelebration(celebrationStates);
     };
 
-    detectAllPRs();
+    if (Object.keys(exercises).length > 0) {
+      detectAllPRs();
+    }
   }, [exercises, detectPRs]);
   
   const handleDiscard = () => {
@@ -114,6 +132,8 @@ export const WorkoutCompletionEnhanced = ({
   };
 
   const handleComplete = async () => {
+    console.log('💾 Saving PRs before workout completion...');
+    
     // Save all detected PRs before completing workout
     for (const [exerciseName, prs] of Object.entries(detectedPRs)) {
       if (prs.some(pr => pr.isNewPR)) {
@@ -123,8 +143,9 @@ export const WorkoutCompletionEnhanced = ({
             prResults: prs,
             equipmentType: 'barbell' // Could be made dynamic based on exercise
           });
+          console.log(`✅ Saved PRs for ${exerciseName}`);
         } catch (error) {
-          console.error(`Error saving PRs for ${exerciseName}:`, error);
+          console.error(`❌ Error saving PRs for ${exerciseName}:`, error);
         }
       }
     }
@@ -138,6 +159,11 @@ export const WorkoutCompletionEnhanced = ({
       toast({
         title: `🎉 ${totalPRs} New Personal Record${totalPRs > 1 ? 's' : ''}!`,
         description: "Your progress has been recorded"
+      });
+    } else {
+      toast({
+        title: "Workout Complete! 💪",
+        description: "Great work - keep pushing for those PRs!"
       });
     }
 
