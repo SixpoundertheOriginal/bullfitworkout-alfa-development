@@ -57,11 +57,7 @@ export interface WorkoutStats {
     };
   };
   muscleFocus?: Record<string, number>;
-  exerciseVolumeHistory?: Array<{
-    exercise_name: string;
-    trend: 'increasing' | 'decreasing' | 'stable' | 'fluctuating';
-    percentChange: number;
-  }>;
+  exerciseVolumeHistory?: TopExerciseStats[];
   lastWorkoutDate?: string;
   efficiency?: number;
   density?: number;

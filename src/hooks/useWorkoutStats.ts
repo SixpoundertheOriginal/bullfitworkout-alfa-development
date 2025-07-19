@@ -100,6 +100,12 @@ export function useWorkoutStats(
       const durationByTimeOfDay = { morning:0, afternoon:0, evening:0, night:0 };
       const muscleCounts: Record<string, number> = {};
       const volumeByExercise: Record<string, number> = {};
+      const exerciseStats: Record<string, { 
+        totalVolume: number; 
+        totalSets: number; 
+        totalWeight: number; 
+        weightCount: number; 
+      }> = {};
 
       // Process each session
       sessions.forEach(w => {
@@ -144,8 +150,24 @@ export function useWorkoutStats(
 
           w.exercises.forEach((s: any) => {
             if (s.weight && s.reps && s.completed) {
+              const volume = s.weight * s.reps;
               volumeByExercise[s.exercise_name] =
-                (volumeByExercise[s.exercise_name] || 0) + s.weight * s.reps;
+                (volumeByExercise[s.exercise_name] || 0) + volume;
+              
+              // Track comprehensive exercise statistics
+              if (!exerciseStats[s.exercise_name]) {
+                exerciseStats[s.exercise_name] = {
+                  totalVolume: 0,
+                  totalSets: 0,
+                  totalWeight: 0,
+                  weightCount: 0
+                };
+              }
+              
+              exerciseStats[s.exercise_name].totalVolume += volume;
+              exerciseStats[s.exercise_name].totalSets += 1;
+              exerciseStats[s.exercise_name].totalWeight += s.weight;
+              exerciseStats[s.exercise_name].weightCount += 1;
             }
           });
         }
@@ -169,14 +191,17 @@ export function useWorkoutStats(
 
       const progressMetrics = { volumeChangePercentage:0, strengthTrend:'stable' as const, consistencyScore:0 };
 
-      const exerciseVolumeHistory = Object.entries(volumeByExercise)
-        .map(([exercise_name, volume]) => ({
-          exercise_name,
-          trend:'stable' as const,
-          percentChange:0
+      const exerciseVolumeHistory = Object.entries(exerciseStats)
+        .map(([exerciseName, stats]) => ({
+          exerciseName,
+          totalVolume: stats.totalVolume,
+          totalSets: stats.totalSets,
+          averageWeight: stats.weightCount > 0 ? stats.totalWeight / stats.weightCount : 0,
+          trend: 'stable' as const,
+          percentChange: 0
         }))
-        .sort((a,b) => b.percentChange - a.percentChange)
-        .slice(0,5);
+        .sort((a, b) => b.totalVolume - a.totalVolume)
+        .slice(0, 10);
 
       const lastWorkoutDate = sessions[0]?.start_time;
 

@@ -281,9 +281,9 @@ export function InsightsDashboard({ stats, className = "" }: InsightsDashboardPr
                   : 'Stable';
               
               return (
-                <div key={exercise.exercise_name} className="p-3 bg-gray-800/60 rounded-lg">
+                <div key={exercise.exerciseName} className="p-3 bg-gray-800/60 rounded-lg">
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm font-medium">{exercise.exercise_name}</span>
+                    <span className="text-sm font-medium">{exercise.exerciseName}</span>
                     <span className={`text-xs font-medium ${trendColor}`}>{percentText}</span>
                   </div>
                   <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">

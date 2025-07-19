@@ -95,16 +95,7 @@ const Overview: React.FC = () => {
       icon: Flame,
       renderComponent: (data: any) => {
         console.log('Top Exercises Data:', data); // Debug logging
-        // Transform exerciseVolumeHistory to TopExerciseStats format
-        const topExercises = data.map((exercise: any) => ({
-          exerciseName: exercise.exerciseName || exercise.name,
-          totalVolume: exercise.totalVolume || 0,
-          totalSets: exercise.totalSets || 0,
-          averageWeight: exercise.averageWeight || 0,
-          trend: exercise.trend || 'stable',
-          percentChange: exercise.percentChange || 0
-        }));
-        return <TopExercisesTable exercises={topExercises} />;
+        return <TopExercisesTable exercises={data} />;
       },
       data: stats.exerciseVolumeHistory || []
     }
