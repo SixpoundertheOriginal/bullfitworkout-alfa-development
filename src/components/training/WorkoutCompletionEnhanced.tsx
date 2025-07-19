@@ -123,8 +123,26 @@ export const WorkoutCompletionEnhanced = () => {
   
   // Enhanced metrics processing with efficiency calculations
   const processedMetrics = useMemo(() => {
+    // Transform store ExerciseSet format to database ExerciseSet format
+    const transformedExercises: Record<string, import('@/types/exercise').ExerciseSet[]> = {};
+    
+    Object.entries(completedWorkout.exercises).forEach(([exerciseName, exerciseData]) => {
+      const sets = exerciseData; // exerciseData is already ExerciseSet[] from CompletedWorkout interface
+      transformedExercises[exerciseName] = sets.map((set, index) => ({
+        id: `${exerciseName}-${index}`,
+        workout_id: 'temp-id',
+        exercise_name: exerciseName,
+        weight: set.weight,
+        reps: set.reps,
+        completed: set.completed,
+        set_number: index + 1,
+        rest_time: set.restTime,
+        created_at: new Date().toISOString(),
+      }));
+    });
+    
     return processWorkoutMetrics(
-      completedWorkout.exercises,
+      transformedExercises,
       duration,
       weightUnit as 'kg' | 'lb',
       { weight: 70, unit: 'kg' }, // You might want to get this from user profile
