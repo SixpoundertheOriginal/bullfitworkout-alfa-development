@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -13,7 +14,6 @@ import { Loader2, Plus } from "lucide-react";
 import { Exercise } from "@/types/exercise";
 import { useSound } from "@/hooks/useSound";
 import { RestTimer } from "@/components/RestTimer";
-import { adaptExerciseSets, adaptToStoreFormat } from "@/utils/exerciseAdapter";
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -46,28 +46,14 @@ const TrainingSessionPage = () => {
     getExerciseConfig
   } = useWorkoutStore();
   
-  // Convert store exercises to the format expected by components
-  const exercises = React.useMemo(() => {
-    const converted: Record<string, any[]> = {};
-    
-    Object.entries(storeExercises).forEach(([name, data]) => {
-      if (Array.isArray(data)) {
-        // Legacy format: just sets array
-        converted[name] = data;
-      } else {
-        // New format: WorkoutExerciseConfig
-        converted[name] = data.sets || [];
-      }
-    });
-    
-    return converted;
-  }, [storeExercises]);
-  
-  const [completedSets, totalSets] = Object.entries(exercises).reduce(
-    ([completed, total], [_, sets]) => [
-      completed + sets.filter(s => s.completed).length,
-      total + sets.length
-    ],
+  const [completedSets, totalSets] = Object.entries(storeExercises).reduce(
+    ([completed, total], [_, data]) => {
+      const sets = Array.isArray(data) ? data : data.sets;
+      return [
+        completed + sets.filter(s => s.completed).length,
+        total + sets.length
+      ];
+    },
     [0, 0]
   );
 
@@ -80,17 +66,17 @@ const TrainingSessionPage = () => {
   const [restTimerResetSignal, setRestTimerResetSignal] = useState(0);
   const [pageLoaded, setPageLoaded] = useState(false);
 
-  const exerciseCount = Object.keys(exercises).length;
+  const exerciseCount = Object.keys(storeExercises).length;
   const hasExercises = exerciseCount > 0;
   
   useEffect(() => { setPageLoaded(true); }, []);
 
   useEffect(() => {
-    if (Object.keys(exercises).length > 0 && workoutStatus === 'saving') {
+    if (Object.keys(storeExercises).length > 0 && workoutStatus === 'saving') {
       setIsSaving(false);
       if (isActive) setWorkoutStatus('active');
     }
-  }, [exercises, workoutStatus, isActive, setWorkoutStatus]);
+  }, [storeExercises, workoutStatus, isActive, setWorkoutStatus]);
 
   useEffect(() => {
     if (location.pathname === '/training-session') {
@@ -269,40 +255,6 @@ const TrainingSessionPage = () => {
     );
   }
 
-  // Set up the adapter function to convert between the different exercise formats
-  const handleSetExercises = (updatedExercises) => {
-    if (typeof updatedExercises === 'function') {
-      setStoreExercises(prev => {
-        const converted = {};
-        const adapted = updatedExercises(exercises);
-        
-        Object.entries(adapted).forEach(([name, sets]) => {
-          const existingConfig = getExerciseConfig(name);
-          if (existingConfig && !Array.isArray(existingConfig)) {
-            // Preserve enhanced configuration
-            converted[name] = { ...existingConfig, sets };
-          } else {
-            // Legacy format
-            converted[name] = sets;
-          }
-        });
-        
-        return converted;
-      });
-    } else {
-      const converted = {};
-      Object.entries(updatedExercises).forEach(([name, sets]) => {
-        const existingConfig = getExerciseConfig(name);
-        if (existingConfig && !Array.isArray(existingConfig)) {
-          converted[name] = { ...existingConfig, sets };
-        } else {
-          converted[name] = sets;
-        }
-      });
-      setStoreExercises(converted);
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
       <main className="flex-1 overflow-auto">
@@ -342,7 +294,7 @@ const TrainingSessionPage = () => {
           </div>
           
           <ExerciseList
-            exercises={exercises}
+            exercises={storeExercises}
             activeExercise={activeExercise}
             onAddSet={handleAddSet}
             onCompleteSet={handleCompleteSet}
@@ -509,7 +461,7 @@ const TrainingSessionPage = () => {
             onShowRestTimer={handleShowRestTimer}
             onResetRestTimer={triggerRestTimerReset}
             onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
-            setExercises={handleSetExercises}
+            setExercises={setStoreExercises}
           />
 
           <div className="mt-8 mb-16 px-4">
