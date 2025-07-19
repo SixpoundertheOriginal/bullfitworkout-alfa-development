@@ -341,7 +341,7 @@ export class PersonalRecordsService {
   }
 
   /**
-   * Save new personal records to the database
+   * Save new personal records to the database using upsert to handle duplicates
    */
   static async savePersonalRecords(
     userId: string,
@@ -354,7 +354,7 @@ export class PersonalRecordsService {
       try {
         const { error } = await supabase
           .from('personal_records')
-          .insert({
+          .upsert({
             user_id: userId,
             exercise_id: exerciseName.toLowerCase().replace(/\s+/g, '_'),
             exercise_name: exerciseName,
@@ -369,15 +369,20 @@ export class PersonalRecordsService {
               date: new Date().toISOString(),
               improvement: pr.improvement || 0
             } : null
+          }, {
+            onConflict: 'user_id,exercise_name,type',
+            ignoreDuplicates: false
           });
 
         if (error) {
           console.error('Error saving personal record:', error);
+          throw error; // Re-throw for proper error handling
         } else {
           console.log(`💾 Saved ${pr.prType} PR: ${pr.currentValue}`);
         }
       } catch (error) {
         console.error('Error in savePersonalRecords:', error);
+        // Don't re-throw to prevent page refresh - just log the error
       }
     }
   }
