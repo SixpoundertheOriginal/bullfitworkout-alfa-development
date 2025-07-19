@@ -16,6 +16,8 @@ import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensity
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { useDateRange } from '@/context/DateRangeContext';
 import { useProcessWorkoutMetrics } from '@/hooks/useProcessWorkoutMetrics';
+import { InsightsPanel } from "@/components/ai/InsightsPanel";
+import { useAIWorkoutRecommendations } from "@/hooks/useAIWorkoutRecommendations";
 
 const Overview: React.FC = () => {
   const { user } = useAuth();
@@ -34,6 +36,16 @@ const Overview: React.FC = () => {
     volumeStats,
     densityStats
   } = useProcessWorkoutMetrics(workouts, weightUnit);
+
+  // AI-enhanced insights
+  const { insights, generateWorkoutInsights, loading: insightsLoading } = useAIWorkoutRecommendations();
+
+  // Generate insights when component mounts or workouts change
+  useEffect(() => {
+    if (workouts.length > 0) {
+      generateWorkoutInsights();
+    }
+  }, [workouts.length, generateWorkoutInsights]);
 
   // Refetch on date range change
   useEffect(() => {
@@ -97,6 +109,18 @@ const Overview: React.FC = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
             Workout Overview
           </h1>
+        </div>
+
+        {/* AI Insights Panel - Featured prominently at the top */}
+        <div className="mb-8">
+          <InsightsPanel 
+            insights={insights}
+            loading={insightsLoading}
+            onInsightAction={(insightId, action) => {
+              console.log('🎯 Insight action:', { insightId, action });
+              // Future: Implement insight action handling (mark helpful, apply suggestion, etc.)
+            }}
+          />
         </div>
 
         {/* Volume over time - Premium styled */}

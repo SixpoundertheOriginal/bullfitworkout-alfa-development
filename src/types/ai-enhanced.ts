@@ -28,7 +28,7 @@ export interface WorkoutNameSuggestion {
   name: string;
   reasoning: string;
   confidence: number;
-  style: 'descriptive' | 'motivational' | 'technical' | 'simple';
+  style: 'descriptive' | 'motivational' | 'technical' | 'simple' | 'creative';
   category: 'exercise-based' | 'muscle-based' | 'performance-based' | 'time-based';
 }
 
@@ -75,7 +75,7 @@ export interface UserFeedback {
 }
 
 export interface NamingStrategy {
-  style: 'descriptive' | 'motivational' | 'technical' | 'simple';
+  style: 'descriptive' | 'motivational' | 'technical' | 'simple' | 'creative';
   patterns: {
     exerciseBased: string[];
     muscleBased: string[];

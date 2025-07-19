@@ -58,16 +58,17 @@ export const WorkoutCompletePage = () => {
   const [templateDescription, setTemplateDescription] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  
+  // State from the route transition - must be before workoutName usage
+  const state = location.state as WorkoutPageState;
+  const workoutData = state?.workoutData;
+  
   const [workoutName, setWorkoutName] = useState(workoutData?.name || "");
   
   // AI-enhanced features
   const { generateWorkoutNameSuggestions, recordUserFeedback } = useAIWorkoutRecommendations();
   const [namingSuggestions, setNamingSuggestions] = useState([]);
   const [loadingNameSuggestions, setLoadingNameSuggestions] = useState(false);
-  
-  // State from the route transition
-  const state = location.state as WorkoutPageState;
-  const workoutData = state?.workoutData;
   
   // Initialize the workout save hook with the proper data
   const {
@@ -113,6 +114,57 @@ export const WorkoutCompletePage = () => {
       setTemplateName(workoutData.name || "My Workout");
     }
   }, [workoutData]);
+
+  // Generate AI suggestions when page loads
+  useEffect(() => {
+    const generateSuggestions = async () => {
+      if (workoutData && user?.id) {
+        setLoadingNameSuggestions(true);
+        try {
+          // Create exercise sets from workout data for AI analysis
+          const exerciseSets = Object.entries(workoutData.exercises || {}).flatMap(([exerciseName, sets]) => 
+            (sets as any[]).map((set, index) => ({
+              id: `temp-${exerciseName}-${index}`,
+              exercise_name: exerciseName,
+              weight: set.weight || 0,
+              reps: set.reps || 0,
+              completed: set.completed || true,
+              set_number: index + 1,
+              workout_id: 'temp',
+              created_at: new Date().toISOString(),
+              rest_time: set.rest_time || 60
+            }))
+           );
+
+          // Create a proper WorkoutSession object for AI analysis
+          const workoutSession = {
+            id: 'temp-id',
+            user_id: user.id,
+            name: workoutData.name,
+            training_type: workoutData.trainingType,
+            start_time: workoutData.startTime.toISOString(),
+            end_time: workoutData.endTime.toISOString(),
+            duration: workoutData.duration,
+            notes: workoutData.notes || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            is_historical: false,
+            logged_at: new Date().toISOString(),
+            metadata: workoutData.metadata || {}
+          };
+
+          const suggestions = await generateWorkoutNameSuggestions(workoutSession, exerciseSets);
+          setNamingSuggestions(suggestions);
+        } catch (error) {
+          console.error('Failed to generate AI suggestions:', error);
+        } finally {
+          setLoadingNameSuggestions(false);
+        }
+      }
+    };
+
+    generateSuggestions();
+  }, [workoutData, user?.id, generateWorkoutNameSuggestions]);
 
   // Back button handler
   const handleBack = () => {

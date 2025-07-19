@@ -1,15 +1,21 @@
 import { WorkoutSession, ExerciseSet } from '@/types/workout';
 import { WorkoutNameSuggestion, UserTrainingProfile, NamingStrategy, UserFeedback } from '@/types/ai-enhanced';
 import { supabase } from '@/integrations/supabase/client';
+import { OpenAIService } from './openAIService';
 
 export class SmartNamingService {
   private static instance: SmartNamingService;
+  private openAIService: OpenAIService;
   
   static getInstance(): SmartNamingService {
     if (!SmartNamingService.instance) {
       SmartNamingService.instance = new SmartNamingService();
     }
     return SmartNamingService.instance;
+  }
+
+  constructor() {
+    this.openAIService = OpenAIService.getInstance();
   }
 
   async generateNameSuggestions(
@@ -21,8 +27,29 @@ export class SmartNamingService {
     
     try {
       const workoutAnalysis = this.analyzeWorkout(workout, exerciseSets);
-      const namingStrategy = await this.getNamingStrategy(userProfile);
       
+      // Try AI-powered suggestions first
+      if (this.openAIService.isAvailable()) {
+        try {
+          const aiSuggestions = await this.generateAISuggestions(workoutAnalysis, userProfile);
+          if (aiSuggestions.length > 0) {
+            // Supplement with rule-based suggestions for variety
+            const namingStrategy = await this.getNamingStrategy(userProfile);
+            const ruleSuggestions = this.generateRuleBasedSuggestions(workoutAnalysis, namingStrategy);
+            const combinedSuggestions = [...aiSuggestions, ...ruleSuggestions.slice(0, 2)];
+            
+            const responseTime = performance.now() - startTime;
+            this.trackPerformance('generateNameSuggestions', responseTime, combinedSuggestions[0]?.confidence || 0);
+            
+            return combinedSuggestions.slice(0, 5);
+          }
+        } catch (aiError) {
+          console.warn('AI suggestions failed, falling back to rule-based:', aiError);
+        }
+      }
+
+      // Fallback to rule-based suggestions
+      const namingStrategy = await this.getNamingStrategy(userProfile);
       const suggestions: WorkoutNameSuggestion[] = [
         ...this.generateExerciseBasedNames(workoutAnalysis, namingStrategy),
         ...this.generateMuscleBasedNames(workoutAnalysis, namingStrategy),
@@ -334,5 +361,55 @@ export class SmartNamingService {
     
     // Could send to analytics service here
     // analytics.track('ai_performance', { operation, responseTime, confidence });
+  }
+
+  private async generateAISuggestions(workoutAnalysis: any, userProfile?: UserTrainingProfile): Promise<WorkoutNameSuggestion[]> {
+    try {
+      // Convert workout analysis to safe data for OpenAI
+      const safeWorkoutData = {
+        exercises: workoutAnalysis.exerciseNames,
+        duration: workoutAnalysis.duration,
+        training_type: workoutAnalysis.trainingType,
+        muscle_groups: Object.keys(workoutAnalysis.muscleGroups),
+        total_sets: workoutAnalysis.totalSets,
+        avg_weight: workoutAnalysis.avgWeight,
+        is_strength_focused: workoutAnalysis.isStrengthFocused
+      };
+
+      const openaiResponse = await this.openAIService.generateWorkoutNames(safeWorkoutData);
+      
+      // Convert OpenAI response to WorkoutNameSuggestion format
+      return openaiResponse.suggestions.map(suggestion => ({
+        name: suggestion.name,
+        reasoning: suggestion.reasoning,
+        confidence: Math.min(suggestion.confidence, 0.95), // Cap AI confidence slightly below perfect
+        style: suggestion.style,
+        category: this.determineCategory(suggestion.style)
+      }));
+    } catch (error) {
+      console.error('Failed to generate AI suggestions:', error);
+      return [];
+    }
+  }
+
+  private generateRuleBasedSuggestions(workoutAnalysis: any, strategy: NamingStrategy): WorkoutNameSuggestion[] {
+    const suggestions: WorkoutNameSuggestion[] = [
+      ...this.generateExerciseBasedNames(workoutAnalysis, strategy),
+      ...this.generateMuscleBasedNames(workoutAnalysis, strategy),
+      ...this.generatePerformanceBasedNames(workoutAnalysis, strategy),
+      ...this.generateTimeBasedNames(workoutAnalysis, strategy)
+    ];
+
+    return suggestions.sort((a, b) => b.confidence - a.confidence);
+  }
+
+  private determineCategory(style: string): 'exercise-based' | 'muscle-based' | 'performance-based' | 'time-based' {
+    switch (style) {
+      case 'technical': return 'exercise-based';
+      case 'motivational': return 'performance-based';
+      case 'descriptive': return 'muscle-based';
+      case 'creative': return 'time-based';
+      default: return 'exercise-based';
+    }
   }
 }
