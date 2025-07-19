@@ -275,7 +275,7 @@ export class PersonalRecordsService {
             data.volume > best.volume ? { workoutId, ...data } : best
           , { workoutId: '', volume: 0, date: '' });
 
-        // Save PRs to database
+        // Save PRs to database - set workout_id to null to avoid foreign key constraint issues
         const prRecords = [
           {
             user_id: userId,
@@ -285,7 +285,7 @@ export class PersonalRecordsService {
             value: prs.maxWeight,
             unit: 'kg',
             date: weightPRSet?.created_at || new Date().toISOString(),
-            workout_id: weightPRSet?.workout_id,
+            workout_id: null, // Set to null to avoid foreign key constraint violation
             equipment_type: 'barbell',
             previous_record: null
           },
@@ -297,7 +297,7 @@ export class PersonalRecordsService {
             value: prs.maxReps,
             unit: 'reps',
             date: repsPRSet?.created_at || new Date().toISOString(),
-            workout_id: repsPRSet?.workout_id,
+            workout_id: null, // Set to null to avoid foreign key constraint violation
             equipment_type: 'barbell',
             previous_record: null
           },
@@ -309,7 +309,7 @@ export class PersonalRecordsService {
             value: prs.maxVolume,
             unit: 'kg',
             date: volumePRWorkout.date,
-            workout_id: volumePRWorkout.workoutId,
+            workout_id: null, // Set to null to avoid foreign key constraint violation
             equipment_type: 'barbell',
             previous_record: null
           }
@@ -362,7 +362,7 @@ export class PersonalRecordsService {
             value: pr.currentValue,
             unit: pr.prType === 'weight' ? 'kg' : pr.prType === 'reps' ? 'reps' : 'kg',
             date: new Date().toISOString(),
-            workout_id: workoutId,
+            workout_id: null, // Set to null to avoid foreign key constraint violation
             equipment_type: equipmentType,
             previous_record: pr.previousBest ? {
               value: pr.previousBest,
