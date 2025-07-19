@@ -17,6 +17,8 @@ export interface BasicWorkoutStats {
   streakDays: number;
   weeklyWorkouts: number;
   weeklyVolume: number;
+  weeklyReps: number;
+  weeklySets: number;
   dailyWorkouts: Record<string, number>;
 }
 
@@ -73,7 +75,7 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
           
         if (periodError) throw periodError;
         
-        // Fetch workout sets for volume calculation
+        // Fetch workout sets for volume, reps, and sets calculation
         let setsQuery = supabase
           .from('exercise_sets')
           .select('*, workout_sessions!inner(*)')
@@ -102,11 +104,21 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
         
         // Calculate weekly volume (weight * reps)
         const weeklyVolume = safeSets.reduce((sum, set) => {
-          if (set.weight && set.reps) {
+          if (set.weight && set.reps && set.completed) {
             return sum + (set.weight * set.reps);
           }
           return sum;
         }, 0);
+        
+        // Calculate weekly reps and sets
+        const weeklyReps = safeSets.reduce((sum, set) => {
+          if (set.reps && set.completed) {
+            return sum + set.reps;
+          }
+          return sum;
+        }, 0);
+        
+        const weeklySets = safeSets.filter(set => set.completed).length;
         
         // Calculate daily workout counts with a consistent day format
         const dailyWorkouts: Record<string, number> = {};
@@ -145,7 +157,9 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
           totalWorkouts,
           periodWorkouts: safePeriodWorkouts.length,
           dailyWorkouts,
-          weeklyVolume
+          weeklyVolume,
+          weeklyReps,
+          weeklySets
         });
         
         return {
@@ -156,6 +170,8 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
           streakDays,
           weeklyWorkouts: safePeriodWorkouts.length,
           weeklyVolume,
+          weeklyReps,
+          weeklySets,
           dailyWorkouts
         };
       } catch (error) {

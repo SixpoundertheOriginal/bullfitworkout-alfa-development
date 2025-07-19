@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
@@ -38,8 +39,22 @@ export const WeeklySummaryStats = React.memo(() => {
 
   const workoutsCount = isLoading ? "..." : stats?.weeklyWorkouts?.toString() || "0";
   const totalVolume = isLoading ? "..." : `${Math.round(stats?.weeklyVolume || 0).toLocaleString()} kg`;
+  const totalReps = isLoading ? "..." : stats?.weeklyReps?.toLocaleString() || "0";
+  const totalSets = isLoading ? "..." : stats?.weeklySets?.toString() || "0";
   const mostActiveDay = getMostActiveDay();
   const dateRangeText = getDateRangeText();
+
+  const cardStyle = {
+    background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+  };
+
+  const innerHighlightStyle = {
+    background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
+    mixBlendMode: 'overlay' as const
+  };
 
   return (
     <div className="space-y-4">
@@ -53,24 +68,16 @@ export const WeeklySummaryStats = React.memo(() => {
         )}
       </div>
 
+      {/* 2x2 Grid for main metrics */}
       <div className="grid grid-cols-2 gap-4">
         {/* Workouts */}
         <div 
           className="p-4 rounded-xl text-start relative overflow-hidden group"
-          style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
-          }}
+          style={cardStyle}
         >
-          {/* Subtle inner highlight */}
           <div 
             className="absolute inset-0 rounded-xl opacity-50"
-            style={{
-              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
-              mixBlendMode: 'overlay'
-            }}
+            style={innerHighlightStyle}
           />
           <div className="relative z-10">
             <div className="flex items-center mb-2">
@@ -85,20 +92,11 @@ export const WeeklySummaryStats = React.memo(() => {
         {/* Total Volume */}
         <div 
           className="p-4 rounded-xl text-start relative overflow-hidden group"
-          style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
-          }}
+          style={cardStyle}
         >
-          {/* Subtle inner highlight */}
           <div 
             className="absolute inset-0 rounded-xl opacity-50"
-            style={{
-              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
-              mixBlendMode: 'overlay'
-            }}
+            style={innerHighlightStyle}
           />
           <div className="relative z-10">
             <div className="flex items-center mb-2">
@@ -115,32 +113,61 @@ export const WeeklySummaryStats = React.memo(() => {
           </div>
         </div>
 
-        {/* Most Active Day - spans both columns */}
+        {/* Total Reps */}
         <div 
-          className="col-span-2 p-4 rounded-xl text-start relative overflow-hidden group"
-          style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
-          }}
+          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          style={cardStyle}
         >
-          {/* Subtle inner highlight */}
           <div 
             className="absolute inset-0 rounded-xl opacity-50"
-            style={{
-              background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
-              mixBlendMode: 'overlay'
-            }}
+            style={innerHighlightStyle}
           />
           <div className="relative z-10">
             <div className="flex items-center mb-2">
-              <span className="text-lg mr-2">🔥</span>
-              <span className="text-sm text-muted-foreground">Most Active Day</span>
+              <span className="text-lg mr-2">💪</span>
+              <span className="text-sm text-muted-foreground">Total Reps</span>
             </div>
-            <div className="text-xl font-semibold">{mostActiveDay}</div>
-            <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
+            <div className="text-xl font-semibold">{totalReps}</div>
+            <div className="text-xs text-muted-foreground opacity-80">Repetitions</div>
           </div>
+        </div>
+
+        {/* Total Sets */}
+        <div 
+          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          style={cardStyle}
+        >
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={innerHighlightStyle}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center mb-2">
+              <span className="text-lg mr-2">📊</span>
+              <span className="text-sm text-muted-foreground">Total Sets</span>
+            </div>
+            <div className="text-xl font-semibold">{totalSets}</div>
+            <div className="text-xs text-muted-foreground opacity-80">Sets completed</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Most Active Day - spans full width */}
+      <div 
+        className="p-4 rounded-xl text-start relative overflow-hidden group"
+        style={cardStyle}
+      >
+        <div 
+          className="absolute inset-0 rounded-xl opacity-50"
+          style={innerHighlightStyle}
+        />
+        <div className="relative z-10">
+          <div className="flex items-center mb-2">
+            <span className="text-lg mr-2">🔥</span>
+            <span className="text-sm text-muted-foreground">Most Active Day</span>
+          </div>
+          <div className="text-xl font-semibold">{mostActiveDay}</div>
+          <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
         </div>
       </div>
     </div>
