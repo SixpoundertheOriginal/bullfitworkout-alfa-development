@@ -28,7 +28,7 @@ export interface WorkoutBadge {
   icon: string;
 }
 
-export interface EnhancedWorkoutCard extends WorkoutSession {
+export interface EnhancedWorkoutData extends WorkoutSession {
   metrics: EnhancedWorkoutMetrics;
   quality: WorkoutQualityIndicators;
   exercisePreview: ExercisePreview[];
@@ -46,8 +46,8 @@ export interface ExercisePreview {
 }
 
 export interface WorkoutComparisonData {
-  current: EnhancedWorkoutCard;
-  previous?: EnhancedWorkoutCard;
+  current: EnhancedWorkoutData;
+  previous?: EnhancedWorkoutData;
   improvements: {
     volume: number;
     strength: number;

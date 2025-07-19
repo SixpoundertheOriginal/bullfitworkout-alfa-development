@@ -25,14 +25,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { EnhancedWorkoutCard as EnhancedWorkoutCardType } from '@/types/workout-enhanced';
+import { EnhancedWorkoutData } from '@/types/workout-enhanced';
 import { trainingTypes } from '@/constants/trainingTypes';
 import { useWeightUnit } from '@/context/WeightUnitContext';
 import { formatWeightWithUnit } from '@/utils/unitConversion';
 import { cn } from '@/lib/utils';
 
 interface EnhancedWorkoutCardProps {
-  workout: EnhancedWorkoutCardType;
+  workout: EnhancedWorkoutData;
   onView?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onDelete?: (id: string) => void;

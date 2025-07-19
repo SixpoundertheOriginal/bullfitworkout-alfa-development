@@ -4,7 +4,7 @@ import { useWorkoutHistory, WorkoutHistoryFilters } from '@/hooks/useWorkoutHist
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  EnhancedWorkoutCard, 
+  EnhancedWorkoutData, 
   EnhancedWorkoutMetrics, 
   WorkoutQualityIndicators,
   WorkoutBadge,
@@ -44,7 +44,7 @@ export function useEnhancedWorkoutHistory(filters: WorkoutManagementFilters) {
       if (error) throw error;
 
       // Process each workout into enhanced format
-      const enhanced: EnhancedWorkoutCard[] = workouts.map(workout => {
+      const enhanced: EnhancedWorkoutData[] = workouts.map(workout => {
         const workoutSets = exerciseSets?.filter(set => set.workout_id === workout.id) || [];
         const metrics = calculateWorkoutMetrics(workoutSets, workout.duration);
         const quality = assessWorkoutQuality(workoutSets, workout, exerciseCounts[workout.id]);
@@ -206,10 +206,10 @@ function createExercisePreview(exerciseSets: any[]): ExercisePreview[] {
     return groups;
   }, {} as Record<string, any[]>);
 
-  return Object.entries(exerciseGroups).map(([name, sets]) => {
-    const completedSets = sets.filter(set => set.completed);
-    const reps = completedSets.map(set => set.reps);
-    const weights = completedSets.map(set => set.weight);
+  return Object.entries(exerciseGroups).map(([name, sets]: [string, any[]]) => {
+    const completedSets = sets.filter((set: any) => set.completed);
+    const reps = completedSets.map((set: any) => set.reps);
+    const weights = completedSets.map((set: any) => set.weight);
 
     return {
       name,

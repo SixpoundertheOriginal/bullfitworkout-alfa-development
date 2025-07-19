@@ -27,7 +27,7 @@ export const WorkoutManagementPage = () => {
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedWorkouts, setSelectedWorkouts] = useState<string[]>([]);
+  const [selectedWorkouts, setSelectedWorkouts] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   // Data fetching
@@ -72,21 +72,26 @@ export const WorkoutManagementPage = () => {
   };
 
   const handleWorkoutSelect = (id: string, selected: boolean) => {
-    if (selected) {
-      setSelectedWorkouts(prev => [...prev, id]);
-    } else {
-      setSelectedWorkouts(prev => prev.filter(workoutId => workoutId !== id));
-    }
+    setSelectedWorkouts(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedWorkouts.length} selected workouts?`)) return;
+    const selectedArray = Array.from(selectedWorkouts);
+    if (!window.confirm(`Delete ${selectedArray.length} selected workouts?`)) return;
     
     try {
-      setDeletingIds(selectedWorkouts);
-      await Promise.all(selectedWorkouts.map(id => deleteWorkout(id)));
-      toast({ title: `${selectedWorkouts.length} workouts deleted` });
-      setSelectedWorkouts([]);
+      setDeletingIds(selectedArray);
+      await Promise.all(selectedArray.map(id => deleteWorkout(id)));
+      toast({ title: `${selectedArray.length} workouts deleted` });
+      setSelectedWorkouts(new Set());
       setSelectionMode(false);
       refetch();
     } catch (error) {
@@ -101,7 +106,7 @@ export const WorkoutManagementPage = () => {
 
   const handleSelectionModeToggle = () => {
     setSelectionMode(!selectionMode);
-    setSelectedWorkouts([]);
+    setSelectedWorkouts(new Set());
   };
 
   // Loading state
@@ -115,7 +120,7 @@ export const WorkoutManagementPage = () => {
           onViewModeChange={setViewMode}
           selectionMode={selectionMode}
           onSelectionModeToggle={handleSelectionModeToggle}
-          selectedCount={selectedWorkouts.length}
+          selectedCount={selectedWorkouts.size}
           onCreateWorkout={handleCreateWorkout}
         />
         
@@ -144,16 +149,16 @@ export const WorkoutManagementPage = () => {
         onViewModeChange={setViewMode}
         selectionMode={selectionMode}
         onSelectionModeToggle={handleSelectionModeToggle}
-        selectedCount={selectedWorkouts.length}
+        selectedCount={selectedWorkouts.size}
         onCreateWorkout={handleCreateWorkout}
       />
 
       {/* Bulk Actions Bar */}
-      {selectionMode && selectedWorkouts.length > 0 && (
+      {selectionMode && selectedWorkouts.size > 0 && (
         <div className="sticky top-32 z-10 bg-purple-900/20 border-y border-purple-500/20 p-3">
           <div className="flex justify-between items-center">
             <span className="text-sm text-purple-300">
-              {selectedWorkouts.length} workout{selectedWorkouts.length !== 1 ? 's' : ''} selected
+              {selectedWorkouts.size} workout{selectedWorkouts.size !== 1 ? 's' : ''} selected
             </span>
             
             <div className="flex gap-2">
@@ -161,8 +166,8 @@ export const WorkoutManagementPage = () => {
                 size="sm" 
                 variant="outline"
                 className="bg-gray-800 border-gray-700"
-                onClick={handleDuplicateWorkout}
-                disabled={selectedWorkouts.length !== 1}
+                onClick={() => handleDuplicateWorkout(Array.from(selectedWorkouts)[0])}
+                disabled={selectedWorkouts.size !== 1}
               >
                 <Copy className="mr-1 h-4 w-4" />
                 Duplicate
@@ -172,8 +177,8 @@ export const WorkoutManagementPage = () => {
                 size="sm" 
                 variant="outline"
                 className="bg-gray-800 border-gray-700"
-                onClick={handleCompareWorkout}
-                disabled={selectedWorkouts.length !== 2}
+                onClick={() => handleCompareWorkout(Array.from(selectedWorkouts)[0])}
+                disabled={selectedWorkouts.size !== 2}
               >
                 <BarChart3 className="mr-1 h-4 w-4" />
                 Compare
@@ -186,7 +191,7 @@ export const WorkoutManagementPage = () => {
                 disabled={deletingIds.length > 0}
               >
                 <Trash2 className="mr-1 h-4 w-4" />
-                Delete ({selectedWorkouts.length})
+                Delete ({selectedWorkouts.size})
               </Button>
             </div>
           </div>
@@ -225,7 +230,7 @@ export const WorkoutManagementPage = () => {
                 onDuplicate={handleDuplicateWorkout}
                 onDelete={handleDeleteWorkout}
                 onCompare={handleCompareWorkout}
-                isSelected={selectedWorkouts.includes(workout.id)}
+                isSelected={selectedWorkouts.has(workout.id)}
                 onSelect={selectionMode ? handleWorkoutSelect : undefined}
                 compact={viewMode === 'list'}
               />

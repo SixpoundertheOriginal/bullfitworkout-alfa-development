@@ -8,6 +8,35 @@ export type WorkoutStatus =
   | 'partial'     // Partially saved
   | 'recovering'; // Attempting recovery
 
+// Export types from Supabase for compatibility
+export type WorkoutSession = {
+  id: string;
+  name: string;
+  training_type: string;
+  start_time: string;
+  end_time: string;
+  duration: number;
+  user_id: string;
+  notes?: string | null;
+  is_historical?: boolean | null;
+  logged_at?: string | null;
+  metadata?: any;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ExerciseSet = {
+  id: string;
+  workout_id: string;
+  exercise_name: string;
+  weight: number;
+  reps: number;
+  completed: boolean;
+  set_number: number;
+  rest_time?: number | null;
+  created_at: string;
+};
+
 export interface WorkoutError {
   type: 'network' | 'database' | 'validation' | 'unknown';
   message: string;
