@@ -13,6 +13,7 @@ import { WorkoutDaysChart } from "@/components/metrics/WorkoutDaysChart";
 import { TopExercisesTable } from "@/components/metrics/TopExercisesTable";
 import { WorkoutVolumeOverTimeChart } from '@/components/metrics/WorkoutVolumeOverTimeChart';
 import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensityOverTimeChart';
+import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { useDateRange } from '@/context/DateRangeContext';
 import { useProcessWorkoutMetrics } from '@/hooks/useProcessWorkoutMetrics';
@@ -121,6 +122,14 @@ const Overview: React.FC = () => {
               // Future: Implement insight action handling (mark helpful, apply suggestion, etc.)
             }}
           />
+        </div>
+
+        {/* Personal Records Card - New addition */}
+        <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-yellow-500/5 pointer-events-none" />
+          <div className="relative z-10">
+            <PersonalRecordsCard />
+          </div>
         </div>
 
         {/* Volume over time - Premium styled */}
