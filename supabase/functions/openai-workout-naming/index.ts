@@ -1,0 +1,194 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface SafeWorkoutData {
+  exercises: string[];
+  totalSets: number;
+  totalReps: number;
+  duration: number;
+  trainingType: string;
+  timestamp: string;
+}
+
+interface OpenAIResponse {
+  suggestions: Array<{
+    id: string;
+    name: string;
+    reasoning: string;
+    style: string;
+    confidence: number;
+  }>;
+  reasoning: string;
+  style: string;
+  confidence: number;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+
+    const { workoutData } = await req.json();
+    console.log('Received workout data:', workoutData);
+
+    const prompt = buildWorkoutNamingPrompt(workoutData);
+    console.log('Generated prompt for OpenAI');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a creative fitness coach that generates inspiring workout names. Always respond with valid JSON matching the exact format requested.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 800,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
+
+    console.log('Raw OpenAI response:', content);
+    const parsedResponse = parseOpenAIResponse(content);
+    console.log('Parsed response:', parsedResponse);
+
+    return new Response(JSON.stringify(parsedResponse), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in openai-workout-naming function:', error);
+    
+    // Return fallback suggestions on error
+    const fallbackResponse: OpenAIResponse = {
+      suggestions: [
+        {
+          id: 'fallback-1',
+          name: `${workoutData?.trainingType || 'Workout'} Session`,
+          reasoning: 'Fallback suggestion due to API error',
+          style: 'descriptive',
+          confidence: 0.5
+        }
+      ],
+      reasoning: 'API unavailable, using fallback',
+      style: 'descriptive',
+      confidence: 0.5
+    };
+
+    return new Response(JSON.stringify(fallbackResponse), {
+      status: 200, // Return 200 so frontend handles gracefully
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
+
+function buildWorkoutNamingPrompt(data: SafeWorkoutData): string {
+  const exerciseList = data.exercises.join(', ');
+  const durationMin = Math.round(data.duration / 60);
+  
+  return `Generate creative workout names for this session:
+
+Exercises: ${exerciseList}
+Training Type: ${data.trainingType}
+Duration: ${durationMin} minutes
+Total Sets: ${data.totalSets}
+Total Reps: ${data.totalReps}
+
+Respond with exactly this JSON format:
+{
+  "suggestions": [
+    {
+      "id": "unique-id-1",
+      "name": "Creative Workout Name",
+      "reasoning": "Why this name fits the workout",
+      "style": "motivational|descriptive|fun|epic",
+      "confidence": 0.95
+    }
+  ],
+  "reasoning": "Overall analysis of the workout",
+  "style": "primary_style_used",
+  "confidence": 0.90
+}
+
+Generate 3-5 diverse, inspiring names that capture the essence of this ${data.trainingType.toLowerCase()} workout. Make them memorable and motivating!`;
+}
+
+function parseOpenAIResponse(content: string): OpenAIResponse {
+  try {
+    // Clean the content to extract JSON
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in response');
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Validate and add IDs if missing
+    if (parsed.suggestions && Array.isArray(parsed.suggestions)) {
+      parsed.suggestions = parsed.suggestions.map((suggestion: any, index: number) => ({
+        id: suggestion.id || `openai-${Date.now()}-${index}`,
+        name: suggestion.name || `Workout ${index + 1}`,
+        reasoning: suggestion.reasoning || 'Generated by AI',
+        style: suggestion.style || 'descriptive',
+        confidence: Math.min(Math.max(suggestion.confidence || 0.7, 0), 1)
+      }));
+    }
+
+    return {
+      suggestions: parsed.suggestions || [],
+      reasoning: parsed.reasoning || 'AI-generated suggestions',
+      style: parsed.style || 'descriptive',
+      confidence: Math.min(Math.max(parsed.confidence || 0.7, 0), 1)
+    };
+  } catch (error) {
+    console.error('Error parsing OpenAI response:', error);
+    
+    // Return a basic parsed response
+    return {
+      suggestions: [{
+        id: `parse-error-${Date.now()}`,
+        name: 'Great Workout',
+        reasoning: 'Parsing error occurred',
+        style: 'descriptive',
+        confidence: 0.5
+      }],
+      reasoning: 'Response parsing failed',
+      style: 'descriptive',
+      confidence: 0.5
+    };
+  }
+}

@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-
 // Privacy-safe data structure for OpenAI
 interface SafeWorkoutData {
   exercises: string[];
@@ -13,20 +11,20 @@ interface SafeWorkoutData {
 
 interface OpenAIResponse {
   suggestions: Array<{
+    id: string;
     name: string;
     reasoning: string;
     style: 'descriptive' | 'motivational' | 'technical' | 'creative';
     confidence: number;
   }>;
+  reasoning: string;
+  confidence: number;
 }
 
 export class OpenAIService {
   private static instance: OpenAIService;
-  private openai: OpenAI | null = null;
   private cache = new Map<string, { data: OpenAIResponse; timestamp: number }>();
   private readonly CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-  private readonly REQUEST_TIMEOUT = 5000; // 5 seconds
-  private readonly MAX_RETRIES = 2;
 
   static getInstance(): OpenAIService {
     if (!OpenAIService.instance) {
@@ -36,22 +34,7 @@ export class OpenAIService {
   }
 
   constructor() {
-    try {
-      // Initialize OpenAI client with API key from environment
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-      
-      if (!apiKey) {
-        console.warn('OpenAI API key not found. AI features will use fallback suggestions.');
-        return;
-      }
-
-      this.openai = new OpenAI({
-        apiKey,
-        dangerouslyAllowBrowser: true // Only for client-side usage
-      });
-    } catch (error) {
-      console.error('Failed to initialize OpenAI service:', error);
-    }
+    console.log('✅ OpenAI service initialized (using edge function)');
   }
 
   async generateWorkoutNames(workoutData: SafeWorkoutData): Promise<OpenAIResponse> {
@@ -63,80 +46,60 @@ export class OpenAIService {
       return cached;
     }
 
-    if (!this.openai) {
-      throw new Error('OpenAI service not available');
-    }
-
-    const sanitizedData = this.sanitizeWorkoutData(workoutData);
-    const prompt = this.buildWorkoutNamingPrompt(sanitizedData);
-
-    let attempt = 0;
-    while (attempt < this.MAX_RETRIES) {
-      try {
-        console.log('🤖 Generating AI workout names...', { attempt: attempt + 1 });
-        
-        const startTime = performance.now();
-        
-        // Create timeout promise
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('OpenAI request timeout')), this.REQUEST_TIMEOUT);
-        });
-
-        // Create OpenAI request promise
-        const openaiPromise = this.openai.chat.completions.create({
-          model: 'gpt-4-turbo-preview',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a creative fitness expert who generates engaging workout names. 
-              You understand different training styles and can create names that match the workout's character.
-              Always respond with valid JSON in the exact format requested.`
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.8,
-          response_format: { type: "json_object" }
-        });
-
-        // Race between timeout and actual request
-        const response = await Promise.race([openaiPromise, timeoutPromise]);
-        
-        const responseTime = performance.now() - startTime;
-        console.log(`✅ OpenAI response received in ${Math.round(responseTime)}ms`);
-
-        const content = response.choices[0]?.message?.content;
-        if (!content) {
-          throw new Error('Empty response from OpenAI');
-        }
-
-        const parsedResponse = this.parseOpenAIResponse(content);
-        
-        // Cache successful response
-        this.cacheResponse(cacheKey, parsedResponse);
-        
-        // Track performance
-        this.trackPerformance('generateWorkoutNames', responseTime, parsedResponse.suggestions.length);
-        
-        return parsedResponse;
-
-      } catch (error) {
-        attempt++;
-        console.warn(`OpenAI attempt ${attempt} failed:`, error);
-        
-        if (attempt >= this.MAX_RETRIES) {
-          throw new Error(`OpenAI service failed after ${this.MAX_RETRIES} attempts: ${error}`);
-        }
-        
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    try {
+      console.log('🚀 Calling OpenAI edge function');
+      const startTime = performance.now();
+      
+      // Import supabase client dynamically
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Call our edge function instead of OpenAI directly
+      const { data, error } = await supabase.functions.invoke('openai-workout-naming', {
+        body: { workoutData: this.sanitizeWorkoutData(workoutData) }
+      });
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
       }
+      
+      if (!data) {
+        throw new Error('No data received from edge function');
+      }
+      
+      const responseTime = performance.now() - startTime;
+      console.log(`✅ OpenAI edge function call successful in ${Math.round(responseTime)}ms`);
+      
+      // Cache successful response
+      this.cacheResponse(cacheKey, data);
+      
+      // Track performance
+      this.trackPerformance('generateWorkoutNames', responseTime, data.suggestions?.length || 0);
+      
+      return data;
+      
+    } catch (error) {
+      console.error('🔥 OpenAI service error:', error);
+      
+      // Return fallback suggestions
+      return this.getFallbackResponse(workoutData);
     }
+  }
 
-    throw new Error('Failed to generate workout names');
+  private getFallbackResponse(workoutData: SafeWorkoutData): OpenAIResponse {
+    return {
+      suggestions: [
+        {
+          id: 'fallback-1',
+          name: `${workoutData.training_type} Session`,
+          reasoning: 'Fallback suggestion due to API unavailability',
+          style: 'descriptive' as const,
+          confidence: 0.5
+        }
+      ],
+      reasoning: 'Using fallback suggestions',
+      confidence: 0.5
+    };
   }
 
   private sanitizeWorkoutData(data: SafeWorkoutData): SafeWorkoutData {
@@ -195,7 +158,8 @@ Respond with valid JSON in this exact format:
       // Validate and clean suggestions
       const validSuggestions = parsed.suggestions
         .filter((s: any) => s.name && s.reasoning && s.style && typeof s.confidence === 'number')
-        .map((s: any) => ({
+        .map((s: any, index: number) => ({
+          id: s.id || `suggestion-${Date.now()}-${index}`,
           name: String(s.name).slice(0, 50), // Limit name length
           reasoning: String(s.reasoning).slice(0, 200), // Limit reasoning length
           style: ['descriptive', 'motivational', 'technical', 'creative'].includes(s.style) 
@@ -208,7 +172,11 @@ Respond with valid JSON in this exact format:
         throw new Error('No valid suggestions in OpenAI response');
       }
 
-      return { suggestions: validSuggestions };
+      return { 
+        suggestions: validSuggestions,
+        reasoning: parsed.reasoning || 'AI-generated suggestions',
+        confidence: parsed.confidence || 0.8
+      };
     } catch (error) {
       console.error('Failed to parse OpenAI response:', error);
       throw new Error('Invalid response format from OpenAI');
@@ -254,8 +222,8 @@ Respond with valid JSON in this exact format:
   }
 
   private trackPerformance(operation: string, responseTime: number, suggestionCount: number): void {
-    if (responseTime > this.REQUEST_TIMEOUT * 0.8) {
-      console.warn(`OpenAI ${operation} took ${Math.round(responseTime)}ms (approaching timeout)`);
+    if (responseTime > 5000) { // 5 second threshold
+      console.warn(`OpenAI ${operation} took ${Math.round(responseTime)}ms (slow response)`);
     }
     
     // Could send to analytics service here
@@ -264,7 +232,7 @@ Respond with valid JSON in this exact format:
 
   // Method to test if service is available
   isAvailable(): boolean {
-    return this.openai !== null;
+    return true; // Always available with edge function
   }
 
   // Method to clear cache (useful for testing)
