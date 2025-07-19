@@ -1,10 +1,8 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
 import { WeeklySummaryStats } from "@/components/WeeklySummaryStats";
 import { ConfigureTrainingDialog } from "@/components/ConfigureTrainingDialog";
-import { ExerciseFAB } from "@/components/ExerciseFAB";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
 import { ExploreSection } from "@/components/ExploreSection";
 import { toast } from "@/hooks/use-toast";
@@ -44,16 +42,7 @@ const Index = () => {
     };
   }, []);
   
-  const [stableFabVisibility, setStableFabVisibility] = useState(true);
   const [showLevelUp, setShowLevelUp] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStableFabVisibility(!isSectionVisible);
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [isSectionVisible]);
 
   // Check for active workout to show continue option
   useEffect(() => {
@@ -125,12 +114,6 @@ const Index = () => {
 
         <section ref={sectionRef} className="mb-40 text-center relative z-10">
           <div style={{ height: "12rem" }} className="relative">
-            <ExerciseFAB 
-              onClick={() => setDialogOpen(true)}
-              visible={stableFabVisibility}
-              className="!bottom-20"
-            />
-
             <div className={cn(
               "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
               isSectionVisible ? "scale-100 opacity-100" : "scale-95 opacity-90"
