@@ -87,7 +87,12 @@ export const WorkoutManagementHeader: React.FC<WorkoutManagementHeaderProps> = (
 
   const clearAllFilters = () => {
     onFiltersChange({
-      dateRange: { from: undefined, to: undefined },
+      dateRange: { 
+        from: undefined, 
+        to: undefined,
+        start: new Date(),
+        end: new Date()
+      },
       trainingTypes: [],
       qualityLevels: [],
       searchQuery: '',

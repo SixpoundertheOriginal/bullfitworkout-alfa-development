@@ -7,6 +7,7 @@ import { ExerciseVolumeMetrics } from './ExerciseVolumeMetrics';
 import { ExerciseActions } from './ExerciseActions';
 import { useExerciseCard } from './hooks/useExerciseCard';
 import { ExerciseSet } from '@/types/workout-enhanced';
+import { ExerciseSet as DatabaseExerciseSet } from '@/types/exercise';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { Badge } from "@/components/ui/badge";
 
@@ -29,6 +30,19 @@ interface WorkoutExerciseCardProps {
   onResetRestTimer: () => void;
   onDeleteExercise: () => void;
 }
+
+// Convert workout state ExerciseSet to database ExerciseSet format
+const convertToDBExerciseSet = (sets: ExerciseSet[], exerciseName: string): DatabaseExerciseSet[] => {
+  return sets.map((set, index) => ({
+    ...set,
+    id: `${exerciseName}-${index}`,
+    set_number: index + 1,
+    exercise_name: exerciseName,
+    workout_id: 'current-workout',
+    restTime: set.restTime || 60,
+    duration: 0,
+  }));
+};
 
 export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) => {
   const {
@@ -142,7 +156,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
         
         <div className="p-4">
           <SetsList
-            sets={sets}
+            sets={convertToDBExerciseSet(sets, exercise)}
             exercise={exercise}
             {...restProps}
           />

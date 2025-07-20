@@ -143,6 +143,13 @@ function calculateWorkoutMetrics(exerciseSets: any[], duration: number): Enhance
     completionRate,
     exerciseVariety,
     workoutDensity,
+    // Add required properties with defaults
+    tonnage: totalVolume,
+    density: workoutDensity,
+    intensity: 0,
+    efficiency: 0,
+    volumeLoad: totalVolume,
+    averageRestTime: 0,
   };
 }
 
@@ -172,7 +179,10 @@ function assessWorkoutQuality(
   
   if (hasIncompleteData) {
     badges.push({
+      id: 'incomplete-data',
       type: 'incomplete',
+      title: 'Incomplete Data',
+      description: 'This workout has incomplete data',
       label: 'Incomplete Data',
       color: '#f59e0b',
       icon: 'AlertTriangle'
@@ -181,7 +191,10 @@ function assessWorkoutQuality(
   
   if (completionRate === 100) {
     badges.push({
+      id: 'workout-complete',
       type: 'progress',
+      title: 'Complete',
+      description: 'This workout was completed successfully',
       label: 'Complete',
       color: '#10b981',
       icon: 'CheckCircle'
@@ -194,6 +207,12 @@ function assessWorkoutQuality(
     qualityScore: Math.round(qualityScore),
     performanceLevel,
     badges,
+    // Add required properties with defaults
+    consistency: 0,
+    progression: 0,
+    balance: 0,
+    recovery: 0,
+    overall: performanceLevel,
   };
 }
 
@@ -210,12 +229,15 @@ function createExercisePreview(exerciseSets: any[]): ExercisePreview[] {
     const completedSets = sets.filter((set: any) => set.completed);
     const reps = completedSets.map((set: any) => set.reps);
     const weights = completedSets.map((set: any) => set.weight);
+    const totalVolume = completedSets.reduce((sum: number, set: any) => sum + (set.weight * set.reps), 0);
 
     return {
       name,
       sets: completedSets.length,
       reps,
+      weight: weights,
       weights,
+      volume: totalVolume,
     };
   }).slice(0, 5); // Show top 5 exercises
 }

@@ -143,6 +143,7 @@ export interface EnhancedWorkoutMetrics {
   totalReps?: number;
   completionRate?: number;
   exerciseVariety?: number;
+  workoutDensity?: number;
 }
 
 // Workout quality indicators

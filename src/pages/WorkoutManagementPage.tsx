@@ -17,7 +17,12 @@ export const WorkoutManagementPage = () => {
   
   // State management
   const [filters, setFilters] = useState<WorkoutManagementFilters>({
-    dateRange: { from: undefined, to: undefined },
+    dateRange: { 
+      from: undefined, 
+      to: undefined,
+      start: new Date(),
+      end: new Date()
+    },
     trainingTypes: [],
     qualityLevels: [],
     searchQuery: '',
