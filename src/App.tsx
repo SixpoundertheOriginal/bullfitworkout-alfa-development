@@ -10,6 +10,7 @@ import { RouterProvider } from "./context/RouterProvider";
 import { DateRangeProvider } from "@/context/DateRangeContext";
 import { WorkoutNavigationContextProvider } from "./context/WorkoutNavigationContext";
 import { LayoutProvider } from "./context/LayoutContext";
+import { WorkoutStateRecoverySystem } from "@/components/recovery/WorkoutStateRecoverySystem";
 
 // Create the query client outside of the component
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ function App() {
                     <TooltipProvider>
                       <Toaster />
                       <RouterProvider />
+                      <WorkoutStateRecoverySystem />
                     </TooltipProvider>
                   </LayoutProvider>
                 </WorkoutNavigationContextProvider>

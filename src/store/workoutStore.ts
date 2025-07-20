@@ -12,6 +12,12 @@ import {
   WorkoutError, 
   RestTimerState 
 } from '@/types/workout-enhanced';
+import { 
+  validateWorkoutState, 
+  recoverFromCorruption, 
+  CURRENT_STATE_VERSION, 
+  StateCorruptionIssue 
+} from '@/utils/workoutStateDebug';
 
 // Export types for other components to use
 export type { ExerciseSet, WorkoutExerciseConfig, WorkoutExercises, WorkoutStatus, WorkoutError, RestTimerState };
@@ -41,6 +47,11 @@ export interface WorkoutState {
   
   // Error handling
   savingErrors: WorkoutError[];
+  
+  // State integrity and recovery
+  stateVersion: string;
+  lastValidationTime: number;
+  corruptionDetected: boolean;
   
   // Action functions
   setExercises: (exercises: WorkoutExercises | ((prev: WorkoutExercises) => WorkoutExercises)) => void;
@@ -77,6 +88,11 @@ export interface WorkoutState {
   // Utility functions
   getExerciseDisplayName: (exerciseName: string) => string;
   getExerciseConfig: (exerciseName: string) => WorkoutExerciseConfig | null;
+  
+  // State recovery functions
+  validateCurrentState: () => StateCorruptionIssue[];
+  recoverFromCorruption: () => void;
+  clearWorkoutState: () => void;
 }
 
 // Generate a unique session ID
@@ -135,6 +151,11 @@ export const useWorkoutStore = create<WorkoutState>()(
       
       // Error handling
       savingErrors: [],
+      
+      // State integrity and recovery
+      stateVersion: CURRENT_STATE_VERSION,
+      lastValidationTime: Date.now(),
+      corruptionDetected: false,
       
       // Action setters
       setExercises: (exercises) => set((state) => ({ 
@@ -428,34 +449,165 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastTabActivity: Date.now(),
         };
       }),
+      
+      // State recovery functions
+      validateCurrentState: () => {
+        const state = get();
+        const validation = validateWorkoutState(state);
+        return validation.issues;
+      },
+      
+      recoverFromCorruption: () => {
+        const state = get();
+        const validation = validateWorkoutState(state);
+        
+        if (validation.issues.length > 0) {
+          const recovered = recoverFromCorruption(state, validation.issues);
+          set({
+            ...recovered,
+            corruptionDetected: false,
+            lastValidationTime: Date.now(),
+          });
+          
+          toast.info("Workout session recovered", {
+            description: `Fixed ${validation.issues.length} issue${validation.issues.length !== 1 ? 's' : ''}`
+          });
+          
+          console.log('🔧 Recovered from corruption:', validation.issues);
+        }
+      },
+      
+      clearWorkoutState: () => {
+        set({
+          exercises: {},
+          activeExercise: null,
+          elapsedTime: 0,
+          workoutId: null,
+          startTime: null,
+          workoutStatus: 'idle',
+          isPaused: false,
+          trainingConfig: null,
+          activeRestTimers: new Map(),
+          isActive: false,
+          lastActiveRoute: '/training-session',
+          sessionId: generateSessionId(),
+          explicitlyEnded: true,
+          lastTabActivity: Date.now(),
+          savingErrors: [],
+          stateVersion: CURRENT_STATE_VERSION,
+          lastValidationTime: Date.now(),
+          corruptionDetected: false,
+        });
+        
+        // Clear localStorage
+        try {
+          localStorage.removeItem('workout-storage');
+        } catch (error) {
+          console.error('Error clearing localStorage:', error);
+        }
+        
+        toast.success("Workout session cleared", {
+          description: "All workout data has been reset"
+        });
+        
+        console.log('🗑️ Workout state cleared completely');
+      },
     }),
     {
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        exercises: state.exercises,
-        activeExercise: state.activeExercise,
-        elapsedTime: state.elapsedTime,
-        workoutId: state.workoutId,
-        startTime: state.startTime,
-        workoutStatus: state.workoutStatus,
-        isPaused: state.isPaused,
-        trainingConfig: state.trainingConfig,
-        isActive: state.isActive,
-        lastActiveRoute: state.lastActiveRoute,
-        sessionId: state.sessionId,
-        explicitlyEnded: state.explicitlyEnded,
-        activeRestTimers: Array.from(state.activeRestTimers.entries()) as any,
-      }),
+      partialize: (state) => {
+        // Validate state before saving to prevent corruption
+        const validation = validateWorkoutState(state);
+        if (validation.issues.length > 0) {
+          console.warn('⚠️ State validation issues before save:', validation.issues);
+        }
+        
+        return {
+          exercises: state.exercises,
+          activeExercise: state.activeExercise,
+          elapsedTime: state.elapsedTime,
+          workoutId: state.workoutId,
+          startTime: state.startTime,
+          workoutStatus: state.workoutStatus,
+          isPaused: state.isPaused,
+          trainingConfig: state.trainingConfig,
+          isActive: state.isActive,
+          lastActiveRoute: state.lastActiveRoute,
+          sessionId: state.sessionId,
+          explicitlyEnded: state.explicitlyEnded,
+          activeRestTimers: Array.from(state.activeRestTimers.entries()) as any,
+          stateVersion: state.stateVersion,
+          lastValidationTime: state.lastValidationTime,
+        };
+      },
       onRehydrateStorage: () => {
         return (rehydratedState, error) => {
           if (error) {
-            console.error('Error rehydrating workout state:', error);
+            console.error('❌ Error rehydrating workout state:', error);
+            
+            // Show recovery dialog for storage errors
+            setTimeout(() => {
+              toast.error("Storage corruption detected", {
+                description: "Click to recover your workout data",
+                action: {
+                  label: "Recover",
+                  onClick: () => {
+                    const store = useWorkoutStore.getState();
+                    store.clearWorkoutState();
+                  }
+                }
+              });
+            }, 1000);
             return;
           }
           
           if (rehydratedState) {
-            console.log('Rehydrated workout state:', rehydratedState);
+            console.log('🔄 Rehydrating workout state...');
+            
+            // Add default values for new state properties
+            rehydratedState.stateVersion = rehydratedState.stateVersion || CURRENT_STATE_VERSION;
+            rehydratedState.lastValidationTime = rehydratedState.lastValidationTime || Date.now();
+            rehydratedState.corruptionDetected = false;
+            
+            // Validate rehydrated state for corruption
+            const validation = validateWorkoutState(rehydratedState);
+            
+            if (validation.issues.length > 0) {
+              console.warn('⚠️ State corruption detected during rehydration:', validation.issues);
+              
+              // Mark corruption for UI handling
+              rehydratedState.corruptionDetected = true;
+              
+              // Show recovery notification after a delay
+              setTimeout(() => {
+                const criticalIssues = validation.issues.filter(issue => issue.severity === 'critical');
+                
+                if (criticalIssues.length > 0) {
+                  toast.error("Critical workout issue detected", {
+                    description: "Your workout session needs recovery. Click to fix it.",
+                    action: {
+                      label: "Recover",
+                      onClick: () => {
+                        const store = useWorkoutStore.getState();
+                        store.recoverFromCorruption();
+                      }
+                    }
+                  });
+                } else {
+                  toast.warning("Workout session issue detected", {
+                    description: "Minor issues found and will be auto-corrected.",
+                    action: {
+                      label: "Fix Now",
+                      onClick: () => {
+                        const store = useWorkoutStore.getState();
+                        store.recoverFromCorruption();
+                      }
+                    }
+                  });
+                }
+              }, 1500);
+            }
             
             // Restore rest timers from serialized format
             if (rehydratedState.activeRestTimers && Array.isArray(rehydratedState.activeRestTimers)) {
@@ -469,9 +621,12 @@ export const useWorkoutStore = create<WorkoutState>()(
             if (rehydratedState.exercises) {
               rehydratedState.exercises = normalizeExerciseData(rehydratedState.exercises);
             }
+            
+            console.log('✅ State rehydration complete');
           }
           
-          if (rehydratedState && rehydratedState.isActive) {
+          // Handle active workout recovery
+          if (rehydratedState && rehydratedState.isActive && !rehydratedState.corruptionDetected) {
             if (rehydratedState.isActive && rehydratedState.startTime) {
               const storedStartTime = new Date(rehydratedState.startTime);
               const currentTime = new Date();
@@ -483,12 +638,14 @@ export const useWorkoutStore = create<WorkoutState>()(
                 setTimeout(() => {
                   const store = useWorkoutStore.getState();
                   store.setElapsedTime(calculatedElapsedTime);
-                  console.log(`Restored elapsed time: ${calculatedElapsedTime}s`);
+                  console.log(`⏱️ Restored elapsed time: ${calculatedElapsedTime}s`);
                 }, 100);
               }
               
               setTimeout(() => {
-                toast.info("Workout session recovered");
+                toast.success("Workout session recovered", {
+                  description: "Your workout has been restored successfully"
+                });
               }, 1000);
             }
           }
