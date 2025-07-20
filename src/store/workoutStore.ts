@@ -72,6 +72,7 @@ export interface WorkoutState {
   workoutId: string | null;
   startTime: string | null;
   workoutStatus: WorkoutStatus;
+  isPaused: boolean;
   
   // Configuration
   trainingConfig: TrainingConfig | null;
@@ -97,6 +98,8 @@ export interface WorkoutState {
   setTrainingConfig: (config: TrainingConfig | null) => void;
   updateLastActiveRoute: (route: string) => void;
   setWorkoutStatus: (status: WorkoutStatus) => void;
+  pauseWorkout: () => void;
+  resumeWorkout: () => void;
   
   // Rest timer management
   startRestTimer: (timerId: string, targetTime: number) => void;
@@ -163,6 +166,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       workoutId: null,
       startTime: null,
       workoutStatus: 'idle',
+      isPaused: false,
       
       // Configuration
       trainingConfig: null,
@@ -246,6 +250,16 @@ export const useWorkoutStore = create<WorkoutState>()(
       
       setWorkoutStatus: (status) => set({ 
         workoutStatus: status,
+        lastTabActivity: Date.now(),
+      }),
+
+      pauseWorkout: () => set({ 
+        isPaused: true,
+        lastTabActivity: Date.now(),
+      }),
+
+      resumeWorkout: () => set({ 
+        isPaused: false,
         lastTabActivity: Date.now(),
       }),
       
@@ -342,6 +356,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           workoutStatus: 'active',
           startTime: now.toISOString(),
           elapsedTime: 0,
+          isPaused: false,
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
         });
@@ -374,6 +389,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           trainingConfig: null,
           activeRestTimers: new Map(),
           isActive: false,
+          isPaused: false,
           explicitlyEnded: true,
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
@@ -471,6 +487,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         workoutId: state.workoutId,
         startTime: state.startTime,
         workoutStatus: state.workoutStatus,
+        isPaused: state.isPaused,
         trainingConfig: state.trainingConfig,
         isActive: state.isActive,
         lastActiveRoute: state.lastActiveRoute,

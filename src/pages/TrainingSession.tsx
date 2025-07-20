@@ -32,6 +32,9 @@ const TrainingSessionPage = () => {
     activeExercise,
     setActiveExercise,
     elapsedTime,
+    isPaused,
+    pauseWorkout,
+    resumeWorkout,
     resetSession,
     clearAllRestTimers,
     handleCompleteSet,
@@ -341,6 +344,9 @@ const TrainingSessionPage = () => {
               completedSets={completedSets}
               totalSets={totalSets}
               workoutStatus={workoutStatus}
+              isPaused={isPaused}
+              onPause={pauseWorkout}
+              onResume={resumeWorkout}
               isRecoveryMode={!!workoutId}
               saveProgress={0}
               onRetrySave={() => workoutId && attemptRecovery()}

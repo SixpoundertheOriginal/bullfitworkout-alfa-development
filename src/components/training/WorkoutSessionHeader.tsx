@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { X } from 'lucide-react';
+import { X, Play, Pause } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WorkoutSaveStatus } from "@/components/WorkoutSaveStatus";
 import { WorkoutMetricsGrid } from "@/components/metrics/core/WorkoutMetricsGrid";
@@ -14,6 +14,9 @@ interface WorkoutSessionHeaderProps {
   completedSets: number;
   totalSets: number;
   workoutStatus: WorkoutStatus;
+  isPaused: boolean;
+  onPause: () => void;
+  onResume: () => void;
   isRecoveryMode: boolean;
   saveProgress: any;
   onRetrySave: () => void;
@@ -36,6 +39,9 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
   completedSets,
   totalSets,
   workoutStatus,
+  isPaused,
+  onPause,
+  onResume,
   isRecoveryMode,
   saveProgress,
   onRetrySave,
@@ -87,9 +93,29 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
       {/* iOS-Native Header */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-b border-gray-800/50">
         <div className="flex items-center justify-between h-16 px-4 max-w-3xl mx-auto">
-          <h1 className="text-xl font-semibold text-white">Workout</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-white">Workout</h1>
+            {isPaused && (
+              <div className="text-sm text-orange-400 font-medium">
+                Paused
+              </div>
+            )}
+          </div>
           
           <div className="flex items-center gap-3">
+            {/* Pause/Resume Button */}
+            <Button
+              onClick={isPaused ? onResume : onPause}
+              variant="ghost"
+              className="
+                h-11 w-11 p-0 rounded-full
+                text-white hover:text-gray-300 hover:bg-white/10
+                transition-all duration-200
+              "
+            >
+              {isPaused ? <Play size={20} /> : <Pause size={20} />}
+            </Button>
+
             {/* Smart Finish Button - Shows based on progress */}
             {hasSubstantialProgress && (
               <Button
