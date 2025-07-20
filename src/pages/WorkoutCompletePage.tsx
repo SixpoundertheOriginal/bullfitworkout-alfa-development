@@ -71,18 +71,32 @@ export const WorkoutCompletePage = () => {
   const [loadingNameSuggestions, setLoadingNameSuggestions] = useState(false);
   
   // Initialize the workout save hook with the proper data
+  const exercisesForSave = workoutData?.exercises || Object.fromEntries(
+    Object.entries(exercises).map(([name, config]) => {
+      // Handle both array format and config object format
+      if (Array.isArray(config)) {
+        return [name, config];
+      }
+      
+      // If it's a config object, extract the sets
+      const sets = config.sets || [];
+      return [name, sets];
+    })
+  );
+
+  console.log("WorkoutCompletePage - Exercises for save:", {
+    exercisesCount: Object.keys(exercisesForSave).length,
+    exerciseNames: Object.keys(exercisesForSave),
+    sampleSets: Object.values(exercisesForSave)[0]?.slice(0, 2) || []
+  });
+
   const {
     saveStatus,
     savingErrors,
     workoutId,
     handleCompleteWorkout,
   } = useWorkoutSave(
-    workoutData?.exercises || Object.fromEntries(
-      Object.entries(exercises).map(([name, config]) => [
-        name,
-        Array.isArray(config) ? config : config.sets
-      ])
-    ),
+    exercisesForSave,
     workoutData?.duration || elapsedTime,
     resetSession
   );
