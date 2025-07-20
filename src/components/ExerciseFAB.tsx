@@ -2,7 +2,7 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWorkoutState } from "@/hooks/useWorkoutState";
+import { useWorkoutStore } from "@/store/workoutStore";
 import { CircularGradientButton } from "@/components/CircularGradientButton";
 
 interface ExerciseFABProps {
@@ -20,7 +20,7 @@ export const ExerciseFAB = ({
   showOnlyIfActive = false,
   hideOnMobile = true
 }: ExerciseFABProps) => {
-  const { isActive } = useWorkoutState();
+  const { isActive } = useWorkoutStore();
   
   // Option to only show when workout is active
   if (showOnlyIfActive && !isActive) {

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dumbbell } from "lucide-react";
 import { TrainingStartButton } from './TrainingStartButton';
-import { useWorkoutState } from '@/hooks/useWorkoutState';
+import { useWorkoutStore } from '@/store/workoutStore';
 import { useExerciseSuggestions } from '@/hooks/useExerciseSuggestions';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -17,7 +17,7 @@ export const WorkoutStarter: React.FC<WorkoutStarterProps> = ({
   trainingType = "strength",
   onAddExerciseClick 
 }) => {
-  const { isActive, exercises } = useWorkoutState();
+  const { isActive, exercises } = useWorkoutStore();
   const { suggestedExercises } = useExerciseSuggestions(trainingType);
   const hasExercises = Object.keys(exercises).length > 0;
   

@@ -21,7 +21,7 @@ import { processExerciseRanking } from "@/utils/processExerciseRanking";
 import { useExercises } from "@/hooks/useExercises";
 import { Exercise, MuscleGroup } from "@/types/exercise";
 import { useTrainingSetupPersistence } from "@/hooks/useTrainingSetupPersistence";
-import { useWorkoutState } from "@/hooks/useWorkoutState";
+import { useWorkoutStore } from "@/store/workoutStore";
 
 interface ConfigureTrainingDialogProps {
   open: boolean;
@@ -95,7 +95,7 @@ export function ConfigureTrainingDialog({
   const [rankedResults, setRankedResults] = useState<{ recommended: Exercise[]; other: Exercise[]; matchData: Record<string, { score: number, reasons: string[] }> }>({ recommended: [], other: [], matchData: {} });
   const { exercises } = useExercises();
   const { storedConfig, saveConfig, clearConfig } = useTrainingSetupPersistence();
-  const { setTrainingConfig } = useWorkoutState();
+  const { setTrainingConfig } = useWorkoutStore();
 
   const [stepCompleteSound, setStepCompleteSound] = useState<HTMLAudioElement | null>(null);
   const [selectSound, setSelectSound] = useState<HTMLAudioElement | null>(null);

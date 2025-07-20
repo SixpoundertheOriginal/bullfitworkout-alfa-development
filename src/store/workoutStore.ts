@@ -13,6 +13,9 @@ import {
   RestTimerState 
 } from '@/types/workout-enhanced';
 
+// Export types for other components to use
+export type { ExerciseSet, WorkoutExerciseConfig, WorkoutExercises, WorkoutStatus, WorkoutError, RestTimerState };
+
 export interface WorkoutState {
   // Core workout data
   exercises: WorkoutExercises;

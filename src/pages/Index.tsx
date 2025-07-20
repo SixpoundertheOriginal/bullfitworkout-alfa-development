@@ -10,14 +10,14 @@ import { StartTrainingButton } from "@/components/training/StartTrainingButton";
 import { motion } from "framer-motion";
 import { typography } from "@/lib/typography";
 import { cn } from "@/lib/utils";
-import { useWorkoutState } from "@/hooks/useWorkoutState";
+import { useWorkoutStore } from "@/store/workoutStore";
 import { DateRangeProvider } from "@/context/DateRangeContext";
 
 const Index = () => {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { stats } = useWorkoutStats();
-  const { isActive, lastActiveRoute } = useWorkoutState();
+  const { isActive, lastActiveRoute } = useWorkoutStore();
   
   // Replace useElementVisibility with native IntersectionObserver
   const sectionRef = useRef<HTMLElement | null>(null);

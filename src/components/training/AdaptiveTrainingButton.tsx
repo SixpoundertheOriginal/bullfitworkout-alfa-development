@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useWorkoutState } from '@/hooks/useWorkoutState';
+import { useWorkoutStore } from '@/store/workoutStore';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
@@ -17,7 +17,7 @@ export const AdaptiveTrainingButton = ({
   variant = 'prominent',
   trainingType = 'strength'
 }: AdaptiveTrainingButtonProps) => {
-  const { isActive, exercises } = useWorkoutState();
+  const { isActive, exercises } = useWorkoutStore();
   const navigate = useNavigate();
   
   const hasExercises = Object.keys(exercises).length > 0;

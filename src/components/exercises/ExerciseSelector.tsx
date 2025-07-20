@@ -7,7 +7,7 @@ import { ExerciseQuickSelect } from "@/components/ExerciseQuickSelect";
 import { useWorkoutHistory } from "@/hooks/useWorkoutHistory";
 import { useExercises } from "@/hooks/useExercises";
 import { rankExercises, getCurrentTimeOfDay, RankingCriteria } from "@/utils/exerciseRankingUtils";
-import { useWorkoutState } from "@/hooks/useWorkoutState";
+import { useWorkoutStore } from "@/store/workoutStore";
 import { TrainingStartButton } from "@/components/training/TrainingStartButton";
 
 interface ExerciseSelectorProps {
@@ -34,7 +34,7 @@ export function ExerciseSelector({
   const { suggestedExercises } = useExerciseSuggestions(trainingType);
   const { workouts } = useWorkoutHistory();
   const { exercises: allExercises } = useExercises();
-  const { isActive } = useWorkoutState();
+  const { isActive } = useWorkoutStore();
   const timeOfDay = getCurrentTimeOfDay();
   
   // Extract recently used exercises from workout history

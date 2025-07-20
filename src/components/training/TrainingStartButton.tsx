@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play } from 'lucide-react';
 import { CircularGradientButton } from '@/components/CircularGradientButton';
 import { cn } from '@/lib/utils';
-import { useWorkoutState } from '@/hooks/useWorkoutState';
+import { useWorkoutStore } from '@/store/workoutStore';
 import { toast } from '@/hooks/use-toast';
 
 interface TrainingStartButtonProps {
@@ -21,7 +21,7 @@ export const TrainingStartButton = ({
   size = 120,
 }: TrainingStartButtonProps) => {
   const navigate = useNavigate();
-  const { isActive, startWorkout, updateLastActiveRoute } = useWorkoutState();
+  const { isActive, startWorkout, updateLastActiveRoute } = useWorkoutStore();
   
   const handleStartClick = () => {
     if (onStartClick) {

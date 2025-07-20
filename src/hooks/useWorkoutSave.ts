@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { saveWorkout, processRetryQueue, recoverPartiallyCompletedWorkout } from "@/services/workoutSaveService";
 import { WorkoutError, EnhancedExerciseSet } from "@/types/workout";
-import { ExerciseSet } from '@/hooks/useWorkoutState';
+import { ExerciseSet } from '@/store/workoutStore';
 
 export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsedTime: number, resetSession: () => void) => {
   const [saveStatus, setSaveStatus] = useState<{
