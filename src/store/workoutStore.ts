@@ -4,65 +4,14 @@ import { TrainingConfig } from '@/hooks/useTrainingSetupPersistence';
 import { Exercise } from '@/types/exercise';
 import { toast } from "@/hooks/use-toast";
 import React from 'react';
-
-export interface ExerciseSet {
-  weight: number;
-  reps: number;
-  restTime: number;
-  completed: boolean;
-  isEditing: boolean;
-  // Enhanced timing metadata
-  metadata?: {
-    startTime?: string;
-    endTime?: string;
-    actualRestTime?: number;
-    exerciseTransitionTime?: number;
-    [key: string]: any;
-  };
-}
-
-// Enhanced exercise configuration with variant data
-export interface WorkoutExerciseConfig {
-  name: string;
-  sets: ExerciseSet[];
-  // Optional variant data for enhanced display
-  exercise?: Exercise; // Full exercise object from library
-  variant?: {
-    gripType?: string;
-    technique?: string;
-    primaryModifier?: string; // "Wide Grip", "Explosive", etc.
-  };
-}
-
-// Support both legacy string-based and new object-based exercises
-export interface WorkoutExercises {
-  [key: string]: ExerciseSet[] | WorkoutExerciseConfig;
-}
-
-export type WorkoutStatus = 
-  | 'idle'        // Initial state
-  | 'active'      // Workout in progress
-  | 'saving'      // Saving in progress
-  | 'saved'       // Successfully saved
-  | 'failed'      // Save failed
-  | 'partial'     // Partially saved
-  | 'recovering'; // Attempting recovery
-
-export interface WorkoutError {
-  type: 'network' | 'database' | 'validation' | 'unknown';
-  message: string;
-  timestamp: string;
-  recoverable: boolean;
-}
-
-export interface RestTimerState {
-  isActive: boolean;
-  targetTime: number;
-  startTime: number;
-  elapsedTime: number;
-  isCompleted: boolean;
-  isOvertime: boolean;
-}
+import { 
+  ExerciseSet, 
+  WorkoutExerciseConfig, 
+  WorkoutExercises, 
+  WorkoutStatus, 
+  WorkoutError, 
+  RestTimerState 
+} from '@/types/workout-enhanced';
 
 export interface WorkoutState {
   // Core workout data

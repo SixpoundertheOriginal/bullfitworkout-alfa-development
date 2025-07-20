@@ -6,7 +6,7 @@ import { SetsList } from './SetsList';
 import { ExerciseVolumeMetrics } from './ExerciseVolumeMetrics';
 import { ExerciseActions } from './ExerciseActions';
 import { useExerciseCard } from './hooks/useExerciseCard';
-import { ExerciseSet } from '@/types/exercise';
+import { ExerciseSet } from '@/types/workout-enhanced';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { Badge } from "@/components/ui/badge";
 

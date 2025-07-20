@@ -1,68 +1,111 @@
 
-import { WorkoutSession, ExerciseSet } from '@/types/workout';
+/**
+ * Enhanced workout types - single source of truth for all workout-related interfaces
+ * This file consolidates all duplicate type definitions across the codebase
+ */
 
-export interface EnhancedWorkoutMetrics {
-  totalVolume: number;
-  avgWeight: number;
-  maxWeight: number;
-  totalReps: number;
-  totalSets: number;
-  completionRate: number;
-  exerciseVariety: number;
-  workoutDensity: number; // kg/min
-  estimatedCalories?: number;
+import { Exercise } from './exercise';
+
+// Core exercise set interface - replaces all duplicate definitions
+export interface ExerciseSet {
+  weight: number;
+  reps: number;
+  restTime: number;
+  completed: boolean;
+  isEditing: boolean;
+  // Enhanced timing metadata
+  metadata?: {
+    startTime?: string;
+    endTime?: string;
+    actualRestTime?: number;
+    exerciseTransitionTime?: number;
+    [key: string]: any;
+  };
 }
 
-export interface WorkoutQualityIndicators {
-  isComplete: boolean;
-  hasIncompleteData: boolean;
-  qualityScore: number; // 0-100
-  performanceLevel: 'poor' | 'average' | 'good' | 'excellent';
-  badges: WorkoutBadge[];
-}
-
-export interface WorkoutBadge {
-  type: 'pr' | 'progress' | 'consistent' | 'volume' | 'intensity' | 'incomplete';
-  label: string;
-  color: string;
-  icon: string;
-}
-
-export interface EnhancedWorkoutData extends WorkoutSession {
-  metrics: EnhancedWorkoutMetrics;
-  quality: WorkoutQualityIndicators;
-  exercisePreview: ExercisePreview[];
-  previousSession?: WorkoutSession;
-  nextSession?: WorkoutSession;
-}
-
-export interface ExercisePreview {
+// Enhanced exercise configuration with variant data
+export interface WorkoutExerciseConfig {
   name: string;
-  sets: number;
-  reps: number[];
-  weights: number[];
-  isPersonalRecord?: boolean;
-  progressIndicator?: 'up' | 'down' | 'same';
-}
-
-export interface WorkoutComparisonData {
-  current: EnhancedWorkoutData;
-  previous?: EnhancedWorkoutData;
-  improvements: {
-    volume: number;
-    strength: number;
-    endurance: number;
+  sets: ExerciseSet[];
+  // Optional variant data for enhanced display
+  exercise?: Exercise;
+  variant?: {
+    gripType?: string;
+    technique?: string;
+    primaryModifier?: string;
   };
 }
 
-export interface WorkoutManagementFilters {
-  dateRange: {
-    from?: Date;
-    to?: Date;
+// Support both legacy string-based and new object-based exercises
+export interface WorkoutExercises {
+  [key: string]: ExerciseSet[] | WorkoutExerciseConfig;
+}
+
+// Workout status types
+export type WorkoutStatus = 
+  | 'idle'
+  | 'active'
+  | 'saving'
+  | 'saved'
+  | 'failed'
+  | 'partial'
+  | 'recovering';
+
+// Error handling
+export interface WorkoutError {
+  type: 'network' | 'database' | 'validation' | 'unknown';
+  message: string;
+  timestamp: string;
+  recoverable: boolean;
+}
+
+// Rest timer state management
+export interface RestTimerState {
+  isActive: boolean;
+  targetTime: number;
+  startTime: number;
+  elapsedTime: number;
+  isCompleted: boolean;
+  isOvertime: boolean;
+}
+
+// Training configuration
+export interface TrainingConfig {
+  trainingType: string;
+  tags: string[];
+  duration: number;
+  rankedExercises?: {
+    recommended: Exercise[];
+    other: Exercise[];
+    matchData: Record<string, { score: number, reasons: string[] }>;
   };
-  trainingTypes: string[];
-  qualityLevels: string[];
-  searchQuery: string;
-  sortBy: 'date' | 'duration' | 'volume' | 'quality';
-  sortOrder: 'asc' | 'desc';
+  timeOfDay?: string;
+  intensity?: number;
+  lastUpdated?: string;
+}
+
+// Workout completion data
+export interface WorkoutCompletionData {
+  exercises: Record<string, ExerciseSet[]>;
+  duration: number;
+  intensity: number;
+  efficiency: number;
+  totalVolume: number;
+  averageRestTime: number;
+  completedSets: number;
+  totalSets: number;
+}
+
+// Session analytics
+export interface WorkoutSessionAnalytics {
+  sessionId: string;
+  startTime: string;
+  endTime?: string;
+  duration: number;
+  exerciseCount: number;
+  setCount: number;
+  totalVolume: number;
+  averageIntensity: number;
+  restPeriods: number[];
+  muscleGroupsTargeted: string[];
 }

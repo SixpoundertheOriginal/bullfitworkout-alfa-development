@@ -1,11 +1,10 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { ExerciseSet } from "@/types/exercise";
+import { ExerciseSet, WorkoutExercises } from '@/types/workout-enhanced';
 import { WorkoutExerciseCard } from '@/components/exercises/WorkoutExerciseCard';
 import { useSmartRestSuggestions } from '@/hooks/useSmartRestSuggestions';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
-import { WorkoutExercises } from '@/store/workoutStore';
 
 interface ExerciseListProps {
   exercises: WorkoutExercises;

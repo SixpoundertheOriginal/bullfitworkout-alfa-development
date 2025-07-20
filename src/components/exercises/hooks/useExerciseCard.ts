@@ -1,7 +1,8 @@
+
 import { useMemo } from 'react';
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { convertWeight } from "@/utils/unitConversion";
-import { ExerciseSet } from '@/types/exercise';
+import { ExerciseSet } from '@/types/workout-enhanced';
 
 // Sample exercise history data - in real app this would come from API
 const exerciseHistoryData: Record<string, Array<{

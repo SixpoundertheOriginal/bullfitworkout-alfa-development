@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useWorkoutState } from '@/hooks/useWorkoutState';
+import { useWorkoutStore } from '@/store/workoutStore';
 import { usePageVisibility } from '@/hooks/usePageVisibility';
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ export function WorkoutNavigationContextProvider({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isActive, updateLastActiveRoute, persistWorkoutState } = useWorkoutState();
+  const { isActive, updateLastActiveRoute } = useWorkoutStore();
   const { isVisible } = usePageVisibility();
   const [showDialog, setShowDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
@@ -56,13 +56,6 @@ export function WorkoutNavigationContextProvider({
     });
   }, [isActive, location.pathname, isTrainingRoute, isVisible]);
 
-  // When tab becomes visible again, ensure we persist state
-  useEffect(() => {
-    if (isVisible && isActive) {
-      persistWorkoutState?.();
-    }
-  }, [isVisible, isActive, persistWorkoutState]);
-
   // Navigation confirmation logic
   const confirmNavigation = useCallback((to: string) => {
     // Skip confirmation if navigating to the same page
@@ -74,13 +67,10 @@ export function WorkoutNavigationContextProvider({
       setShowDialog(true);
       setPendingNavigation(to);
       console.log('Confirming navigation from workout to:', to);
-      
-      // Make sure state is persisted before potential navigation
-      persistWorkoutState?.();
     } else {
       navigate(to);
     }
-  }, [isActive, isTrainingRoute, navigate, location.pathname, persistWorkoutState]);
+  }, [isActive, isTrainingRoute, navigate, location.pathname]);
 
   return (
     <Provider value={{ confirmNavigation }}>
@@ -99,9 +89,6 @@ export function WorkoutNavigationContextProvider({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                // Extra persistence before navigation
-                persistWorkoutState?.();
-                
                 if (pendingNavigation) {
                   navigate(pendingNavigation);
                 }
