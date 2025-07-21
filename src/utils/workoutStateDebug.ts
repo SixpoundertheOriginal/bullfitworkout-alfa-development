@@ -1,6 +1,9 @@
 import { useWorkoutStore } from '@/store/workoutStore';
 import { WorkoutState } from '@/store/workoutStore';
 
+// Import the immediate cleanup utility
+import { scanForCorruption, clearCorruption, quickHealthCheck } from './immediateCorruptionCleanup';
+
 // Current state version for migration purposes
 export const CURRENT_STATE_VERSION = '1.0.0';
 
@@ -141,15 +144,21 @@ export const recoverFromCorruption = (state: Partial<WorkoutState>, issues: Stat
  */
 export const clearWorkoutState = (): void => {
   try {
-    // Clear the store state
-    useWorkoutStore.getState().resetSession();
-    
-    // Clear localStorage
-    localStorage.removeItem('workout-storage');
+    // Use the new aggressive cleanup utility
+    clearCorruption(true); // Skip confirmation for programmatic calls
     
     console.log('✅ Workout state cleared successfully');
   } catch (error) {
     console.error('❌ Error clearing workout state:', error);
+    
+    // Fallback to original method
+    try {
+      useWorkoutStore.getState().resetSession();
+      localStorage.removeItem('workout-storage');
+      console.log('✅ Fallback cleanup successful');
+    } catch (fallbackError) {
+      console.error('❌ Fallback cleanup failed:', fallbackError);
+    }
   }
 };
 
@@ -234,9 +243,21 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     return health;
   };
 
+  // Add new corruption utilities
+  (window as any).scanCorruption = scanForCorruption;
+  (window as any).clearCorruption = clearCorruption;
+  (window as any).quickHealth = quickHealthCheck;
+
   console.log('🛠️ Workout debugging tools available:');
   console.log('  debugWorkoutState() - Full state inspection');
   console.log('  validateWorkoutState() - Check for corruption');
   console.log('  clearWorkoutState() - Reset everything');
   console.log('  checkStorageHealth() - localStorage diagnostics');
+  console.log('');
+  console.log('🚨 CORRUPTION TOOLS:');
+  console.log('  scanCorruption() - Detailed corruption scan');
+  console.log('  clearCorruption() - Aggressive cleanup with backup');
+  console.log('  quickHealth() - Fast issue detection');
+  console.log('');
+  console.log('🔥 IMMEDIATE FIX: clearCorruption() to fix stuck sessions');
 }

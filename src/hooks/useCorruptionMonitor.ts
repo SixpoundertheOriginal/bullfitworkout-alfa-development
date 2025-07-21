@@ -1,6 +1,7 @@
+
 import { useEffect, useRef } from 'react';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { validateWorkoutState } from '@/utils/workoutStateDebug';
+import { quickHealthCheck, clearCorruption } from '@/utils/immediateCorruptionCleanup';
 import { toast } from '@/hooks/use-toast';
 
 export const useCorruptionMonitor = () => {
@@ -36,15 +37,11 @@ export const useCorruptionMonitor = () => {
         return;
       }
 
-      // Run full validation check
-      const state = useWorkoutStore.getState();
-      const validation = validateWorkoutState(state);
-      
-      if (!validation.isValid) {
-        const criticalIssues = validation.issues.filter(i => i.severity === 'critical');
-        if (criticalIssues.length > 0) {
-          showFixButton('Workout session needs fixing');
-        }
+      // Use the new quick health check
+      const health = quickHealthCheck();
+      if (!health.isHealthy) {
+        showFixButton(`Health issues detected: ${health.issues[0]}`);
+        return;
       }
 
       lastCheck.current = now;
@@ -61,12 +58,26 @@ export const useCorruptionMonitor = () => {
       action: {
         label: "Fix Workout",
         onClick: () => {
-          const store = useWorkoutStore.getState();
-          store.quickFix();
-          toast({
-            title: "Workout fixed!",
-            description: "You can continue your workout normally"
-          });
+          // Use the new aggressive cleanup utility
+          const success = clearCorruption(true); // Skip confirmation for auto-fix
+          
+          if (success) {
+            toast({
+              title: "Workout fixed!",
+              description: "Refresh the page to continue with a clean session"
+            });
+            
+            // Auto-refresh after a short delay
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else {
+            toast({
+              title: "Fix failed",
+              description: "Please try manually refreshing the page",
+              variant: "destructive"
+            });
+          }
         }
       },
       duration: 0, // Don't auto-dismiss
