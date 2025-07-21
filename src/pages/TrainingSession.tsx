@@ -17,6 +17,7 @@ import { RealTimeEfficiencyMonitor } from "@/components/training/RealTimeEfficie
 import { WorkoutPredictionEngine } from "@/components/training/WorkoutPredictionEngine";
 import { useEnhancedRestAnalytics } from "@/hooks/useEnhancedRestAnalytics";
 import { useWeightUnit } from "@/context/WeightUnitContext";
+import { WorkoutSessionLayout } from '@/components/training/WorkoutSessionLayout';
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -334,9 +335,10 @@ const TrainingSessionPage = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
-      <main className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6">
+    <WorkoutSessionLayout>
+      <div className="flex flex-col min-h-screen bg-black text-white">
+        <main className="flex-1 overflow-auto">
+          <div className="mx-auto max-w-3xl px-4 py-6">
           <div className="mb-6 relative">
             <WorkoutSessionHeader
               elapsedTime={elapsedTime}
@@ -630,7 +632,8 @@ const TrainingSessionPage = () => {
         onSelectExercise={handleAddExercise}
         trainingType={trainingConfig?.trainingType}
       />
-    </div>
+      </div>
+    </WorkoutSessionLayout>
   );
 };
 

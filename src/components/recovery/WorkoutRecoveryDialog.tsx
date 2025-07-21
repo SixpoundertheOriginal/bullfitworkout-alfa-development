@@ -21,6 +21,7 @@ interface WorkoutRecoveryDialogProps {
   onStartFresh: () => void;
   onViewDetails?: () => void;
   isRecovering?: boolean;
+  showSimpleUI?: boolean; // New prop for simple one-button UI
 }
 
 export const WorkoutRecoveryDialog: React.FC<WorkoutRecoveryDialogProps> = ({
@@ -30,7 +31,8 @@ export const WorkoutRecoveryDialog: React.FC<WorkoutRecoveryDialogProps> = ({
   onRecover,
   onStartFresh,
   onViewDetails,
-  isRecovering = false
+  isRecovering = false,
+  showSimpleUI = false
 }) => {
   const criticalIssues = issues.filter(issue => issue.severity === 'critical');
   const moderateIssues = issues.filter(issue => issue.severity === 'moderate');
@@ -65,6 +67,48 @@ export const WorkoutRecoveryDialog: React.FC<WorkoutRecoveryDialogProps> = ({
         return 'An unknown issue was detected with your workout session.';
     }
   };
+
+  if (showSimpleUI) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Your workout needs a quick fix to continue
+            </DialogTitle>
+            <DialogDescription>
+              We detected an issue with your workout session, but we can fix it automatically while keeping your exercise data.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Button
+              onClick={() => {
+                onRecover();
+                onClose();
+              }}
+              disabled={isRecovering}
+              className="w-full"
+              size="lg"
+            >
+              {isRecovering ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Fixing workout...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Fix Workout
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
