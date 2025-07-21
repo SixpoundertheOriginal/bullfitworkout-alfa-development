@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +15,17 @@ import {
   Star,
   Home,
   BarChart3,
-  Zap
+  Zap,
+  AlertTriangle,
+  RefreshCw,
+  Search,
+  Save
 } from 'lucide-react';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { processWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
 import { useWeightUnit } from '@/context/WeightUnitContext';
 import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
+import { toast } from "@/hooks/use-toast";
 
 interface ExerciseSet {
   weight: number;
@@ -36,6 +40,16 @@ interface CompletedWorkout {
   exercises: Record<string, ExerciseSet[]>;
 }
 
+// Recovery data interface
+interface RecoveryData {
+  exercises?: Record<string, any>;
+  elapsedTime?: number;
+  startTime?: string;
+  activeExercise?: string;
+  sessionId?: string;
+  savedAt?: number;
+}
+
 // Helper function to extract sets from workout store data
 const getExerciseSets = (exerciseData: any): ExerciseSet[] => {
   if (Array.isArray(exerciseData)) {
@@ -45,6 +59,81 @@ const getExerciseSets = (exerciseData: any): ExerciseSet[] => {
     return exerciseData.sets;
   }
   return [];
+};
+
+// Recovery utility functions
+const checkForRecoveryData = (): RecoveryData | null => {
+  try {
+    // Check sessionStorage backup first
+    const backup = sessionStorage.getItem('workout-backup');
+    if (backup) {
+      const backupData = JSON.parse(backup);
+      if (backupData.exercises && Object.keys(backupData.exercises).length > 0) {
+        console.log('🔍 Found sessionStorage backup:', backupData);
+        return backupData;
+      }
+    }
+
+    // Check localStorage for any workout fragments
+    const workoutStorage = localStorage.getItem('workout-storage');
+    if (workoutStorage) {
+      const storageData = JSON.parse(workoutStorage);
+      if (storageData.state?.exercises && Object.keys(storageData.state.exercises).length > 0) {
+        console.log('🔍 Found localStorage fragments:', storageData.state);
+        return {
+          exercises: storageData.state.exercises,
+          elapsedTime: storageData.state.elapsedTime,
+          startTime: storageData.state.startTime,
+          activeExercise: storageData.state.activeExercise,
+          sessionId: storageData.state.sessionId
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error checking recovery data:', error);
+    return null;
+  }
+};
+
+const restoreFromRecoveryData = (recoveryData: RecoveryData, workoutStore: any): CompletedWorkout | null => {
+  try {
+    if (!recoveryData.exercises) return null;
+
+    // Restore to workout store
+    workoutStore.setExercises(recoveryData.exercises);
+    if (recoveryData.elapsedTime) {
+      workoutStore.setElapsedTime(recoveryData.elapsedTime);
+    }
+    if (recoveryData.activeExercise) {
+      workoutStore.setActiveExercise(recoveryData.activeExercise);
+    }
+
+    // Create completed workout from recovery data
+    const now = Date.now();
+    const startTime = recoveryData.startTime ? new Date(recoveryData.startTime).getTime() : (now - (recoveryData.elapsedTime || 0) * 1000);
+    
+    const exerciseData: Record<string, ExerciseSet[]> = {};
+    Object.entries(recoveryData.exercises).forEach(([name, data]) => {
+      const sets = getExerciseSets(data);
+      exerciseData[name] = sets.map(set => ({
+        weight: set.weight || 0,
+        reps: set.reps || 0,
+        completed: set.completed || false,
+        restTime: set.restTime || 60
+      }));
+    });
+
+    return {
+      startTime,
+      endTime: now,
+      exercises: exerciseData
+    };
+  } catch (error) {
+    console.error('Error restoring from recovery data:', error);
+    return null;
+  }
 };
 
 export const WorkoutCompletionEnhanced = () => {
@@ -60,30 +149,50 @@ export const WorkoutCompletionEnhanced = () => {
   } = useWorkoutStore();
   const { weightUnit } = useWeightUnit();
   const [showCelebration, setShowCelebration] = useState(true);
+  const [recoveryData, setRecoveryData] = useState<RecoveryData | null>(null);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   // Check if we have a completed workout based on store state
   const hasCompletedWorkout = workoutStatus === 'saved' || (!isActive && Object.keys(exercises).length > 0);
   
-  // Create completed workout data from store
-  const completedWorkout: CompletedWorkout | null = useMemo(() => {
-    if (!hasCompletedWorkout || !startTime) return null;
-    
-    const exerciseData: Record<string, ExerciseSet[]> = {};
-    Object.entries(exercises).forEach(([name, data]) => {
-      const sets = getExerciseSets(data);
-      exerciseData[name] = sets.map(set => ({
-        weight: set.weight || 0,
-        reps: set.reps || 0,
-        completed: set.completed || false,
-        restTime: set.restTime || 60
-      }));
-    });
+  // Detect corruption: user reached this page but no workout data
+  const isCorrupted = !hasCompletedWorkout && !recoveryData;
 
-    return {
-      startTime: new Date(startTime).getTime(),
-      endTime: new Date(startTime).getTime() + (elapsedTime * 1000),
-      exercises: exerciseData
-    };
+  // Check for recovery data on mount
+  useEffect(() => {
+    if (!hasCompletedWorkout) {
+      console.log('🔍 No completed workout found, checking for recovery data...');
+      const recovery = checkForRecoveryData();
+      if (recovery) {
+        setRecoveryData(recovery);
+        console.log('✅ Recovery data found:', recovery);
+      } else {
+        console.log('❌ No recovery data available');
+      }
+    }
+  }, [hasCompletedWorkout]);
+
+  // Create completed workout data from store or recovery data
+  const completedWorkout: CompletedWorkout | null = useMemo(() => {
+    if (hasCompletedWorkout && startTime) {
+      const exerciseData: Record<string, ExerciseSet[]> = {};
+      Object.entries(exercises).forEach(([name, data]) => {
+        const sets = getExerciseSets(data);
+        exerciseData[name] = sets.map(set => ({
+          weight: set.weight || 0,
+          reps: set.reps || 0,
+          completed: set.completed || false,
+          restTime: set.restTime || 60
+        }));
+      });
+
+      return {
+        startTime: new Date(startTime).getTime(),
+        endTime: new Date(startTime).getTime() + (elapsedTime * 1000),
+        exercises: exerciseData
+      };
+    }
+    return null;
   }, [hasCompletedWorkout, startTime, elapsedTime, exercises]);
 
   useEffect(() => {
@@ -104,15 +213,242 @@ export const WorkoutCompletionEnhanced = () => {
     }
   }, [showCelebration]);
 
+  // Handle recovery actions
+  const handleQuickRecover = async () => {
+    if (!recoveryData) return;
+    
+    setIsRecovering(true);
+    try {
+      const workoutStore = useWorkoutStore.getState();
+      const recovered = restoreFromRecoveryData(recoveryData, workoutStore);
+      
+      if (recovered) {
+        toast({
+          title: "Workout recovered!",
+          description: "Your exercise data has been restored successfully"
+        });
+        // Refresh the component by clearing recovery data
+        setRecoveryData(null);
+      } else {
+        throw new Error('Could not restore workout data');
+      }
+    } catch (error) {
+      console.error('Recovery failed:', error);
+      toast({
+        title: "Recovery failed",
+        description: "Could not restore your workout data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRecovering(false);
+    }
+  };
+
+  const handleClearAndStart = () => {
+    // Clear all storage
+    localStorage.removeItem('workout-storage');
+    sessionStorage.removeItem('workout-backup');
+    resetSession();
+    
+    toast({
+      title: "Workout data cleared",
+      description: "You can start a fresh workout now"
+    });
+    
+    navigate('/training-session');
+  };
+
+  const handleSavePartial = () => {
+    if (!recoveryData) return;
+    
+    // Navigate to completion page with recovery data
+    navigate('/workout-complete-page', {
+      state: {
+        workoutData: {
+          exercises: recoveryData.exercises || {},
+          duration: recoveryData.elapsedTime || 0,
+          startTime: recoveryData.startTime ? new Date(recoveryData.startTime) : new Date(),
+          endTime: new Date(),
+          trainingType: 'recovered',
+          name: 'Recovered Workout',
+          trainingConfig: null,
+          notes: 'This workout was recovered from corrupted session data',
+          metadata: { recovered: true }
+        }
+      }
+    });
+  };
+
+  // Show corruption recovery UI
+  if (isCorrupted && recoveryData) {
+    const exerciseCount = Object.keys(recoveryData.exercises || {}).length;
+    const duration = Math.round((recoveryData.elapsedTime || 0) / 60);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-gradient-to-r from-yellow-500 to-orange-500 p-4 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">Workout Recovery</h1>
+            <p className="text-gray-400">We found your workout data! Choose how to proceed.</p>
+          </div>
+
+          <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Search className="h-5 w-5 text-blue-400" />
+                Found Workout Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <Dumbbell className="h-5 w-5 text-green-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{exerciseCount}</p>
+                  <p className="text-xs text-gray-400">Exercises</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/50 rounded-lg">
+                  <Clock className="h-5 w-5 text-blue-400 mx-auto mb-1" />
+                  <p className="text-2xl font-bold text-white">{duration}m</p>
+                  <p className="text-xs text-gray-400">Duration</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={handleQuickRecover}
+                  disabled={isRecovering}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                >
+                  {isRecovering ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Recovering...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Quick Recover & Continue
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleSavePartial}
+                  variant="outline"
+                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Partial Workout
+                </Button>
+
+                <Button
+                  onClick={handleClearAndStart}
+                  variant="outline"
+                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  Clear & Start Fresh
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              Your workout session was interrupted, but we saved your progress.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show no data found UI (true corruption with no recovery data)
+  if (isCorrupted && !recoveryData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Workout Data Lost</h2>
+            <p className="text-gray-400 mb-6">
+              Your workout session was interrupted and we couldn't recover your data. This sometimes happens due to browser issues or network problems.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => navigate('/training-session')} 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                Start New Workout
+              </Button>
+              <Button 
+                onClick={() => navigate('/')} 
+                variant="outline"
+                className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Go Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show regular completion UI if we have workout data
+  if (isCorrupted && !recoveryData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Workout Data Lost</h2>
+            <p className="text-gray-400 mb-6">
+              Your workout session was interrupted and we couldn't recover your data. This sometimes happens due to browser issues or network problems.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                onClick={() => navigate('/training-session')} 
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                Start New Workout
+              </Button>
+              <Button 
+                onClick={() => navigate('/')} 
+                variant="outline"
+                className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Go Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show regular completion UI if we have workout data
   if (!completedWorkout) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="p-6 text-center">
-            <p className="text-gray-400">No completed workout found</p>
-            <Button onClick={() => navigate('/')} className="mt-4">
-              Go Home
-            </Button>
+            <p className="text-gray-400">Loading workout completion...</p>
           </CardContent>
         </Card>
       </div>
@@ -228,11 +564,9 @@ export const WorkoutCompletionEnhanced = () => {
             </CardContent>
           </Card>
 
-          {/* Enhanced Efficiency Metrics Card */}
           <EfficiencyMetricsCard metrics={processedMetrics} />
         </div>
 
-        {/* Exercises Completed Section */}
         <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
           <CardHeader>
             <CardTitle className="text-white">Exercises Completed</CardTitle>
@@ -255,7 +589,6 @@ export const WorkoutCompletionEnhanced = () => {
           </CardContent>
         </Card>
 
-        {/* Achievements Section */}
         <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
@@ -285,7 +618,6 @@ export const WorkoutCompletionEnhanced = () => {
           </CardContent>
         </Card>
 
-        {/* Advanced Metrics Section */}
         <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
