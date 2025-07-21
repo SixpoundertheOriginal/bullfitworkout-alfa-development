@@ -550,9 +550,24 @@ export const useWorkoutStore = create<WorkoutState>()(
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
-        // Basic validation to prevent corruption
-        if (state.elapsedTime < 0) state.elapsedTime = 0;
+        // Enhanced validation to prevent corruption
+        const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours
+        
+        // Fix negative elapsed time
+        if (state.elapsedTime < 0) {
+          console.warn('🔧 Fixed negative elapsed time');
+          state.elapsedTime = 0;
+        }
+        
+        // Fix extremely large elapsed times (corruption detection)
+        if (state.elapsedTime > MAX_REASONABLE_DURATION) {
+          console.warn(`🔧 Fixed corrupted elapsed time: ${state.elapsedTime}s -> 2h`);
+          state.elapsedTime = 2 * 60 * 60; // Cap at 2 hours
+        }
+        
+        // Fix stuck saving states
         if (state.workoutStatus === 'saving' && Date.now() - (state.lastTabActivity || 0) > 60000) {
+          console.warn('🔧 Fixed stuck saving state');
           state.workoutStatus = 'failed'; // Don't save stuck saving states
         }
         
@@ -626,6 +641,16 @@ export const useWorkoutStore = create<WorkoutState>()(
             rehydratedState.stateVersion = rehydratedState.stateVersion || CURRENT_STATE_VERSION;
             rehydratedState.lastValidationTime = rehydratedState.lastValidationTime || Date.now();
             rehydratedState.corruptionDetected = false;
+            
+            // Enhanced corruption detection during rehydration
+            const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours
+            
+            // Fix corrupted elapsed time immediately during rehydration
+            if (rehydratedState.elapsedTime > MAX_REASONABLE_DURATION) {
+              console.warn(`🔧 Auto-fixing corrupted elapsed time during rehydration: ${rehydratedState.elapsedTime}s -> 2h`);
+              rehydratedState.elapsedTime = 2 * 60 * 60; // Cap at 2 hours
+              rehydratedState.corruptionDetected = true;
+            }
             
             // Validate rehydrated state for corruption
             const validation = validateWorkoutState(rehydratedState);

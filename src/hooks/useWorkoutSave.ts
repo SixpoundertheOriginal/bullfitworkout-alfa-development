@@ -98,11 +98,28 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
       return null;
     }
     
+    // Corruption Detection & Auto-Fix
+    const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours in seconds
+    const MIN_REASONABLE_DURATION = 60; // 1 minute in seconds
+    let cleanedElapsedTime = elapsedTime;
+    
+    if (elapsedTime > MAX_REASONABLE_DURATION) {
+      console.warn(`🔧 Detected corrupted elapsed time: ${elapsedTime}s (${Math.round(elapsedTime/3600)}h). Capping to 2 hours.`);
+      cleanedElapsedTime = 2 * 60 * 60; // Cap at 2 hours for corrupted data
+      toast({
+        title: "Fixed workout duration",
+        description: "Detected and corrected an invalid workout duration"
+      });
+    } else if (elapsedTime < MIN_REASONABLE_DURATION) {
+      console.warn(`🔧 Detected very short elapsed time: ${elapsedTime}s. Setting to minimum.`);
+      cleanedElapsedTime = MIN_REASONABLE_DURATION;
+    }
+    
     try {
       markAsSaving();
       
       const now = new Date();
-      const startTime = new Date(now.getTime() - elapsedTime * 1000);
+      const startTime = new Date(now.getTime() - cleanedElapsedTime * 1000);
       
       // Format data for the workout save service
       const workoutData = {
@@ -110,7 +127,7 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
         training_type: trainingConfig?.trainingType || 'strength',
         start_time: startTime.toISOString(),
         end_time: now.toISOString(),
-        duration: elapsedTime || 0,
+        duration: cleanedElapsedTime || 0,
         notes: null,
         metadata: trainingConfig ? JSON.stringify({ trainingConfig }) : null
       };
