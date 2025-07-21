@@ -353,6 +353,10 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
       
       resetSession: () => {
+        // Clear all sessionStorage backup data to prevent recovery conflicts
+        sessionStorage.removeItem('workout-backup');
+        sessionStorage.removeItem('workout-session-recovery');
+        
         set({ 
           exercises: {},
           activeExercise: null,
@@ -378,6 +382,10 @@ export const useWorkoutStore = create<WorkoutState>()(
       }),
       
       markAsSaved: () => {
+        // Clear sessionStorage backup immediately to prevent recovery conflicts
+        sessionStorage.removeItem('workout-backup');
+        sessionStorage.removeItem('workout-session-recovery');
+        
         set({ 
           workoutStatus: 'saved',
           isActive: false,

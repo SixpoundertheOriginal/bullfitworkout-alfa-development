@@ -158,7 +158,6 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
           return saveResult.workoutId;
         } else {
           markAsSaved(saveResult.workoutId || '');
-          resetSession();
           return saveResult.workoutId;
         }
       } else {
