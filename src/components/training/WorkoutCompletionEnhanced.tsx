@@ -148,9 +148,12 @@ export const WorkoutCompletionEnhanced = () => {
     workoutStatus 
   } = useWorkoutStore();
   const { weightUnit } = useWeightUnit();
+  
+  // ALL HOOKS MUST BE CALLED AT THE TOP - NO CONDITIONAL HOOKS
   const [showCelebration, setShowCelebration] = useState(true);
   const [recoveryData, setRecoveryData] = useState<RecoveryData | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [shouldFixCorruption, setShouldFixCorruption] = useState(false);
 
   // Check if we have a completed workout based on store state
   const hasCompletedWorkout = workoutStatus === 'saved' || (!isActive && Object.keys(exercises).length > 0);
@@ -166,6 +169,7 @@ export const WorkoutCompletionEnhanced = () => {
       const fixedTime = Math.min(2 * 60 * 60, elapsedTime); // Cap at 2 hours
       const workoutStore = useWorkoutStore.getState();
       workoutStore.setElapsedTime(fixedTime);
+      setShouldFixCorruption(true);
       
       toast({
         title: "Fixed workout timing",
@@ -211,10 +215,10 @@ export const WorkoutCompletionEnhanced = () => {
     return null;
   }, [hasCompletedWorkout, startTime, elapsedTime, exercises]);
 
+  // Clear workout after completion
   useEffect(() => {
     if (!completedWorkout) return;
 
-    // Clear workout after 5 seconds
     const timer = setTimeout(() => {
       resetSession();
     }, 5000);
@@ -222,6 +226,7 @@ export const WorkoutCompletionEnhanced = () => {
     return () => clearTimeout(timer);
   }, [completedWorkout, resetSession]);
 
+  // Celebration timer
   useEffect(() => {
     if (showCelebration) {
       const timer = setTimeout(() => setShowCelebration(false), 3000);
@@ -294,6 +299,44 @@ export const WorkoutCompletionEnhanced = () => {
       }
     });
   };
+
+  // Enhanced metrics processing with efficiency calculations
+  const processedMetrics = useMemo(() => {
+    if (!completedWorkout) return null;
+    
+    // Transform store ExerciseSet format to database ExerciseSet format
+    const transformedExercises: Record<string, import('@/types/exercise').ExerciseSet[]> = {};
+    
+    Object.entries(completedWorkout.exercises).forEach(([exerciseName, exerciseData]) => {
+      const sets = exerciseData; // exerciseData is already ExerciseSet[] from CompletedWorkout interface
+      transformedExercises[exerciseName] = sets.map((set, index) => ({
+        id: `${exerciseName}-${index}`,
+        workout_id: 'temp-id',
+        exercise_name: exerciseName,
+        weight: set.weight,
+        reps: set.reps,
+        completed: set.completed,
+        set_number: index + 1,
+        rest_time: set.restTime,
+        created_at: new Date().toISOString(),
+      }));
+    });
+    
+    const duration = Math.round((completedWorkout.endTime - completedWorkout.startTime) / (1000 * 60));
+    
+    return processWorkoutMetrics(
+      transformedExercises,
+      duration,
+      weightUnit as 'kg' | 'lb',
+      { weight: 70, unit: 'kg' }, // You might want to get this from user profile
+      {
+        start_time: new Date(completedWorkout.startTime).toISOString(),
+        duration: duration
+      }
+    );
+  }, [completedWorkout, weightUnit]);
+
+  // NOW ALL CONDITIONAL LOGIC AND EARLY RETURNS COME AFTER ALL HOOKS
 
   // Show corruption recovery UI
   if (isCorrupted && recoveryData) {
@@ -422,43 +465,6 @@ export const WorkoutCompletionEnhanced = () => {
   }
 
   // Show regular completion UI if we have workout data
-  if (isCorrupted && !recoveryData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="p-6 text-center">
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-4 rounded-full">
-                <AlertTriangle className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            <h2 className="text-xl font-bold text-white mb-2">Workout Data Lost</h2>
-            <p className="text-gray-400 mb-6">
-              Your workout session was interrupted and we couldn't recover your data. This sometimes happens due to browser issues or network problems.
-            </p>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/training-session')} 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                Start New Workout
-              </Button>
-              <Button 
-                onClick={() => navigate('/')} 
-                variant="outline"
-                className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-              >
-                <Home className="mr-2 h-4 w-4" />
-                Go Home
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show regular completion UI if we have workout data
   if (!completedWorkout) {
     // Check if we're stuck loading due to corruption
     const hasExerciseData = Object.keys(exercises).length > 0;
@@ -483,18 +489,11 @@ export const WorkoutCompletionEnhanced = () => {
         exercises: exerciseData
       };
       
-      // Set completion data and continue with normal flow
-      React.useEffect(() => {
-        console.log('🔧 Force-completing workout due to stuck loading state');
-      }, []);
-      
-      // Use the forced completion data for rendering below
       const duration = Math.round((forceCompletedWorkout.endTime - forceCompletedWorkout.startTime) / (1000 * 60));
       
       return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
           <div className="container mx-auto px-4 py-6 max-w-4xl">
-            {/* Continue with completion UI using forceCompletedWorkout */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">Workout Complete!</h1>
               <p className="text-gray-400">Great job on completing your workout</p>
@@ -523,38 +522,6 @@ export const WorkoutCompletionEnhanced = () => {
 
   const duration = Math.round((completedWorkout.endTime - completedWorkout.startTime) / (1000 * 60));
   
-  // Enhanced metrics processing with efficiency calculations
-  const processedMetrics = useMemo(() => {
-    // Transform store ExerciseSet format to database ExerciseSet format
-    const transformedExercises: Record<string, import('@/types/exercise').ExerciseSet[]> = {};
-    
-    Object.entries(completedWorkout.exercises).forEach(([exerciseName, exerciseData]) => {
-      const sets = exerciseData; // exerciseData is already ExerciseSet[] from CompletedWorkout interface
-      transformedExercises[exerciseName] = sets.map((set, index) => ({
-        id: `${exerciseName}-${index}`,
-        workout_id: 'temp-id',
-        exercise_name: exerciseName,
-        weight: set.weight,
-        reps: set.reps,
-        completed: set.completed,
-        set_number: index + 1,
-        rest_time: set.restTime,
-        created_at: new Date().toISOString(),
-      }));
-    });
-    
-    return processWorkoutMetrics(
-      transformedExercises,
-      duration,
-      weightUnit as 'kg' | 'lb',
-      { weight: 70, unit: 'kg' }, // You might want to get this from user profile
-      {
-        start_time: new Date(completedWorkout.startTime).toISOString(),
-        duration: duration
-      }
-    );
-  }, [completedWorkout.exercises, duration, weightUnit]);
-
   const totalSets = Object.values(completedWorkout.exercises).flat().length;
   const completedSets = Object.values(completedWorkout.exercises)
     .flat()
@@ -630,7 +597,7 @@ export const WorkoutCompletionEnhanced = () => {
             </CardContent>
           </Card>
 
-          <EfficiencyMetricsCard metrics={processedMetrics} />
+          {processedMetrics && <EfficiencyMetricsCard metrics={processedMetrics} />}
         </div>
 
         <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
@@ -684,36 +651,38 @@ export const WorkoutCompletionEnhanced = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Zap className="h-5 w-5 text-yellow-400" />
-              Advanced Metrics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
-                <p className="text-lg font-bold text-cyan-400">
-                  {processedMetrics.densityMetrics.formattedOverallDensity}
-                </p>
-                <p className="text-xs text-gray-400">Workout Density</p>
+        {processedMetrics && (
+          <Card className="bg-gray-900/40 border-gray-800/50 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Zap className="h-5 w-5 text-yellow-400" />
+                Advanced Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                  <p className="text-lg font-bold text-cyan-400">
+                    {processedMetrics.densityMetrics.formattedOverallDensity}
+                  </p>
+                  <p className="text-xs text-gray-400">Workout Density</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                  <p className="text-lg font-bold text-pink-400">
+                    {processedMetrics.intensityMetrics.averageLoad.toFixed(1)} {weightUnit}
+                  </p>
+                  <p className="text-xs text-gray-400">Average Load</p>
+                </div>
+                <div className="text-center p-3 bg-gray-800/30 rounded-lg">
+                  <p className="text-lg font-bold text-emerald-400">
+                    {processedMetrics.estimatedEnergyExpenditure} cal
+                  </p>
+                  <p className="text-xs text-gray-400">Est. Calories</p>
+                </div>
               </div>
-              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
-                <p className="text-lg font-bold text-pink-400">
-                  {processedMetrics.intensityMetrics.averageLoad.toFixed(1)} {weightUnit}
-                </p>
-                <p className="text-xs text-gray-400">Average Load</p>
-              </div>
-              <div className="text-center p-3 bg-gray-800/30 rounded-lg">
-                <p className="text-lg font-bold text-emerald-400">
-                  {processedMetrics.estimatedEnergyExpenditure} cal
-                </p>
-                <p className="text-xs text-gray-400">Est. Calories</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button
