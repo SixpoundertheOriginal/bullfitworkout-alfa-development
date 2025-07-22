@@ -565,6 +565,15 @@ export const useWorkoutStore = create<WorkoutState>()(
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
+        // First check: Don't persist saved or explicitly ended workouts
+        if (state.workoutStatus === 'saved' || state.explicitlyEnded) {
+          console.log('🚫 Not persisting saved/ended workout - clearing sessionStorage');
+          // Clear sessionStorage backup for completed workouts
+          sessionStorage.removeItem('workout-backup');
+          sessionStorage.removeItem('workout-session-recovery');
+          return {};
+        }
+        
         const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours
         
         if (state.elapsedTime < 0) {
@@ -582,12 +591,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           state.workoutStatus = 'failed'; // Don't save stuck saving states
         }
         
-        if (state.workoutStatus === 'saved' || state.explicitlyEnded) {
-          console.log('🚫 Not persisting saved/ended workout to prevent zombie recovery');
-          return {};
-        }
-        
-        if (state.exercises && Object.keys(state.exercises).length > 0) {
+        // Only create backup for active workouts
+        if (state.isActive && state.exercises && Object.keys(state.exercises).length > 0) {
           try {
             sessionStorage.setItem('workout-backup', JSON.stringify({
               exercises: state.exercises,
