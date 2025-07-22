@@ -125,6 +125,22 @@ const getExerciseSets = (exerciseData: ExerciseSet[] | WorkoutExerciseConfig): E
   return exerciseData.sets || [];
 };
 
+// Helper function to clear all storage
+const clearAllStorage = () => {
+  try {
+    // Clear localStorage items
+    localStorage.removeItem('workout-storage');
+    
+    // Clear sessionStorage items
+    sessionStorage.removeItem('workout-backup');
+    sessionStorage.removeItem('workout-session-recovery');
+    
+    console.log('✅ All workout storage cleared');
+  } catch (error) {
+    console.error('❌ Error clearing storage:', error);
+  }
+};
+
 // Create the persistent store
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
@@ -158,7 +174,6 @@ export const useWorkoutStore = create<WorkoutState>()(
       lastValidationTime: Date.now(),
       corruptionDetected: false,
       
-      // Action setters
       setExercises: (exercises) => set((state) => ({ 
         exercises: typeof exercises === 'function' ? normalizeExerciseData(exercises(state.exercises)) : normalizeExerciseData(exercises),
         lastTabActivity: Date.now(),
@@ -353,9 +368,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
       
       resetSession: () => {
-        // Clear all sessionStorage backup data to prevent recovery conflicts
-        sessionStorage.removeItem('workout-backup');
-        sessionStorage.removeItem('workout-session-recovery');
+        // Clear ALL storage immediately to prevent zombie sessions
+        clearAllStorage();
         
         set({ 
           exercises: {},
@@ -373,7 +387,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastTabActivity: Date.now(),
           savingErrors: [],
         });
-        console.log("Workout session reset");
+        console.log("🔄 Workout session reset - all storage cleared");
       },
       
       markAsSaving: () => set({ 
@@ -382,9 +396,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       }),
       
       markAsSaved: () => {
-        // Clear sessionStorage backup immediately to prevent recovery conflicts
-        sessionStorage.removeItem('workout-backup');
-        sessionStorage.removeItem('workout-session-recovery');
+        // CRITICAL: Clear ALL storage immediately to prevent zombie recovery
+        clearAllStorage();
         
         set({ 
           workoutStatus: 'saved',
@@ -395,6 +408,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         
         toast.success("Workout saved successfully!");
         
+        // Reset session after short delay to ensure UI updates
         setTimeout(() => {
           get().resetSession();
         }, 500);
@@ -459,7 +473,6 @@ export const useWorkoutStore = create<WorkoutState>()(
         };
       }),
       
-      // State recovery functions
       validateCurrentState: () => {
         const state = get();
         const validation = validateWorkoutState(state);
@@ -487,6 +500,9 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
       
       clearWorkoutState: () => {
+        // Clear ALL storage before resetting state
+        clearAllStorage();
+        
         set({
           exercises: {},
           activeExercise: null,
@@ -508,78 +524,69 @@ export const useWorkoutStore = create<WorkoutState>()(
           corruptionDetected: false,
         });
         
-      // Clear localStorage
-      try {
-        localStorage.removeItem('workout-storage');
-        sessionStorage.removeItem('workout-backup');
-      } catch (error) {
-        console.error('Error clearing storage:', error);
-      }
-      
-      toast.success("Workout session cleared", {
-        description: "All workout data has been reset"
-      });
-      
-      console.log('🗑️ Workout state cleared completely');
-    },
-
-    // Quick fix for corruption - saves current data and clears bad state
-    quickFix: () => {
-      set((state) => {
-        // Save current exercise data to sessionStorage backup
-        const backupData = {
-          exercises: state.exercises,
-          elapsedTime: state.elapsedTime,
-          activeExercise: state.activeExercise,
-          savedAt: Date.now()
-        };
+        toast.success("Workout session cleared", {
+          description: "All workout data has been reset"
+        });
         
-        try {
-          sessionStorage.setItem('workout-backup', JSON.stringify(backupData));
-        } catch (error) {
-          console.warn('Could not save backup:', error);
-        }
+        console.log('🗑️ Workout state cleared completely');
+      },
 
-        // Fix corrupted state while preserving exercise data
-        const fixed = {
-          ...state,
-          workoutStatus: (state.exercises && Object.keys(state.exercises).length > 0 ? 'active' : 'idle') as WorkoutStatus,
-          savingErrors: [],
-          lastTabActivity: Date.now(),
-          activeRestTimers: new Map(),
-        };
+      quickFix: () => {
+        set((state) => {
+          // Save current exercise data to sessionStorage backup
+          const backupData = {
+            exercises: state.exercises,
+            elapsedTime: state.elapsedTime,
+            activeExercise: state.activeExercise,
+            savedAt: Date.now()
+          };
+          
+          try {
+            sessionStorage.setItem('workout-backup', JSON.stringify(backupData));
+          } catch (error) {
+            console.warn('Could not save backup:', error);
+          }
 
-        console.log('🔧 Quick fix applied - workout state cleaned');
-        return fixed;
-      });
-    },
+          // Fix corrupted state while preserving exercise data
+          const fixed = {
+            ...state,
+            workoutStatus: (state.exercises && Object.keys(state.exercises).length > 0 ? 'active' : 'idle') as WorkoutStatus,
+            savingErrors: [],
+            lastTabActivity: Date.now(),
+            activeRestTimers: new Map(),
+          };
+
+          console.log('🔧 Quick fix applied - workout state cleaned');
+          return fixed;
+        });
+      },
     }),
     {
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
-        // Enhanced validation to prevent corruption
         const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours
         
-        // Fix negative elapsed time
         if (state.elapsedTime < 0) {
           console.warn('🔧 Fixed negative elapsed time');
           state.elapsedTime = 0;
         }
         
-        // Fix extremely large elapsed times (corruption detection)
         if (state.elapsedTime > MAX_REASONABLE_DURATION) {
           console.warn(`🔧 Fixed corrupted elapsed time: ${state.elapsedTime}s -> 2h`);
           state.elapsedTime = 2 * 60 * 60; // Cap at 2 hours
         }
         
-        // Fix stuck saving states
         if (state.workoutStatus === 'saving' && Date.now() - (state.lastTabActivity || 0) > 60000) {
           console.warn('🔧 Fixed stuck saving state');
           state.workoutStatus = 'failed'; // Don't save stuck saving states
         }
         
-        // Create sessionStorage backup of current workout
+        if (state.workoutStatus === 'saved' || state.explicitlyEnded) {
+          console.log('🚫 Not persisting saved/ended workout to prevent zombie recovery');
+          return {};
+        }
+        
         if (state.exercises && Object.keys(state.exercises).length > 0) {
           try {
             sessionStorage.setItem('workout-backup', JSON.stringify({
@@ -616,25 +623,34 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (error) {
             console.error('❌ Error rehydrating workout state:', error);
             
-            // Try to restore from sessionStorage backup
             try {
               const backup = sessionStorage.getItem('workout-backup');
               if (backup) {
                 const backupData = JSON.parse(backup);
+                
+                const backupAge = Date.now() - (backupData.savedAt || 0);
+                const MAX_BACKUP_AGE = 30 * 60 * 1000; // 30 minutes
+                
+                if (backupAge > MAX_BACKUP_AGE) {
+                  console.log('🚫 Backup too old, clearing instead of restoring');
+                  sessionStorage.removeItem('workout-backup');
+                  clearAllStorage();
+                  return;
+                }
+                
                 const store = useWorkoutStore.getState();
                 store.setExercises(backupData.exercises);
                 store.setElapsedTime(backupData.elapsedTime);
                 if (backupData.activeExercise) {
                   store.setActiveExercise(backupData.activeExercise);
                 }
-                console.log('✅ Restored from backup');
+                console.log('✅ Restored from recent backup');
                 return;
               }
             } catch (backupError) {
               console.warn('Could not restore from backup:', backupError);
             }
             
-            // Clear corrupted state on startup
             setTimeout(() => {
               const store = useWorkoutStore.getState();
               store.clearWorkoutState();
@@ -645,31 +661,31 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (rehydratedState) {
             console.log('🔄 Rehydrating workout state...');
             
-            // Add default values for new state properties
+            if (rehydratedState.workoutStatus === 'saved' || rehydratedState.explicitlyEnded) {
+              console.log('🚫 Preventing zombie recovery of saved/ended workout');
+              clearAllStorage();
+              return;
+            }
+            
             rehydratedState.stateVersion = rehydratedState.stateVersion || CURRENT_STATE_VERSION;
             rehydratedState.lastValidationTime = rehydratedState.lastValidationTime || Date.now();
             rehydratedState.corruptionDetected = false;
             
-            // Enhanced corruption detection during rehydration
             const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours
             
-            // Fix corrupted elapsed time immediately during rehydration
             if (rehydratedState.elapsedTime > MAX_REASONABLE_DURATION) {
               console.warn(`🔧 Auto-fixing corrupted elapsed time during rehydration: ${rehydratedState.elapsedTime}s -> 2h`);
               rehydratedState.elapsedTime = 2 * 60 * 60; // Cap at 2 hours
               rehydratedState.corruptionDetected = true;
             }
             
-            // Validate rehydrated state for corruption
             const validation = validateWorkoutState(rehydratedState);
             
             if (validation.issues.length > 0) {
               console.warn('⚠️ State corruption detected during rehydration:', validation.issues);
               
-              // Mark corruption for UI handling
               rehydratedState.corruptionDetected = true;
               
-              // Show recovery notification after a delay
               setTimeout(() => {
                 const criticalIssues = validation.issues.filter(issue => issue.severity === 'critical');
                 
@@ -699,7 +715,6 @@ export const useWorkoutStore = create<WorkoutState>()(
               }, 1500);
             }
             
-            // Restore rest timers from serialized format
             if (rehydratedState.activeRestTimers && Array.isArray(rehydratedState.activeRestTimers)) {
               const timersArray = rehydratedState.activeRestTimers as [string, RestTimerState][];
               rehydratedState.activeRestTimers = new Map(timersArray) as any;
@@ -707,7 +722,6 @@ export const useWorkoutStore = create<WorkoutState>()(
               rehydratedState.activeRestTimers = new Map() as any;
             }
             
-            // Normalize exercise data format
             if (rehydratedState.exercises) {
               rehydratedState.exercises = normalizeExerciseData(rehydratedState.exercises);
             }
@@ -715,7 +729,6 @@ export const useWorkoutStore = create<WorkoutState>()(
             console.log('✅ State rehydration complete');
           }
           
-          // Handle active workout recovery
           if (rehydratedState && rehydratedState.isActive && !rehydratedState.corruptionDetected) {
             if (rehydratedState.isActive && rehydratedState.startTime) {
               const storedStartTime = new Date(rehydratedState.startTime);
