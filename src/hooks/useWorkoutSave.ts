@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { saveWorkout, processRetryQueue, recoverPartiallyCompletedWorkout } from "@/services/workoutSaveService";
 import { WorkoutError, EnhancedExerciseSet } from "@/types/workout";
-import { ExerciseSet } from '@/store/workoutStore';
+import { ExerciseSet, useWorkoutStore } from '@/store/workoutStore';
 
 export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsedTime: number, resetSession: () => void) => {
   const [saveStatus, setSaveStatus] = useState<{
@@ -23,6 +23,7 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
   });
 
   const { user } = useAuth();
+  const { markAsSaved: markAsSavedStore } = useWorkoutStore();
 
   const markAsSaving = useCallback(() => {
     setSaveStatus(prev => ({
@@ -157,7 +158,9 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
           markAsPartialSave(saveResult.error ? [saveResult.error] : []);
           return saveResult.workoutId;
         } else {
+          // Call both local and global store markAsSaved
           markAsSaved(saveResult.workoutId || '');
+          markAsSavedStore();
           return saveResult.workoutId;
         }
       } else {
