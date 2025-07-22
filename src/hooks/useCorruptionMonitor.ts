@@ -1,15 +1,65 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWorkoutStore } from '@/store/workoutStore';
-import { quickHealthCheck, clearCorruption } from '@/utils/immediateCorruptionCleanup';
+import { quickHealthCheck, clearCorruption, scanForCorruption } from '@/utils/immediateCorruptionCleanup';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const useCorruptionMonitor = () => {
   const statusHistory = useRef<string[]>([]);
   const lastCheck = useRef<number>(0);
+  const timeInSavingState = useRef<number>(0);
+  const stuckDetected = useRef<boolean>(false);
+  const navigate = useNavigate();
   
-  const { workoutStatus, isActive, elapsedTime } = useWorkoutStore();
+  const { 
+    workoutStatus, 
+    isActive, 
+    elapsedTime,
+    lastTabActivity,
+    markAsFailed,
+    markAsSaved,
+    resetSession
+  } = useWorkoutStore();
 
+  // Track saving state to detect stuck workouts
+  useEffect(() => {
+    if (workoutStatus === 'saving') {
+      const now = Date.now();
+      if (timeInSavingState.current === 0) {
+        timeInSavingState.current = now;
+      } else {
+        const stuckDuration = now - timeInSavingState.current;
+        
+        // Auto-transition from 'saving' to 'failed' after 2 minutes
+        if (stuckDuration > 2 * 60 * 1000 && !stuckDetected.current) {
+          console.warn(`🔄 Auto-recovering from stuck 'saving' state after ${Math.round(stuckDuration / 1000)}s`);
+          stuckDetected.current = true;
+          
+          // Force transition to failed state
+          markAsFailed({
+            message: 'Save operation timed out',
+            type: 'unknown', // Using 'unknown' type as per the allowed types
+            timestamp: new Date().toISOString(),
+            recoverable: true
+          });
+          
+          toast({
+            title: "Workout save timed out",
+            description: "Your workout got stuck while saving. You can try again or restart.",
+            variant: "destructive",
+            duration: 5000,
+          });
+        }
+      }
+    } else {
+      // Reset timer when not in saving state
+      timeInSavingState.current = 0;
+      stuckDetected.current = false;
+    }
+  }, [workoutStatus, markAsFailed]);
+
+  // Main corruption detection effect
   useEffect(() => {
     if (!isActive) return;
 
@@ -31,13 +81,32 @@ export const useCorruptionMonitor = () => {
         return;
       }
 
-      // Check for stuck saving state (>30 seconds)
-      if (workoutStatus === 'saving' && (now - lastCheck.current) > 30000) {
-        showFixButton('Workout stuck while saving');
+      // Check for session age > 24 hours (very likely corrupted)
+      if (lastTabActivity && (now - lastTabActivity > 24 * 60 * 60 * 1000)) {
+        console.warn('🕰️ Extremely old session detected (> 24h). Likely corrupted.');
+        showFixButton('Workout session is too old and needs reset');
         return;
       }
 
-      // Use the new quick health check
+      // Check for excessive elapsed time (> 12 hours)
+      const MAX_REASONABLE_DURATION = 12 * 60 * 60; // 12 hours in seconds
+      if (elapsedTime > MAX_REASONABLE_DURATION) {
+        console.warn(`⏱️ Excessive workout duration: ${elapsedTime}s (> 12h). Likely corrupted.`);
+        showFixButton('Workout duration is unreasonably long');
+        return;
+      }
+
+      // Deep scan for corruption (every 5 minutes)
+      if (now - lastCheck.current > 5 * 60 * 1000) {
+        const report = scanForCorruption();
+        if (report.summary.severity === 'critical' || report.summary.severity === 'major') {
+          console.warn('🚨 Critical corruption detected:', report);
+          showFixButton(`Serious workout data issues detected (${report.summary.totalIssues} issues)`);
+          return;
+        }
+      }
+
+      // Quick health check (every check interval)
       const health = quickHealthCheck();
       if (!health.isHealthy) {
         showFixButton(`Health issues detected: ${health.issues[0]}`);
@@ -47,9 +116,10 @@ export const useCorruptionMonitor = () => {
       lastCheck.current = now;
     };
 
-    const interval = setInterval(checkForCorruption, 30000); // Check every 30 seconds
+    // Check every 30 seconds
+    const interval = setInterval(checkForCorruption, 30000);
     return () => clearInterval(interval);
-  }, [isActive, workoutStatus]);
+  }, [isActive, workoutStatus, elapsedTime, lastTabActivity]);
 
   const showFixButton = (message: string) => {
     toast({

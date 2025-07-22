@@ -591,15 +591,35 @@ export const useWorkoutStore = create<WorkoutState>()(
           state.workoutStatus = 'failed'; // Don't save stuck saving states
         }
         
+        // Check for very old session before backing up
+        const SESSION_AGE_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
+        const isSessionTooOld = state.startTime && (Date.now() - new Date(state.startTime).getTime() > SESSION_AGE_LIMIT);
+        
+        if (isSessionTooOld) {
+          console.warn('🕰️ Session too old, skipping backup and marking as invalid');
+          sessionStorage.removeItem('workout-backup');
+          // Do not save extremely old sessions
+          return {};
+        }
+        
         // Only create backup for active workouts
         if (state.isActive && state.exercises && Object.keys(state.exercises).length > 0) {
           try {
-            sessionStorage.setItem('workout-backup', JSON.stringify({
-              exercises: state.exercises,
-              elapsedTime: state.elapsedTime,
-              activeExercise: state.activeExercise,
-              savedAt: Date.now()
-            }));
+            // Check if in stuck saving state
+            const isStuckSaving = state.workoutStatus === 'saving' && 
+                                 state.lastTabActivity && 
+                                 (Date.now() - state.lastTabActivity > 2 * 60 * 1000);
+                                 
+            if (!isStuckSaving) {
+              sessionStorage.setItem('workout-backup', JSON.stringify({
+                exercises: state.exercises,
+                elapsedTime: state.elapsedTime,
+                activeExercise: state.activeExercise,
+                savedAt: Date.now()
+              }));
+            } else {
+              console.warn('🚫 Not backing up stuck saving state to prevent zombie recovery');
+            }
           } catch (error) {
             console.warn('Could not create backup:', error);
           }
@@ -666,10 +686,29 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (rehydratedState) {
             console.log('🔄 Rehydrating workout state...');
             
+            // ENHANCED ZOMBIE PROTECTION: Check for invalid states before rehydration
             if (rehydratedState.workoutStatus === 'saved' || rehydratedState.explicitlyEnded) {
               console.log('🚫 Preventing zombie recovery of saved/ended workout');
               clearAllStorage();
               return;
+            }
+            
+            // Check for session age limit to prevent very old sessions from being rehydrated
+            const SESSION_AGE_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
+            if (rehydratedState.startTime && (Date.now() - new Date(rehydratedState.startTime).getTime() > SESSION_AGE_LIMIT)) {
+              console.warn('🕰️ Session too old (>24h), clearing instead of rehydrating');
+              clearAllStorage();
+              return;
+            }
+            
+            // Check for stuck saving state during rehydration
+            if (rehydratedState.workoutStatus === 'saving' && rehydratedState.lastTabActivity) {
+              const stuckTime = Date.now() - rehydratedState.lastTabActivity;
+              if (stuckTime > 2 * 60 * 1000) { // 2 minutes
+                console.warn('🔄 Unsticking workout from saving state during rehydration');
+                rehydratedState.workoutStatus = 'failed';
+                rehydratedState.corruptionDetected = true;
+              }
             }
             
             rehydratedState.stateVersion = rehydratedState.stateVersion || CURRENT_STATE_VERSION;

@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, RefreshCw, Trash2, Eye } from 'lucide-react';
 import { StateCorruptionIssue } from '@/utils/workoutStateDebug';
+import { EmergencyRecoveryButton } from './EmergencyRecoveryButton';
 
 interface WorkoutRecoveryDialogProps {
   isOpen: boolean;
@@ -182,6 +183,16 @@ export const WorkoutRecoveryDialog: React.FC<WorkoutRecoveryDialogProps> = ({
                 <span><strong>Start Fresh:</strong> Clear everything and begin a new workout session</span>
               </div>
             </div>
+            
+            {criticalIssues.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <h4 className="font-medium mb-2 text-destructive">Emergency Recovery:</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  If normal recovery fails, use this emergency option to force reset the workout state completely.
+                </p>
+                <EmergencyRecoveryButton className="w-full mt-2" />
+              </div>
+            )}
           </div>
         </div>
 
