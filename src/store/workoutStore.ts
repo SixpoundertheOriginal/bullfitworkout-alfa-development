@@ -390,10 +390,22 @@ export const useWorkoutStore = create<WorkoutState>()(
         console.log("🔄 Workout session reset - all storage cleared");
       },
       
-      markAsSaving: () => set({ 
-        workoutStatus: 'saving',
-        lastTabActivity: Date.now(),
-      }),
+      markAsSaving: () => {
+        // CRITICAL: Clear all backup data BEFORE setting saving state
+        // This prevents recovery loops that cause stuck workouts
+        try {
+          sessionStorage.removeItem('workout-backup');
+          sessionStorage.removeItem('workout-session-recovery');
+          console.log('🗑️ Cleared backup data before save');
+        } catch (error) {
+          console.error('Failed to clear backup data:', error);
+        }
+        
+        set({ 
+          workoutStatus: 'saving',
+          lastTabActivity: Date.now(),
+        });
+      },
       
       markAsSaved: () => {
         // CRITICAL: Clear ALL storage immediately to prevent zombie recovery

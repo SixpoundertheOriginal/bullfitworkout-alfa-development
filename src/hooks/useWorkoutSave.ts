@@ -26,6 +26,14 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
   const { markAsSaved: markAsSavedStore } = useWorkoutStore();
 
   const markAsSaving = useCallback(() => {
+    // Clear backup data BEFORE marking as saving to prevent recovery loops
+    try {
+      sessionStorage.removeItem('workout-backup');
+      sessionStorage.removeItem('workout-session-recovery');
+    } catch (error) {
+      console.error('Failed to clear backup data:', error);
+    }
+    
     setSaveStatus(prev => ({
       ...prev,
       status: 'saving',
@@ -52,6 +60,15 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
   }, []);
 
   const markAsSaved = useCallback((workoutId: string) => {
+    // Clear ALL storage when workout is saved
+    try {
+      sessionStorage.removeItem('workout-backup');
+      sessionStorage.removeItem('workout-session-recovery');
+      localStorage.removeItem('workout-storage');
+    } catch (error) {
+      console.error('Failed to clear storage:', error);
+    }
+    
     setSaveStatus({
       status: 'saved',
       errors: [],

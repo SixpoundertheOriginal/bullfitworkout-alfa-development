@@ -31,22 +31,31 @@ export const useCorruptionMonitor = () => {
       } else {
         const stuckDuration = now - timeInSavingState.current;
         
-        // Auto-transition from 'saving' to 'failed' after 2 minutes
-        if (stuckDuration > 2 * 60 * 1000 && !stuckDetected.current) {
+        // Auto-transition from 'saving' to 'failed' after 1 minute (faster recovery)
+        if (stuckDuration > 60 * 1000 && !stuckDetected.current) {
           console.warn(`🔄 Auto-recovering from stuck 'saving' state after ${Math.round(stuckDuration / 1000)}s`);
           stuckDetected.current = true;
           
+          // Clear all storage to break the loop
+          try {
+            sessionStorage.removeItem('workout-backup');
+            sessionStorage.removeItem('workout-session-recovery');
+            localStorage.removeItem('workout-storage');
+          } catch (error) {
+            console.error('Failed to clear storage during auto-recovery:', error);
+          }
+          
           // Force transition to failed state
           markAsFailed({
-            message: 'Save operation timed out',
-            type: 'unknown', // Using 'unknown' type as per the allowed types
+            message: 'Save operation timed out - cleared stuck data',
+            type: 'unknown',
             timestamp: new Date().toISOString(),
-            recoverable: true
+            recoverable: false // Not recoverable since we cleared the data
           });
           
           toast({
             title: "Workout save timed out",
-            description: "Your workout got stuck while saving. You can try again or restart.",
+            description: "Cleared stuck data. Please start a new workout.",
             variant: "destructive",
             duration: 5000,
           });
