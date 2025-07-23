@@ -259,7 +259,7 @@ export function EnhancedExerciseCard({
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                Last: {formatDistanceToNow(new Date(lastPerformed), { addSuffix: true })}
+                Last: {lastPerformed ? formatDistanceToNow(new Date(lastPerformed), { addSuffix: true }) : 'Never'}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -268,12 +268,14 @@ export function EnhancedExerciseCard({
                 {progressionTrend}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                PR: {personalBest.weight}kg × {personalBest.reps}
-              </span>
-            </div>
+            {personalBest && (
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  PR: {personalBest.weight}kg × {personalBest.reps}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
