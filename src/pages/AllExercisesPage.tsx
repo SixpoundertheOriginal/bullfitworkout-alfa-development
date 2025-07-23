@@ -1,39 +1,25 @@
-
-import React, { useState, useEffect } from "react";
-import { useExercises } from "@/hooks/useExercises";
-import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter, X, ChevronLeft, Heart, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { ExerciseDialog } from "@/components/ExerciseDialog";
-import { MuscleGroup, EquipmentType, MovementPattern, Difficulty, Exercise } from "@/types/exercise";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { ExerciseFAB } from "@/components/ExerciseFAB";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PageHeader } from "@/components/navigation/PageHeader";
-import { COMMON_MUSCLE_GROUPS, COMMON_EQUIPMENT, MOVEMENT_PATTERNS, DIFFICULTY_LEVELS } from "@/types/exercise";
-import { useWorkoutHistory } from "@/hooks/useWorkoutHistory";
+import React, { useState, useEffect, useMemo } from 'react';
+import { PageHeader } from '@/components/navigation/PageHeader';
+import { EnhancedExerciseCard } from '@/components/exercises/EnhancedExerciseCard';
+import { ExerciseDialog } from '@/components/ExerciseDialog';
+import { ExerciseDetailsModal } from '@/components/exercises/ExerciseDetailsModal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ExerciseFAB } from '@/components/ExerciseFAB';
 import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
-import { CommonExerciseCard } from "@/components/exercises/CommonExerciseCard";
-import { EnhancedExerciseCard } from "@/components/exercises/EnhancedExerciseCard";
-import { ExerciseDetailsModal } from "@/components/exercises/ExerciseDetailsModal";
-import { SmartRecommendations } from "@/components/exercises/SmartRecommendations";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { MultiSelect } from "@/components/MultiSelect";
-import { FilterPresets, FilterState } from "@/components/exercises/FilterPresets";
-import { FilterChips } from "@/components/exercises/FilterChips";
-import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
-import { filterExercises as searchFilterExercises } from "@/utils/exerciseSearch";
+  Search, 
+  Plus, 
+  ChevronLeft,
+  X
+} from 'lucide-react';
+import { Exercise, MuscleGroup, EquipmentType, MovementPattern, Difficulty } from '@/types/exercise';
+import { useExercises } from '@/hooks/useExercises';
+import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { filterExercises as searchFilterExercises } from '@/utils/exerciseSearch';
 
 interface AllExercisesPageProps {
   onSelectExercise?: (exercise: string | Exercise) => void;
@@ -43,125 +29,38 @@ interface AllExercisesPageProps {
 
 export default function AllExercisesPage({ onSelectExercise, standalone = true, onBack }: AllExercisesPageProps) {
   const { exercises, isLoading, isError, createExercise, isPending } = useExercises();
-  const { workouts } = useWorkoutHistory();
   const { favorites, toggleFavorite, isFavorite } = useFavoriteExercises();
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState<string>("smart");
   
   // For delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
 
-  // Enhanced filter state
-  const [filters, setFilters] = useState<FilterState>({
-    muscleGroups: [],
-    equipment: [],
-    difficulty: [],
-    movementPatterns: [],
-    searchQuery: ""
-  });
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const exercisesPerPage = 8;
+  // Simple search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   // For add/edit
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [exerciseToEdit, setExerciseToEdit] = useState<any | null>(null);
 
-  // Extract recently used exercises from workout history
-  const recentExercises = React.useMemo(() => {
-    if (!workouts?.length) return [];
-    
-    const exerciseMap = new Map<string, Exercise>();
-    
-    // Get unique exercise names from recent workouts
-    workouts.slice(0, 8).forEach(workout => {
-      const exerciseNames = new Set<string>();
-      
-      workout.exerciseSets?.forEach(set => {
-        exerciseNames.add(set.exercise_name);
-      });
-      
-      exerciseNames.forEach(name => {
-        const exercise = exercises.find(e => e.name === name);
-        if (exercise && !exerciseMap.has(exercise.id)) {
-          exerciseMap.set(exercise.id, exercise);
-        }
-      });
-    });
-    
-    return Array.from(exerciseMap.values());
-  }, [workouts, exercises]);
-
-  // Get favorite exercises
-  const favoriteExercises = React.useMemo(() => {
-    return exercises.filter(exercise => favorites.includes(exercise.id));
-  }, [exercises, favorites]);
-
-  // Enhanced filter logic with comprehensive search and multi-select support
-  const applyFilters = (exercisesList: Exercise[]) => {
-    // If there's a search query, only apply search and ignore other filters
-    if (filters.searchQuery.trim()) {
-      return searchFilterExercises(exercisesList, filters.searchQuery, {
-        includeEquipment: true,
-        includeMuscleGroups: true,
-        includeMovementPattern: true,
-        includeDifficulty: true,
-        fuzzyMatch: true
-      });
+  // Apply search filter to exercises
+  const filteredExercises = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return exercises; // Show all exercises when no search
     }
-
-    // Only apply other filters when there's no search query
-    return exercisesList.filter(exercise => {
-      // Muscle group filter (AND logic - must match ALL selected groups)
-      const matchesMuscleGroup = filters.muscleGroups.length === 0 || 
-        filters.muscleGroups.every(selectedGroup => 
-          exercise.primary_muscle_groups.includes(selectedGroup) ||
-          (exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.includes(selectedGroup))
-        );
-
-      // Equipment filter (OR logic - must match ANY selected equipment)
-      const matchesEquipment = filters.equipment.length === 0 || 
-        filters.equipment.some(selectedEq => exercise.equipment_type.includes(selectedEq));
-
-      // Difficulty filter (OR logic - must match ANY selected difficulty)
-      const matchesDifficulty = filters.difficulty.length === 0 || 
-        filters.difficulty.includes(exercise.difficulty);
-
-      // Movement pattern filter (OR logic - must match ANY selected pattern)
-      const matchesMovement = filters.movementPatterns.length === 0 || 
-        filters.movementPatterns.includes(exercise.movement_pattern);
-
-      return matchesMuscleGroup && matchesEquipment && matchesDifficulty && matchesMovement;
+    
+    return searchFilterExercises(exercises, searchQuery, {
+      includeEquipment: true,
+      includeMuscleGroups: true,
+      includeMovementPattern: true,
+      includeDifficulty: true,
+      fuzzyMatch: true
     });
-  };
-
-  const suggestedExercises = applyFilters(exercises.slice(0, 20)); // Limit suggested to top 20 for better performance
-  const filteredRecent = applyFilters(recentExercises);
-  const filteredAll = applyFilters(exercises);
-
-  // Pagination logic
-  const indexOfLastExercise = currentPage * exercisesPerPage;
-  const indexOfFirstExercise = indexOfLastExercise - exercisesPerPage;
-  const currentExercises = filteredAll.slice(indexOfFirstExercise, indexOfLastExercise);
-  const totalPages = Math.ceil(filteredAll.length / exercisesPerPage);
-
-  const paginate = (pageNumber: number) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
+  }, [exercises, searchQuery]);
 
   const handleAdd = () => {
     setExerciseToEdit(null);
@@ -193,7 +92,6 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     setExerciseToDelete(null);
   };
   
-  
   const handleDuplicate = (exercise: Exercise) => {
     toast({
       title: "Duplicate Exercise",
@@ -212,40 +110,8 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     setShowDetailsModal(true);
   };
 
-  // Enhanced filter management
-  const updateFilters = (newFilters: Partial<FilterState>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const applyQuickFilter = (quickFilters: Partial<FilterState>) => {
-    setFilters(prev => ({
-      ...prev,
-      ...quickFilters
-    }));
-  };
-
-  const removeFilter = (category: keyof FilterState, value: string) => {
-    setFilters(prev => {
-      if (category === 'searchQuery') {
-        return { ...prev, searchQuery: '' };
-      }
-      
-      const currentArray = prev[category] as string[];
-      return {
-        ...prev,
-        [category]: currentArray.filter(item => item !== value)
-      };
-    });
-  };
-
-  const clearAllFilters = () => {
-    setFilters({
-      muscleGroups: [],
-      equipment: [],
-      difficulty: [],
-      movementPatterns: [],
-      searchQuery: ""
-    });
+  const clearSearch = () => {
+    setSearchQuery('');
   };
 
   // Add/Edit handler
@@ -302,93 +168,43 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     );
   };
 
-  const renderExerciseList = (exercisesList: Exercise[], showPagination = false) => {
-    if (exercisesList.length === 0) {
+  const renderExerciseList = (exercisesList: Exercise[]) => {
+    if (isLoading) {
       return (
-        <div className="text-center py-6 text-muted-foreground">
-          No exercises found
+        <div className="space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          ))}
         </div>
       );
     }
 
-    const listToRender = showPagination ? currentExercises : exercisesList;
+    if (isError) {
+      return (
+        <div className="text-center py-8 text-destructive">
+          Failed to load exercises. Please try again.
+        </div>
+      );
+    }
+
+    if (exercisesList.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <div className="text-muted-foreground mb-2">
+            {searchQuery ? `No exercises found for "${searchQuery}"` : "No exercises available"}
+          </div>
+          {searchQuery && (
+            <Button variant="outline" size="sm" onClick={clearSearch}>
+              Clear search
+            </Button>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-2">
-        {listToRender.map(renderExerciseCard)}
-        
-        {showPagination && totalPages > 1 && (
-          <Pagination className="mt-4">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => paginate(currentPage - 1)}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-              
-              {/* First page */}
-              {currentPage > 2 && (
-                <PaginationItem>
-                  <PaginationLink onClick={() => paginate(1)}>1</PaginationLink>
-                </PaginationItem>
-              )}
-              
-              {/* Ellipsis */}
-              {currentPage > 3 && (
-                <PaginationItem>
-                  <span className="px-2">...</span>
-                </PaginationItem>
-              )}
-              
-              {/* Previous page */}
-              {currentPage > 1 && (
-                <PaginationItem>
-                  <PaginationLink onClick={() => paginate(currentPage - 1)}>
-                    {currentPage - 1}
-                  </PaginationLink>
-                </PaginationItem>
-              )}
-              
-              {/* Current page */}
-              <PaginationItem>
-                <PaginationLink isActive>{currentPage}</PaginationLink>
-              </PaginationItem>
-              
-              {/* Next page */}
-              {currentPage < totalPages && (
-                <PaginationItem>
-                  <PaginationLink onClick={() => paginate(currentPage + 1)}>
-                    {currentPage + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              )}
-              
-              {/* Ellipsis */}
-              {currentPage < totalPages - 2 && (
-                <PaginationItem>
-                  <span className="px-2">...</span>
-                </PaginationItem>
-              )}
-              
-              {/* Last page */}
-              {currentPage < totalPages - 1 && (
-                <PaginationItem>
-                  <PaginationLink onClick={() => paginate(totalPages)}>
-                    {totalPages}
-                  </PaginationLink>
-                </PaginationItem>
-              )}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => paginate(currentPage + 1)}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
+        {exercisesList.map(renderExerciseCard)}
       </div>
     );
   };
@@ -437,7 +253,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
         </AlertDialog>
         
         {/* Header with back button if needed */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           {onBack && (
             <Button 
               variant="ghost"
@@ -461,12 +277,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
               onClick={handleAdd}
               size="sm"
               variant="outline"
-              className="h-9 px-3 rounded-full relative overflow-hidden group"
-              style={{
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
-                border: '1px solid rgba(139,92,246,0.3)',
-                color: 'rgba(255,255,255,0.9)'
-              }}
+              className="h-9 px-3 rounded-full"
             >
               <Plus size={16} className="mr-1" />
               New Exercise
@@ -474,254 +285,46 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
           )}
         </div>
         
-        {/* Premium Search bar */}
-        <div className="relative mb-4">
-          <div
-            className="relative rounded-xl overflow-hidden"
-            style={{
-              background: `
-                linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(236,72,153,0.08) 100%),
-                linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%)
-              `,
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-          >
-            <Search className="absolute left-3 top-2.5 h-4 w-4" style={{ color: 'rgba(139,92,246,0.7)' }} />
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search exercises..."
-              className="pl-9 bg-transparent border-none focus:ring-0 text-white placeholder:text-white/50"
-              value={filters.searchQuery}
-              onChange={(e) => updateFilters({ searchQuery: e.target.value })}
+              placeholder="Search exercises by name, muscle group, equipment..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 h-10 bg-card border-border"
             />
-            {filters.searchQuery && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="absolute right-2 top-1.5 h-7 w-7 p-0 text-white/60 hover:text-white"
-                onClick={() => updateFilters({ searchQuery: "" })}
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSearch}
+                className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-muted"
               >
-                <X className="h-4 w-4" />
+                <X size={14} />
               </Button>
             )}
           </div>
-        </div>
-                
-        {/* Tabs for navigation */}
-        <Tabs className="flex-1 overflow-hidden flex flex-col" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="smart">Smart</TabsTrigger>
-            <TabsTrigger value="favorites">Favorites</TabsTrigger>
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-            <TabsTrigger value="browse">Browse All</TabsTrigger>
-          </TabsList>
           
-
-          {/* Quick Filter Presets */}
-          <FilterPresets onApplyFilter={applyQuickFilter} activeFilters={filters} />
-          
-          {/* Active Filter Chips */}
-          <FilterChips 
-            filters={filters} 
-            onRemoveFilter={removeFilter} 
-            onClearAll={clearAllFilters} 
-          />
-
-          {/* Filters button - only show in browse tab */}
-          {activeTab === 'browse' && (
-            <div className="mb-4">
-              <Button 
-                variant="outline"
-                size="sm" 
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center w-full justify-center ${showFilters ? 'bg-accent border-primary' : ''}`}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Advanced Filters
-                {(filters.muscleGroups.length > 0 || filters.equipment.length > 0 || 
-                  filters.difficulty.length > 0 || filters.movementPatterns.length > 0) && (
-                  <Badge variant="secondary" className="ml-2 bg-primary text-primary-foreground text-xs">
-                    {filters.muscleGroups.length + filters.equipment.length + 
-                     filters.difficulty.length + filters.movementPatterns.length}
-                  </Badge>
-                )}
-              </Button>
+          {/* Search results info */}
+          {searchQuery && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              {filteredExercises.length} result{filteredExercises.length !== 1 ? 's' : ''} found
             </div>
           )}
-          
-          {/* Advanced Filter section */}
-          {showFilters && activeTab === 'browse' && (
-            <Card className="p-4 mb-4 bg-card border-border">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Muscle Groups</label>
-                  <MultiSelect
-                    options={COMMON_MUSCLE_GROUPS.map(muscle => ({ label: muscle, value: muscle }))}
-                    selected={filters.muscleGroups}
-                    onChange={(values) => updateFilters({ muscleGroups: values as MuscleGroup[] })}
-                    placeholder="Select muscle groups"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Equipment</label>
-                  <MultiSelect
-                    options={COMMON_EQUIPMENT.map(eq => ({ label: eq, value: eq }))}
-                    selected={filters.equipment}
-                    onChange={(values) => updateFilters({ equipment: values as EquipmentType[] })}
-                    placeholder="Select equipment"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Difficulty</label>
-                  <MultiSelect
-                    options={DIFFICULTY_LEVELS.map(diff => ({ label: diff, value: diff }))}
-                    selected={filters.difficulty}
-                    onChange={(values) => updateFilters({ difficulty: values as Difficulty[] })}
-                    placeholder="Select difficulty"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Movement Patterns</label>
-                  <MultiSelect
-                    options={MOVEMENT_PATTERNS.map(pattern => ({ label: pattern, value: pattern }))}
-                    selected={filters.movementPatterns}
-                    onChange={(values) => updateFilters({ movementPatterns: values as MovementPattern[] })}
-                    placeholder="Select patterns"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-muted-foreground">
-                  {filteredAll.length} exercise{filteredAll.length !== 1 ? 's' : ''} found
-                </div>
-                
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-primary hover:text-primary/80"
-                >
-                  Clear all filters
-                </Button>
-              </div>
-            </Card>
-          )}
-          
-          {/* Tab content */}
-          <div className="flex-1 overflow-y-auto">
-            {/* Loading state */}
-            {isLoading && (
-              <div className="space-y-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <Card key={index} className="bg-gray-900 border-gray-700 p-4">
-                    <div className="flex flex-col gap-2">
-                      <Skeleton className="h-6 w-3/4 bg-gray-800" />
-                      <Skeleton className="h-4 w-5/6 bg-gray-800" />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-            
-            {/* Error state */}
-            {isError && (
-              <div className="text-red-500 text-center py-8">
-                Error loading exercises. Please try again later.
-              </div>
-            )}
-            
-            {/* Empty state */}
-            {!isLoading && !isError && filteredAll.length === 0 && activeTab === 'browse' && (
-              <div className="text-center py-12">
-                <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
-                  {filters.searchQuery || filters.muscleGroups.length > 0 || filters.equipment.length > 0 || 
-                  filters.difficulty.length > 0 || filters.movementPatterns.length > 0 ? (
-                    <>
-                      <h3 className="text-xl font-medium mb-2">No matching exercises</h3>
-                      <p className="text-muted-foreground mb-6">Try adjusting your filters or search query</p>
-                      <Button variant="outline" onClick={clearAllFilters}>Clear filters</Button>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-xl font-medium mb-2">No exercises found</h3>
-                      <p className="text-muted-foreground mb-6">Create your first exercise to get started</p>
-                      <Button variant="default" onClick={handleAdd}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Your First Exercise
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Tab content */}
-            <TabsContent value="smart" className="mt-0 h-full">
-              <div className="overflow-y-auto">
-                <SmartRecommendations
-                  exercises={exercises}
-                  recentExercises={recentExercises}
-                  favoriteExercises={favoriteExercises}
-                  onSelectExercise={onSelectExercise ? handleSelectExercise : undefined}
-                  onToggleFavorite={toggleFavorite}
-                  isFavorite={isFavorite}
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="favorites" className="mt-0 h-full">
-              <div className="overflow-y-auto">
-                {favoriteExercises.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
-                      <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No favorites yet</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Heart exercises you love to add them to your favorites
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  renderExerciseList(favoriteExercises)
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="recent" className="mt-0 h-full">
-              <div className="overflow-y-auto">
-                {recentExercises.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="bg-card/50 rounded-lg py-10 px-6 max-w-md mx-auto border border-border">
-                      <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-xl font-medium mb-2">No recent exercises</h3>
-                      <p className="text-muted-foreground mb-6">
-                        Complete some workouts to see your recently used exercises
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  renderExerciseList(filteredRecent)
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="browse" className="mt-0 h-full">
-              <div className="overflow-y-auto">
-                {renderExerciseList(filteredAll, true)}
-              </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+        </div>
+        
+        {/* Exercise list */}
+        <div className="flex-1 overflow-y-auto">
+          {renderExerciseList(filteredExercises)}
+        </div>
+        
+        {/* Mobile FAB */}
+        {isMobile && standalone && (
+          <ExerciseFAB onClick={handleAdd} hideOnMobile={false} />
+        )}
       </div>
-      
-      {/* Mobile Add Button */}
-      {standalone && isMobile && (
-        <ExerciseFAB onClick={handleAdd} />
-      )}
     </div>
   );
 }
