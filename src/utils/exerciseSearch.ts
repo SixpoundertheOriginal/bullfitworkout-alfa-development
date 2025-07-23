@@ -16,6 +16,54 @@ export interface SearchOptions {
 }
 
 /**
+ * Helper function to check if a word matches the search term with proper boundaries
+ */
+function getWordMatchScore(word: string, searchTerm: string): number {
+  if (word === searchTerm) return 100; // Exact match
+  if (word.startsWith(searchTerm)) return 90; // Starts with
+  if (searchTerm.length >= 3 && word.includes(searchTerm)) return 70; // Contains (3+ chars)
+  if (searchTerm.length >= 2 && word.includes(searchTerm)) return 20; // Short partial (low priority)
+  return 0;
+}
+
+/**
+ * Helper function to score array field matches
+ */
+function scoreArrayFieldMatch(array: string[] | undefined, searchTerms: string[], fuzzyMatch: boolean): number {
+  if (!array) return 0;
+  
+  let maxScore = 0;
+  
+  for (const item of array) {
+    const itemLower = item.toLowerCase();
+    
+    for (const term of searchTerms) {
+      // Check full phrase match first
+      if (itemLower.includes(searchTerms.join(' '))) {
+        maxScore = Math.max(maxScore, 100);
+        continue;
+      }
+      
+      // Check individual term matches
+      if (fuzzyMatch) {
+        const words = itemLower.split(/\s+/);
+        for (const word of words) {
+          const wordScore = getWordMatchScore(word, term);
+          maxScore = Math.max(maxScore, wordScore);
+        }
+      } else {
+        // Exact phrase matching only
+        if (itemLower.includes(term)) {
+          maxScore = Math.max(maxScore, 90);
+        }
+      }
+    }
+  }
+  
+  return maxScore;
+}
+
+/**
  * Comprehensive exercise search utility that searches across all exercise fields
  * with relevance scoring and match explanations
  */
@@ -51,23 +99,35 @@ export function searchExercises(
     const matchReasons: string[] = [];
 
     // Search in exercise name (highest priority)
-    if (exercise.name?.toLowerCase().includes(normalizedSearchTerm)) {
-      score += 100;
+    const exerciseName = exercise.name?.toLowerCase() || '';
+    
+    // Exact phrase match in name
+    if (exerciseName.includes(normalizedSearchTerm)) {
+      if (exerciseName === normalizedSearchTerm) {
+        score += 150; // Perfect match
+      } else if (exerciseName.startsWith(normalizedSearchTerm)) {
+        score += 120; // Starts with
+      } else {
+        score += 100; // Contains
+      }
       matchReasons.push("Name");
     }
 
-    // Search individual terms in name for partial matches
-    if (fuzzyMatch) {
-      const nameWords = exercise.name?.toLowerCase().split(/\s+/) || [];
+    // Individual word matches in name
+    if (fuzzyMatch && score === 0) {
+      const nameWords = exerciseName.split(/\s+/);
+      let bestNameScore = 0;
+      
       for (const term of searchTerms) {
         for (const word of nameWords) {
-          if (word.includes(term)) {
-            score += 80;
-            if (!matchReasons.includes("Name")) {
-              matchReasons.push("Name");
-            }
-          }
+          const wordScore = getWordMatchScore(word, term);
+          bestNameScore = Math.max(bestNameScore, wordScore);
         }
+      }
+      
+      if (bestNameScore > 0) {
+        score += bestNameScore;
+        matchReasons.push("Name");
       }
     }
 
@@ -79,12 +139,9 @@ export function searchExercises(
 
     // Search in equipment types
     if (includeEquipment && exercise.equipment_type) {
-      const equipmentMatches = exercise.equipment_type.some(equipment => 
-        equipment.toLowerCase().includes(normalizedSearchTerm) ||
-        (fuzzyMatch && searchTerms.some(term => equipment.toLowerCase().includes(term)))
-      );
-      if (equipmentMatches) {
-        score += 90;
+      const equipmentScore = scoreArrayFieldMatch(exercise.equipment_type, searchTerms, fuzzyMatch);
+      if (equipmentScore > 0) {
+        score += equipmentScore;
         matchReasons.push("Equipment");
       }
 
@@ -116,24 +173,18 @@ export function searchExercises(
 
     // Search in primary muscle groups
     if (includeMuscleGroups && exercise.primary_muscle_groups) {
-      const primaryMuscleMatches = exercise.primary_muscle_groups.some(muscle =>
-        muscle.toLowerCase().includes(normalizedSearchTerm) ||
-        (fuzzyMatch && searchTerms.some(term => muscle.toLowerCase().includes(term)))
-      );
-      if (primaryMuscleMatches) {
-        score += 85;
+      const primaryMuscleScore = scoreArrayFieldMatch(exercise.primary_muscle_groups, searchTerms, fuzzyMatch);
+      if (primaryMuscleScore > 0) {
+        score += primaryMuscleScore;
         matchReasons.push("Primary muscles");
       }
     }
 
     // Search in secondary muscle groups
     if (includeMuscleGroups && exercise.secondary_muscle_groups) {
-      const secondaryMuscleMatches = exercise.secondary_muscle_groups.some(muscle =>
-        muscle.toLowerCase().includes(normalizedSearchTerm) ||
-        (fuzzyMatch && searchTerms.some(term => muscle.toLowerCase().includes(term)))
-      );
-      if (secondaryMuscleMatches) {
-        score += 70;
+      const secondaryMuscleScore = scoreArrayFieldMatch(exercise.secondary_muscle_groups, searchTerms, fuzzyMatch);
+      if (secondaryMuscleScore > 0) {
+        score += Math.floor(secondaryMuscleScore * 0.8); // Slightly lower score for secondary muscles
         matchReasons.push("Secondary muscles");
       }
     }
