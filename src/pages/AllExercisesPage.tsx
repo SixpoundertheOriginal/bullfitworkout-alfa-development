@@ -106,11 +106,9 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
 
   // Enhanced filter logic with comprehensive search and multi-select support
   const applyFilters = (exercisesList: Exercise[]) => {
-    // First apply the comprehensive search if there's a search query
-    let filteredList = exercisesList;
-    
+    // If there's a search query, only apply search and ignore other filters
     if (filters.searchQuery.trim()) {
-      filteredList = searchFilterExercises(exercisesList, filters.searchQuery, {
+      return searchFilterExercises(exercisesList, filters.searchQuery, {
         includeEquipment: true,
         includeMuscleGroups: true,
         includeMovementPattern: true,
@@ -119,8 +117,8 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
       });
     }
 
-    // Then apply additional filters
-    return filteredList.filter(exercise => {
+    // Only apply other filters when there's no search query
+    return exercisesList.filter(exercise => {
       // Muscle group filter (AND logic - must match ALL selected groups)
       const matchesMuscleGroup = filters.muscleGroups.length === 0 || 
         filters.muscleGroups.every(selectedGroup => 
