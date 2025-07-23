@@ -9,8 +9,9 @@ import { EnhancedWorkoutCard } from "@/components/workouts/EnhancedWorkoutCard";
 import { WorkoutManagementFilters } from "@/types/workout-enhanced";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Trash2, Copy, BarChart3 } from "lucide-react";
+import { Trash2, Copy, BarChart3, Plus, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ManualWorkoutLogger } from "@/components/workouts/ManualWorkoutLogger";
 
 export const WorkoutManagementPage = () => {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export const WorkoutManagementPage = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedWorkouts, setSelectedWorkouts] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [manualLoggingMode, setManualLoggingMode] = useState(false);
 
   // Data fetching
   const { workouts, totalCount, isLoading, refetch } = useEnhancedWorkoutHistory(filters);
@@ -41,6 +43,10 @@ export const WorkoutManagementPage = () => {
   // Handlers
   const handleCreateWorkout = () => {
     navigate('/training-session');
+  };
+
+  const handleLogPastWorkout = () => {
+    setManualLoggingMode(true);
   };
 
   const handleViewWorkout = (id: string) => {
@@ -127,6 +133,7 @@ export const WorkoutManagementPage = () => {
           onSelectionModeToggle={handleSelectionModeToggle}
           selectedCount={selectedWorkouts.size}
           onCreateWorkout={handleCreateWorkout}
+          onLogPastWorkout={handleLogPastWorkout}
         />
         
         <div className="p-4">
@@ -156,7 +163,20 @@ export const WorkoutManagementPage = () => {
         onSelectionModeToggle={handleSelectionModeToggle}
         selectedCount={selectedWorkouts.size}
         onCreateWorkout={handleCreateWorkout}
+        onLogPastWorkout={handleLogPastWorkout}
       />
+
+      {/* Manual Workout Logger */}
+      {manualLoggingMode && (
+        <ManualWorkoutLogger
+          isOpen={manualLoggingMode}
+          onClose={() => setManualLoggingMode(false)}
+          onSuccess={() => {
+            setManualLoggingMode(false);
+            refetch();
+          }}
+        />
+      )}
 
       {/* Bulk Actions Bar */}
       {selectionMode && selectedWorkouts.size > 0 && (

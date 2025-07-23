@@ -9,7 +9,8 @@ import {
   ArrowUpDown,
   Calendar,
   CheckSquare,
-  X
+  X,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,7 @@ interface WorkoutManagementHeaderProps {
   onSelectionModeToggle: () => void;
   selectedCount: number;
   onCreateWorkout: () => void;
+  onLogPastWorkout?: () => void;
 }
 
 export const WorkoutManagementHeader: React.FC<WorkoutManagementHeaderProps> = ({
@@ -52,6 +54,7 @@ export const WorkoutManagementHeader: React.FC<WorkoutManagementHeaderProps> = (
   onSelectionModeToggle,
   selectedCount,
   onCreateWorkout,
+  onLogPastWorkout,
 }) => {
   const activeFiltersCount = [
     ...filters.trainingTypes,
@@ -134,6 +137,18 @@ export const WorkoutManagementHeader: React.FC<WorkoutManagementHeaderProps> = (
                 <CheckSquare className="mr-1 h-4 w-4" />
                 Select
               </Button>
+              
+              {onLogPastWorkout && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={onLogPastWorkout}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Log Past Workout
+                </Button>
+              )}
               
               <Button 
                 onClick={onCreateWorkout}
