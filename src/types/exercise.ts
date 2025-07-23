@@ -20,7 +20,10 @@ export type MuscleGroup =
 
 export type EquipmentType = 
   | 'barbell' | 'dumbbell' | 'kettlebell' | 'cable' | 'machine' | 'bodyweight' 
-  | 'resistance band' | 'smith machine' | 'box' | 'bench' | 'other';
+  | 'resistance band' | 'smith machine' | 'box' | 'bench' | 'ab wheel' | 'rings'
+  | 'trx' | 'battle ropes' | 'medicine ball' | 'foam roller' | 'parallettes'
+  | 'pull up bar' | 'dip station' | 'suspension trainer' | 'slider discs'
+  | 'bosu ball' | 'stability ball' | 'sandbag' | 'weighted vest' | 'other';
 
 export type MovementPattern = 
   | 'push' | 'pull' | 'squat' | 'hinge' | 'lunge' | 'rotation' | 'carry' | 'isometric';
@@ -77,7 +80,10 @@ export const COMMON_MUSCLE_GROUPS: MuscleGroup[] = [
 
 export const COMMON_EQUIPMENT: EquipmentType[] = [
   'barbell', 'dumbbell', 'kettlebell', 'cable', 'machine', 'bodyweight',
-  'resistance band', 'smith machine', 'box', 'bench', 'other'
+  'resistance band', 'smith machine', 'box', 'bench', 'ab wheel', 'rings',
+  'trx', 'battle ropes', 'medicine ball', 'foam roller', 'parallettes',
+  'pull up bar', 'dip station', 'suspension trainer', 'slider discs',
+  'bosu ball', 'stability ball', 'sandbag', 'weighted vest', 'other'
 ];
 
 export const MOVEMENT_PATTERNS: MovementPattern[] = [
