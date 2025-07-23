@@ -226,7 +226,7 @@ export const ManualWorkoutLogger: React.FC<ManualWorkoutLoggerProps> = ({
         throw new Error(error.message || 'Failed to save workout');
       }
 
-      if (data?.success) {
+      if (data?.workout_id) {
         toast({
           title: "Workout saved successfully!",
           description: `${workoutName} has been logged for ${format(workoutDate, 'MMM dd, yyyy')}`,
