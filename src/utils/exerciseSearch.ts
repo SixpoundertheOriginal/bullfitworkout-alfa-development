@@ -19,11 +19,25 @@ export interface SearchOptions {
  * Helper function to check if a word matches the search term with proper boundaries
  */
 function getWordMatchScore(word: string, searchTerm: string): number {
-  if (word === searchTerm) return 100; // Exact match
-  if (word.startsWith(searchTerm)) return 90; // Starts with
-  if (searchTerm.length >= 3 && word.includes(searchTerm)) return 70; // Contains (3+ chars)
-  if (searchTerm.length >= 2 && word.includes(searchTerm)) return 20; // Short partial (low priority)
-  return 0;
+  const cleanWord = word.trim().toLowerCase();
+  const cleanSearchTerm = searchTerm.trim().toLowerCase();
+  
+  if (cleanWord === cleanSearchTerm) return 100; // Exact match
+  if (cleanWord.startsWith(cleanSearchTerm)) return 90; // Starts with
+  
+  // Only allow partial matches for search terms with 3+ characters
+  if (cleanSearchTerm.length >= 3 && cleanWord.includes(cleanSearchTerm)) {
+    // Check if it's a word boundary match (not just substring)
+    const words = cleanWord.split(/[\s-_]+/);
+    const hasWordBoundaryMatch = words.some(w => 
+      w.startsWith(cleanSearchTerm) || w === cleanSearchTerm
+    );
+    
+    if (hasWordBoundaryMatch) return 70; // Word boundary match
+    if (cleanWord.includes(cleanSearchTerm)) return 40; // Substring match (lower priority)
+  }
+  
+  return 0; // No match or too short search term
 }
 
 /**
@@ -113,12 +127,15 @@ export function searchExercises(
       matchReasons.push("Name");
     }
 
-    // Individual word matches in name
+    // Individual word matches in name (only if no exact phrase match)
     if (fuzzyMatch && score === 0) {
-      const nameWords = exerciseName.split(/\s+/);
+      const nameWords = exerciseName.split(/[\s-_]+/);
       let bestNameScore = 0;
       
       for (const term of searchTerms) {
+        // Skip very short search terms to prevent false matches
+        if (term.length < 2) continue;
+        
         for (const word of nameWords) {
           const wordScore = getWordMatchScore(word, term);
           bestNameScore = Math.max(bestNameScore, wordScore);
