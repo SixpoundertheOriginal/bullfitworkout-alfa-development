@@ -46,6 +46,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { filterExercises } from "@/utils/exerciseSearch";
 
 interface ExerciseAutocompleteProps {
   onSelectExercise: (exercise: Exercise) => void;
@@ -198,11 +199,20 @@ export function ExerciseAutocomplete({ onSelectExercise, className }: ExerciseAu
     });
   };
 
-  const filteredExercises = safeExercises
-    .filter(exercise => 
-      exercise?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const filteredExercises = React.useMemo(() => {
+    if (!searchTerm.trim()) {
+      return safeExercises.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return filterExercises(safeExercises, searchTerm, {
+      includeEquipment: true,
+      includeMuscleGroups: true,
+      includeMovementPattern: true,
+      includeDifficulty: true,
+      fuzzyMatch: true,
+      maxResults: 20
+    });
+  }, [safeExercises, searchTerm]);
 
   return (
     <div className={cn("flex items-center gap-2", className)}>

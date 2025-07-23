@@ -33,6 +33,7 @@ import { MultiSelect } from "@/components/MultiSelect";
 import { FilterPresets, FilterState } from "@/components/exercises/FilterPresets";
 import { FilterChips } from "@/components/exercises/FilterChips";
 import { useFavoriteExercises } from "@/hooks/useFavoriteExercises";
+import { filterExercises as searchFilterExercises } from "@/utils/exerciseSearch";
 
 interface AllExercisesPageProps {
   onSelectExercise?: (exercise: string | Exercise) => void;
@@ -103,14 +104,23 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     return exercises.filter(exercise => favorites.includes(exercise.id));
   }, [exercises, favorites]);
 
-  // Enhanced filter logic with multi-select support
-  const filterExercises = (exercisesList: Exercise[]) => {
-    return exercisesList.filter(exercise => {
-      // Search filter
-      const matchesSearch = filters.searchQuery === "" || 
-        exercise.name.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-        exercise.description?.toLowerCase().includes(filters.searchQuery.toLowerCase());
+  // Enhanced filter logic with comprehensive search and multi-select support
+  const applyFilters = (exercisesList: Exercise[]) => {
+    // First apply the comprehensive search if there's a search query
+    let filteredList = exercisesList;
+    
+    if (filters.searchQuery.trim()) {
+      filteredList = searchFilterExercises(exercisesList, filters.searchQuery, {
+        includeEquipment: true,
+        includeMuscleGroups: true,
+        includeMovementPattern: true,
+        includeDifficulty: true,
+        fuzzyMatch: true
+      });
+    }
 
+    // Then apply additional filters
+    return filteredList.filter(exercise => {
       // Muscle group filter (AND logic - must match ALL selected groups)
       const matchesMuscleGroup = filters.muscleGroups.length === 0 || 
         filters.muscleGroups.every(selectedGroup => 
@@ -130,14 +140,13 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
       const matchesMovement = filters.movementPatterns.length === 0 || 
         filters.movementPatterns.includes(exercise.movement_pattern);
 
-      return matchesSearch && matchesMuscleGroup && matchesEquipment && 
-            matchesDifficulty && matchesMovement;
+      return matchesMuscleGroup && matchesEquipment && matchesDifficulty && matchesMovement;
     });
   };
 
-  const suggestedExercises = filterExercises(exercises.slice(0, 20)); // Limit suggested to top 20 for better performance
-  const filteredRecent = filterExercises(recentExercises);
-  const filteredAll = filterExercises(exercises);
+  const suggestedExercises = applyFilters(exercises.slice(0, 20)); // Limit suggested to top 20 for better performance
+  const filteredRecent = applyFilters(recentExercises);
+  const filteredAll = applyFilters(exercises);
 
   // Pagination logic
   const indexOfLastExercise = currentPage * exercisesPerPage;

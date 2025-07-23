@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import AllExercisesPage from "@/pages/AllExercisesPage";
+import { filterExercises } from "@/utils/exerciseSearch";
 
 interface AddExerciseSheetProps {
   open: boolean;
@@ -60,22 +61,28 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
     return Array.from(exerciseMap.values());
   }, [workouts, allExercises]);
 
-  // Filter exercises based on search query
+  // Enhanced filter exercises based on comprehensive search
   const filteredSuggested = React.useMemo(() => {
     return searchQuery
-      ? suggestedExercises.filter(e => 
-          e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.primary_muscle_groups.some(m => m.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
+      ? filterExercises(suggestedExercises, searchQuery, {
+          includeEquipment: true,
+          includeMuscleGroups: true,
+          includeMovementPattern: true,
+          includeDifficulty: true,
+          fuzzyMatch: true
+        })
       : suggestedExercises;
   }, [suggestedExercises, searchQuery]);
 
   const filteredRecent = React.useMemo(() => {
     return searchQuery
-      ? recentExercises.filter(e => 
-          e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.primary_muscle_groups.some(m => m.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
+      ? filterExercises(recentExercises, searchQuery, {
+          includeEquipment: true,
+          includeMuscleGroups: true,
+          includeMovementPattern: true,
+          includeDifficulty: true,
+          fuzzyMatch: true
+        })
       : recentExercises;
   }, [recentExercises, searchQuery]);
 
