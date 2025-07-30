@@ -654,8 +654,30 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastValidationTime: state.lastValidationTime,
         };
       },
+      // CRITICAL FIX: Prevent rehydration of completed workouts
       onRehydrateStorage: () => {
         return (rehydratedState, error) => {
+          // NEW: Check for completed workouts BEFORE any processing
+          if (rehydratedState?.explicitlyEnded || rehydratedState?.workoutStatus === 'saved') {
+            console.log('🚫 Blocking rehydration of completed workout - clearing storage');
+            localStorage.removeItem('workout-storage');
+            clearAllStorage();
+            return undefined; // Don't rehydrate completed workouts
+          }
+          
+          // Additional safety check for old sessions
+          if (rehydratedState?.startTime) {
+            const sessionAge = Date.now() - new Date(rehydratedState.startTime).getTime();
+            const MAX_SESSION_AGE = 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (sessionAge > MAX_SESSION_AGE) {
+              console.log('🕰️ Blocking rehydration of stale session (>24h)');
+              localStorage.removeItem('workout-storage');
+              clearAllStorage();
+              return undefined;
+            }
+          }
+          
           if (error) {
             console.error('❌ Error rehydrating workout state:', error);
             
@@ -697,12 +719,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (rehydratedState) {
             console.log('🔄 Rehydrating workout state...');
             
-            // ENHANCED ZOMBIE PROTECTION: Check for invalid states before rehydration
-            if (rehydratedState.workoutStatus === 'saved' || rehydratedState.explicitlyEnded) {
-              console.log('🚫 Preventing zombie recovery of saved/ended workout');
-              clearAllStorage();
-              return;
-            }
+            // Note: Zombie protection is now handled in onRehydrateStorage callback above
             
             // Check for session age limit to prevent very old sessions from being rehydrated
             const SESSION_AGE_LIMIT = 24 * 60 * 60 * 1000; // 24 hours
