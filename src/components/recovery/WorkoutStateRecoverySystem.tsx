@@ -16,11 +16,19 @@ export const WorkoutStateRecoverySystem: React.FC = () => {
     corruptionDetected, 
     recoverFromCorruption, 
     clearWorkoutState,
-    validateCurrentState 
+    validateCurrentState,
+    explicitlyEnded,
+    workoutStatus
   } = useWorkoutStore();
 
   // Monitor for corruption on mount and when corruption flag changes
   useEffect(() => {
+    // Skip recovery for explicitly completed workouts
+    if (explicitlyEnded || workoutStatus === 'saved') {
+      console.log('🚫 Skipping recovery - workout explicitly completed');
+      return;
+    }
+    
     if (corruptionDetected) {
       const issues = validateCurrentState();
       if (issues.length > 0) {
@@ -28,11 +36,16 @@ export const WorkoutStateRecoverySystem: React.FC = () => {
         setShowRecoveryDialog(true);
       }
     }
-  }, [corruptionDetected, validateCurrentState]);
+  }, [corruptionDetected, validateCurrentState, explicitlyEnded, workoutStatus]);
 
   // Periodic state validation (every 5 minutes when active)
   useEffect(() => {
     const interval = setInterval(() => {
+      // Skip recovery for explicitly completed workouts
+      if (explicitlyEnded || workoutStatus === 'saved') {
+        return;
+      }
+      
       const issues = validateCurrentState();
       if (issues.length > 0) {
         setDetectedIssues(issues);
@@ -41,7 +54,7 @@ export const WorkoutStateRecoverySystem: React.FC = () => {
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [validateCurrentState]);
+  }, [validateCurrentState, explicitlyEnded, workoutStatus]);
 
   const handleRecover = async () => {
     setIsRecovering(true);

@@ -408,9 +408,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
       
       markAsSaved: () => {
-        // CRITICAL: Clear ALL storage immediately to prevent zombie recovery
-        clearAllStorage();
-        
+        // CRITICAL: Set completion state FIRST to prevent recovery interference
         set({ 
           workoutStatus: 'saved',
           isActive: false,
@@ -418,12 +416,13 @@ export const useWorkoutStore = create<WorkoutState>()(
           lastTabActivity: Date.now(),
         });
         
+        // Clear ALL storage immediately AFTER state is set
+        clearAllStorage();
+        
         toast.success("Workout saved successfully!");
         
-        // Reset session after short delay to ensure UI updates
-        setTimeout(() => {
-          get().resetSession();
-        }, 500);
+        // Reset session immediately - no delay to prevent race conditions
+        get().resetSession();
       },
       
       markAsFailed: (error) => set((state) => ({ 

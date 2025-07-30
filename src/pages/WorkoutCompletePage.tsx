@@ -237,17 +237,30 @@ export const WorkoutCompletePage = () => {
         }
       }
 
-      // Success - show toast and delay navigation to allow it to be seen
+      // Success - navigate to workout summary with data
       console.log("Workout saved with ID:", savedWorkoutId);
-      toast({
-        title: "Workout saved!",
-        description: "Your workout has been successfully recorded"
-      });
       
-      // Navigate after short delay to show the success message
-      setTimeout(() => {
-        navigate('/overview');
-      }, 1500);
+      // Calculate totals for summary
+      const totalSets = Object.values(finalWorkoutData.exercises).reduce((acc, sets) => acc + sets.length, 0);
+      const totalVolume = Object.values(finalWorkoutData.exercises).reduce((acc, sets) => {
+        return acc + sets.reduce((setAcc, set) => setAcc + (set.weight * set.reps), 0);
+      }, 0);
+      
+      // Navigate to summary page with workout data
+      navigate('/workout-summary', {
+        state: {
+          workoutData: {
+            workoutId: savedWorkoutId,
+            name: workoutName || finalWorkoutData.name,
+            duration: finalWorkoutData.duration,
+            exerciseCount: Object.keys(finalWorkoutData.exercises).length,
+            totalSets,
+            totalVolume,
+            trainingType: finalWorkoutData.trainingType,
+            completedAt: new Date().toISOString()
+          }
+        }
+      });
       
     } catch (error) {
       console.error("Error saving workout:", error);

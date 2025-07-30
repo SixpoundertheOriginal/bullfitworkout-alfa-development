@@ -8,6 +8,7 @@ import NotFound from "@/pages/NotFound";
 import TrainingSessionPage from "@/pages/TrainingSession";
 import WorkoutComplete from "@/pages/WorkoutComplete";
 import WorkoutDetailsPage from "@/pages/WorkoutDetailsPage";
+import WorkoutSummaryPage from "@/pages/WorkoutSummaryPage";
 import ProfilePage from "@/pages/ProfilePage";
 import Auth from "@/pages/Auth";
 import AllExercisesPage from "@/pages/AllExercisesPage";
@@ -74,6 +75,13 @@ export const RouterProvider = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <WorkoutComplete />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/workout-summary" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <WorkoutSummaryPage />
                 </MainLayout>
               </ProtectedRoute>
             } />

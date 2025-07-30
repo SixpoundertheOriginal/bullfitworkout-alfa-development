@@ -60,20 +60,14 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
   }, []);
 
   const markAsSaved = useCallback((workoutId: string) => {
-    // Clear ALL storage when workout is saved
-    try {
-      sessionStorage.removeItem('workout-backup');
-      sessionStorage.removeItem('workout-session-recovery');
-      localStorage.removeItem('workout-storage');
-    } catch (error) {
-      console.error('Failed to clear storage:', error);
-    }
-    
     setSaveStatus({
       status: 'saved',
       errors: [],
       workoutId
     });
+    
+    // Storage clearing is handled by the store markAsSaved function
+    console.log('✅ Workout save status updated');
   }, []);
 
   const markAsFailed = useCallback((error: WorkoutError) => {
