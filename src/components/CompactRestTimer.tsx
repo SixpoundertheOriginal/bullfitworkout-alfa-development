@@ -93,7 +93,8 @@ export const CompactRestTimer = ({
   const remainingTime = Math.max(targetTime - elapsedTime, 0);
   const overtimeSeconds = Math.max(elapsedTime - targetTime, 0);
 
-  if (!isActive) return null;
+  // FIX: Show timer even when inactive to display current set's rest time
+  // Only hide if no target time is set (truly irrelevant)
 
   return (
     <div className={cn(
@@ -101,6 +102,7 @@ export const CompactRestTimer = ({
       "bg-gradient-to-r from-primary/5 to-primary-glow/5",
       "border border-primary/10",
       "animate-fade-in",
+      !isActive && "opacity-70", // Muted styling for inactive timers
       isCompleted && !isOvertime && "from-emerald-500/10 to-emerald-400/10 border-emerald-500/20",
       isOvertime && "from-amber-500/10 to-orange-400/10 border-amber-500/20",
       className
@@ -109,14 +111,17 @@ export const CompactRestTimer = ({
         {isCompleted ? (
           <CheckCircle size={14} className="text-emerald-400" />
         ) : (
-          <Timer size={14} className="text-primary" />
+          <Timer size={14} className={isActive ? "text-primary" : "text-muted-foreground"} />
         )}
         <span className={cn(
           "text-xs font-mono font-medium",
-          isCompleted && !isOvertime ? "text-emerald-400" : 
-          isOvertime ? "text-amber-400" : "text-primary"
+          !isActive && "text-muted-foreground", // Muted text for inactive
+          isCompleted && !isOvertime && isActive ? "text-emerald-400" : 
+          isOvertime && isActive ? "text-amber-400" : 
+          isActive ? "text-primary" : "text-muted-foreground"
         )}>
-          {isCompleted && !isOvertime ? "Ready!" : 
+          {!isActive ? formatTime(targetTime) : // Show target time when inactive
+           isCompleted && !isOvertime ? "Ready!" : 
            isOvertime ? `+${formatTime(overtimeSeconds)}` : 
            formatTime(remainingTime)}
         </span>
