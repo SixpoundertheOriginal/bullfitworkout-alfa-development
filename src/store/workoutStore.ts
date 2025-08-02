@@ -31,6 +31,7 @@ export interface WorkoutState {
   startTime: string | null;
   workoutStatus: WorkoutStatus;
   isPaused: boolean;
+  lastCompletionTime: number | null; // NEW: Track completion timestamp
   
   // Configuration
   trainingConfig: TrainingConfig | null;
@@ -152,6 +153,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       startTime: null,
       workoutStatus: 'idle',
       isPaused: false,
+      lastCompletionTime: null, // NEW: Initialize completion time
       
       // Configuration
       trainingConfig: null,
@@ -408,11 +410,18 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
       
       markAsSaved: () => {
+        console.log('🎯 Marking workout as saved');
+        
+        // ATOMIC COMPLETION: Set completion timestamp immediately
+        const completionTime = Date.now();
+        localStorage.setItem('last-workout-completion', completionTime.toString());
+        
         // CRITICAL: Set completion state FIRST to prevent recovery interference
         set({ 
           workoutStatus: 'saved',
           isActive: false,
           explicitlyEnded: true,
+          lastCompletionTime: completionTime, // NEW: Store completion time in state
           lastTabActivity: Date.now(),
         });
         
@@ -657,8 +666,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       // CRITICAL FIX: Prevent rehydration of completed workouts
       onRehydrateStorage: () => {
         return (rehydratedState, error) => {
-          // NEW: Check for completed workouts BEFORE any processing
-          if (rehydratedState?.explicitlyEnded || rehydratedState?.workoutStatus === 'saved') {
+          // ENHANCED: Check for completed workouts BEFORE any processing
+          if (rehydratedState?.explicitlyEnded || rehydratedState?.workoutStatus === 'saved' || rehydratedState?.lastCompletionTime) {
             console.log('🚫 Blocking rehydration of completed workout - clearing storage');
             localStorage.removeItem('workout-storage');
             clearAllStorage();

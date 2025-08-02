@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useWorkoutStore } from '@/store/workoutStore';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,12 @@ export const WorkoutBanner: React.FC = () => {
   const [isStuck, setIsStuck] = useState(false);
   const lastCheckRef = useRef<number>(Date.now());
   
+  // Check for recently completed workouts to prevent recovery interference
+  const recentlyCompleted = useMemo(() => {
+    const lastCompletion = localStorage.getItem('last-workout-completion');
+    return lastCompletion && (Date.now() - parseInt(lastCompletion)) < 30000; // 30 seconds
+  }, []);
+
   // Update banner visibility
   useEffect(() => {
     const currentPath = location.pathname;
@@ -32,6 +38,7 @@ export const WorkoutBanner: React.FC = () => {
     const shouldShow = isActive && 
                      !explicitlyEnded && 
                      workoutStatus !== 'saved' &&
+                     !recentlyCompleted && // NEW: Prevent recovery after recent completion
                      currentPath !== '/training-session' && 
                      exerciseCount > 0;
                      
@@ -43,11 +50,12 @@ export const WorkoutBanner: React.FC = () => {
       exerciseCount,
       elapsedTime,
       explicitlyEnded,
+      recentlyCompleted,
       visible: shouldShow
     });
     
     setVisible(shouldShow);
-  }, [isActive, exercises, location, workoutStatus, explicitlyEnded]);
+  }, [isActive, exercises, location, workoutStatus, explicitlyEnded, recentlyCompleted]);
   
   // Handle visibility changes and check for stuck states
   useEffect(() => {

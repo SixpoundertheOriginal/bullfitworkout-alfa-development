@@ -103,9 +103,17 @@ const TrainingSessionPage = () => {
 
   useEffect(() => {
     if (pageLoaded && workoutStatus === 'idle' && hasExercises) {
-      startWorkout();
+      // FIX 3: Only auto-start if we have valid training config (came from setup wizard)
+      const hasValidConfig = trainingConfig && Object.keys(trainingConfig).length > 0;
+      if (hasValidConfig) {
+        console.log('🎯 Auto-starting workout with valid config');
+        startWorkout();
+      } else {
+        console.log('⚠️ Redirecting to setup - no valid config');
+        navigate('/');
+      }
     }
-  }, [pageLoaded, workoutStatus, hasExercises, startWorkout]);
+  }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate]);
 
   useEffect(() => {
     if (location.state?.trainingConfig && !isActive) {
