@@ -19,7 +19,7 @@ export const CompactRestTimer = ({
   onRestTimeTracked,
   className 
 }: CompactRestTimerProps) => {
-  const { getTimer, updateTimer, stopTimer, startTimer } = useGlobalRestTimers();
+  const { getTimer, updateTimer, stopTimer, startTimer, isTimerForActiveExercise } = useGlobalRestTimers();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const completedRef = useRef(false);
 
@@ -93,8 +93,13 @@ export const CompactRestTimer = ({
   const remainingTime = Math.max(targetTime - elapsedTime, 0);
   const overtimeSeconds = Math.max(elapsedTime - targetTime, 0);
 
-  // FIX: Show timer even when inactive to display current set's rest time
-  // Only hide if no target time is set (truly irrelevant)
+  // Check if this timer belongs to the currently active exercise
+  const isForActiveExercise = isTimerForActiveExercise(timerId);
+  
+  // Hide timers that don't belong to the active exercise
+  if (!isForActiveExercise && !isActive) {
+    return null;
+  }
 
   return (
     <div className={cn(

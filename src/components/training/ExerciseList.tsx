@@ -47,7 +47,14 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   setExercises
 }) => {
   const { getSuggestionForExercise } = useSmartRestSuggestions();
-  const { generateTimerId, startTimer, getTimer, stopTimer } = useGlobalRestTimers();
+  const { 
+    generateTimerId, 
+    startTimerForExercise, 
+    getTimer, 
+    stopTimer,
+    activeExerciseName,
+    setActiveExerciseName 
+  } = useGlobalRestTimers();
   const exerciseList = Object.keys(exercises);
   
   // Helper function to get sets from either format
@@ -182,11 +189,13 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
               // Call the original completion handler
               onCompleteSet(exerciseName, setIndex);
               
-              // Start rest timer after completing the set
+              // Set this exercise as active and start smart rest timer
+              setActiveExerciseName(exerciseName);
+              
+              // Start rest timer after completing the set using smart timer
               const set = sets[setIndex];
               if (set && set.restTime && set.restTime > 0) {
-                const timerId = generateTimerId(exerciseName, setIndex + 1);
-                startTimer(timerId, set.restTime);
+                startTimerForExercise(exerciseName, setIndex + 1, set.restTime);
               }
             }}
             onDeleteExercise={() => onDeleteExercise(exerciseName)}
