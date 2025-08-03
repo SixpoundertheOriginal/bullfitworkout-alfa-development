@@ -18,6 +18,7 @@ import { WorkoutPredictionEngine } from "@/components/training/WorkoutPrediction
 import { useEnhancedRestAnalytics } from "@/hooks/useEnhancedRestAnalytics";
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { WorkoutSessionLayout } from '@/components/training/WorkoutSessionLayout';
+import { useWorkoutSave } from "@/hooks/useWorkoutSave";
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -61,6 +62,17 @@ const TrainingSessionPage = () => {
     getCurrentRestTime,
     getOptimalRestSuggestion,
   } = useEnhancedRestAnalytics();
+
+  // Transform exercises for useWorkoutSave hook (expects simple Record<string, ExerciseSet[]>)
+  const exercisesForSave = Object.fromEntries(
+    Object.entries(storeExercises).map(([name, data]) => [
+      name,
+      Array.isArray(data) ? data : data.sets
+    ])
+  );
+
+  // Initialize workout save functionality
+  const { handleCompleteWorkout, saveStatus, savingErrors } = useWorkoutSave(exercisesForSave, elapsedTime, resetSession);
   
   const [completedSets, totalSets] = Object.entries(storeExercises).reduce(
     ([completed, total], [_, data]) => {
@@ -285,45 +297,26 @@ const TrainingSessionPage = () => {
 
     try {
       setIsSaving(true);
-      markAsSaving();
-      const now = new Date();
-      const startTime = new Date(now.getTime() - elapsedTime * 1000);
-      const workoutData = {
-        exercises: Object.fromEntries(
-          Object.entries(storeExercises).map(([name, data]) => {
-            if (Array.isArray(data)) {
-              return [name, data.map(s => ({ ...s, isEditing: s.isEditing || false }))];
-            } else {
-              return [name, data.sets.map(s => ({ ...s, isEditing: s.isEditing || false }))];
-            }
-          })
-        ),
-        duration: elapsedTime,
-        startTime,
-        endTime: now,
-        trainingType: trainingConfig?.trainingType || "Strength",
-        name: trainingConfig?.trainingType || "Workout",
-        trainingConfig: trainingConfig || null,
-        notes: "",
-        metrics: {
-          trainingConfig: trainingConfig || null,
-          performance: { completedSets, totalSets, restTimers: { defaultTime: 60, wasUsed: false } },
-          progression: {
-            timeOfDay: startTime.getHours() < 12 ? 'morning' :
-                       startTime.getHours() < 17 ? 'afternoon' : 'evening',
-            totalVolume: Object.values(storeExercises).reduce((acc, data) => {
-              const sets = Array.isArray(data) ? data : data.sets;
-              return acc + sets.reduce((setAcc, s) => setAcc + (s.weight * s.reps), 0);
-            }, 0)
-          },
-          sessionDetails: { exerciseCount, averageRestTime: 60, workoutDensity: completedSets / (elapsedTime / 60) }
-        }
-      };
-      navigate("/workout-complete", { state: { workoutData } });
+      
+      // Actually save the workout to the database using useWorkoutSave
+      const workoutId = await handleCompleteWorkout(trainingConfig);
+      
+      if (workoutId) {
+        // Navigate to completion page with saved workout ID
+        navigate("/workout-complete", { 
+          state: { 
+            workoutId: workoutId,
+            success: true 
+          } 
+        });
+        toast.success("Workout saved successfully!");
+      } else {
+        // Handle save failure
+        throw new Error("Failed to save workout");
+      }
     } catch (err) {
-      console.error("Error preparing workout data:", err);
-      markAsFailed({ type: 'unknown', message: err instanceof Error ? err.message : 'Save failed', timestamp: new Date().toISOString(), recoverable: true });
-      toast.error("Failed to complete workout");
+      console.error("Error saving workout:", err);
+      toast.error("Failed to save workout");
       setIsSaving(false);
     }
   };
