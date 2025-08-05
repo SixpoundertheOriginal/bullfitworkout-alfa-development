@@ -15,6 +15,9 @@ import { WorkoutVolumeOverTimeChart } from '@/components/metrics/WorkoutVolumeOv
 import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensityOverTimeChart';
 import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
 import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
+import { RestAnalyticsCard } from '@/components/metrics/RestAnalyticsCard';
+import { LastWorkoutSummary } from '@/components/metrics/LastWorkoutSummary';
+import { MuscleGroupBalance } from '@/components/metrics/MuscleGroupBalance';
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { useDateRange } from '@/context/DateRangeContext';
 import { useProcessWorkoutMetrics } from '@/hooks/useProcessWorkoutMetrics';
@@ -129,6 +132,25 @@ const Overview: React.FC = () => {
           />
         </div>
 
+        {/* Recent Session & Rest Analytics Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Last Workout Summary */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-blue-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <LastWorkoutSummary workouts={workouts} />
+            </div>
+          </div>
+
+          {/* Rest Analytics Card */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-cyan-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <RestAnalyticsCard />
+            </div>
+          </div>
+        </div>
+
         {/* Personal Records & Efficiency Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Personal Records Card */}
@@ -171,12 +193,11 @@ const Overview: React.FC = () => {
           </CardContent>
         </div>
 
-        {/* KPI cards - Premium styled with Efficiency */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* KPI cards - Premium styled (removed redundant volume rate) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
             { title: "Total Volume", value: `${Math.round(volumeStats.total).toLocaleString()} ${weightUnit}`, icon: Dumbbell, color: "from-purple-500 to-pink-600" },
-            { title: "Avg Volume Rate", value: `${densityStats.avgOverallDensity.toFixed(1)} ${weightUnit}/min`, icon: Activity, color: "from-pink-500 to-orange-600" },
             { title: "Efficiency Score", value: processedMetrics ? `${processedMetrics.efficiencyMetrics.efficiencyScore.toFixed(0)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
@@ -198,8 +219,17 @@ const Overview: React.FC = () => {
           ))}
         </div>
 
-        {/* Other charts grid - Premium styled */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Enhanced analysis grid with muscle balance */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Muscle Group Balance */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-green-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <MuscleGroupBalance muscleFocus={stats.muscleFocus || {}} />
+            </div>
+          </div>
+
+          {/* Existing charts */}
           {chartConfigs.map(({ title, icon: Icon, renderComponent, data }, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
               {/* Subtle inner highlight overlay */}
@@ -223,7 +253,7 @@ const Overview: React.FC = () => {
           ))}
         </div>
 
-        {/* Density over time - Premium styled */}
+        {/* Volume vs Rest Time Correlation - Enhanced chart */}
         <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
           {/* Subtle inner highlight overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
@@ -231,7 +261,7 @@ const Overview: React.FC = () => {
           <CardHeader className="relative z-10">
             <CardTitle className="flex items-center gap-2 text-white/90">
               <Activity className="h-5 w-5 text-purple-400" />
-              Volume Rate Over Time
+              Workout Density Trends
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[250px] relative z-10">
