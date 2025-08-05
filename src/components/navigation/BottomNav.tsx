@@ -47,7 +47,14 @@ export const BottomNav = () => {
         icon={<Zap size={20} />} 
         label="Training"
         active={isActive('/training-session')}
-        onClick={() => confirmNavigation('/training-session')}
+        onClick={() => {
+          if (isWorkoutActive) {
+            confirmNavigation('/training-session');
+          } else {
+            // Redirect to home for workout setup wizard
+            confirmNavigation('/');
+          }
+        }}
         highlight={isWorkoutActive}
       />
       <NavButton 

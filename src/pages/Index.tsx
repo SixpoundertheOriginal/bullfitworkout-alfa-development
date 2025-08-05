@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
 import { WeeklySummaryStats } from "@/components/WeeklySummaryStats";
-import { ConfigureTrainingDialog } from "@/components/ConfigureTrainingDialog";
+import { EnhancedWorkoutSetupWizard } from "@/components/training/enhanced/EnhancedWorkoutSetupWizard";
+import { SmartTemplateService } from "@/services/SmartTemplateService";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
 import { ExploreSection } from "@/components/ExploreSection";
 import { toast } from "@/hooks/use-toast";
@@ -15,9 +17,10 @@ import { DateRangeProvider } from "@/context/DateRangeContext";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const { stats } = useWorkoutStats();
   const { isActive, lastActiveRoute } = useWorkoutStore();
+  const { user } = useAuth();
   
   // Replace useElementVisibility with native IntersectionObserver
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -54,42 +57,60 @@ const Index = () => {
     }
   }, [isActive]);
 
-  const handleStartTraining = ({ trainingType, tags, duration, rankedExercises }) => {
-    toast({
-      title: "Quest Started!",
-      description: 
-        <div className="flex flex-col">
-          <span>{`${trainingType} adventure for ${duration} minutes`}</span>
-          <div className="flex items-center mt-1 text-xs">
-            <div className="h-1.5 w-1.5 bg-yellow-400 rounded-full mr-1.5"></div>
-            <span className="text-yellow-400">+{Math.round(duration * 2)} XP will be awarded on completion</span>
-          </div>
-        </div>,
-    });
-    
-    const isFirstWorkoutToday = !stats?.lastWorkoutDate || 
-      new Date(stats.lastWorkoutDate).toDateString() !== new Date().toDateString();
+  const handleEnhancedWorkoutComplete = async (config: any) => {
+    try {
+      if (!user) {
+        toast.error("Please log in to create personalized workouts");
+        return;
+      }
+
+      // Generate smart template with AI recommendations
+      const smartTemplate = await SmartTemplateService.generateSmartTemplate(
+        config.focus,
+        config.goals,
+        user.id
+      );
+
+      toast({
+        title: "Smart Workout Generated!",
+        description: 
+          <div className="flex flex-col">
+            <span>{`${config.focus.category} workout with ${smartTemplate.exercises.length} exercises`}</span>
+            <div className="flex items-center mt-1 text-xs">
+              <div className="h-1.5 w-1.5 bg-green-400 rounded-full mr-1.5"></div>
+              <span className="text-green-400">Estimated: {smartTemplate.estimatedTonnage}kg tonnage, {smartTemplate.estimatedDuration}min</span>
+            </div>
+          </div>,
+      });
       
-    if (isFirstWorkoutToday) {
-      setShowLevelUp(true);
-      
-      setTimeout(() => {
-        setShowLevelUp(false);
-        navigateToTraining({ trainingType, tags, duration, rankedExercises });
-      }, 2500);
-    } else {
-      navigateToTraining({ trainingType, tags, duration, rankedExercises });
+      const isFirstWorkoutToday = !stats?.lastWorkoutDate || 
+        new Date(stats.lastWorkoutDate).toDateString() !== new Date().toDateString();
+        
+      if (isFirstWorkoutToday) {
+        setShowLevelUp(true);
+        
+        setTimeout(() => {
+          setShowLevelUp(false);
+          navigateToTraining(config, smartTemplate);
+        }, 2500);
+      } else {
+        navigateToTraining(config, smartTemplate);
+      }
+    } catch (error) {
+      console.error('Error generating smart workout:', error);
+      toast.error("Failed to generate workout. Please try again.");
     }
   };
 
-  const navigateToTraining = ({ trainingType, tags, duration, rankedExercises }) => {
+  const navigateToTraining = (config: any, smartTemplate: any) => {
     navigate('/training-session', { 
       state: { 
         trainingConfig: {
-          trainingType, 
-          tags, 
-          duration,
-          rankedExercises
+          trainingType: config.focus.category,
+          tags: config.focus.subFocus || [],
+          duration: config.goals.timeBudget,
+          smartTemplate: smartTemplate,
+          enhancedConfig: config
         }
       } 
     });
@@ -126,7 +147,7 @@ const Index = () => {
                     label="Resume"
                   />
                   <button 
-                    onClick={() => setDialogOpen(true)}
+                    onClick={() => setWizardOpen(true)}
                     className="text-sm text-white/70 hover:text-white/90 underline"
                   >
                     Start a new workout
@@ -134,7 +155,7 @@ const Index = () => {
                 </div>
               ) : (
                 <StartTrainingButton
-                  onClick={() => setDialogOpen(true)}
+                  onClick={() => setWizardOpen(true)}
                   trainingType={recommendedWorkoutType}
                   label="Start"
                 />
@@ -152,10 +173,10 @@ const Index = () => {
         <ExploreSection />
       </main>
 
-      <ConfigureTrainingDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
-        onStartTraining={handleStartTraining} 
+      <EnhancedWorkoutSetupWizard 
+        open={wizardOpen} 
+        onOpenChange={setWizardOpen} 
+        onComplete={handleEnhancedWorkoutComplete} 
       />
       
       <AnimatedLevelUp show={showLevelUp} />

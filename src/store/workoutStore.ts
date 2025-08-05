@@ -34,8 +34,11 @@ export interface WorkoutState {
   lastCompletionTime: number | null;
   lastSavedWorkoutId: string | null; // NEW: Track last saved workout ID
   
-  // Configuration
-  trainingConfig: TrainingConfig | null;
+  // Configuration (enhanced)
+  trainingConfig: (TrainingConfig & {
+    smartTemplate?: any;
+    enhancedConfig?: any;
+  }) | null;
   
   // Enhanced rest timer state - support multiple concurrent timers
   activeRestTimers: Map<string, RestTimerState>;

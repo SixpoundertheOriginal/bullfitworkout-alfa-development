@@ -115,26 +115,55 @@ const TrainingSessionPage = () => {
 
   useEffect(() => {
     if (pageLoaded && workoutStatus === 'idle' && hasExercises) {
-      // FIX 3: Only auto-start if we have valid training config (came from setup wizard)
+      // Auto-start if we have valid training config (came from setup wizard)
       const hasValidConfig = trainingConfig && Object.keys(trainingConfig).length > 0;
       if (hasValidConfig) {
-        console.log('🎯 Auto-starting workout with valid config');
+        console.log('🎯 Auto-starting workout with enhanced config');
         startWorkout();
       } else {
         console.log('⚠️ Redirecting to setup - no valid config');
         navigate('/');
       }
     }
+    
+    // Redirect to setup if accessed without proper config
+    if (pageLoaded && workoutStatus === 'idle' && !hasExercises && !trainingConfig) {
+      console.log('⚠️ Redirecting to setup wizard - empty session');
+      navigate('/');
+    }
   }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate]);
 
   useEffect(() => {
     if (location.state?.trainingConfig && !isActive) {
-      setTrainingConfig(location.state.trainingConfig);
+      const config = location.state.trainingConfig;
+      setTrainingConfig(config);
+      
+      // Pre-populate exercises from smart template
+      if (config.smartTemplate?.exercises && config.smartTemplate.exercises.length > 0) {
+        console.log('🎯 Pre-populating exercises from smart template');
+        
+        config.smartTemplate.exercises.forEach((exerciseTemplate: any) => {
+          const sets = Array.from({ length: exerciseTemplate.sets }, () => ({
+            weight: exerciseTemplate.weight,
+            reps: exerciseTemplate.reps,
+            restTime: exerciseTemplate.restTime,
+            completed: false,
+            isEditing: false
+          }));
+          
+          addEnhancedExercise(exerciseTemplate.name, sets);
+        });
+        
+        toast({
+          title: "Smart Workout Ready!",
+          description: `Pre-loaded ${config.smartTemplate.exercises.length} exercises based on your goals`,
+        });
+      }
     }
     if (location.state?.fromDiscard) {
       setIsSaving(false);
     }
-  }, [location.state, isActive, setTrainingConfig]);
+  }, [location.state, isActive, setTrainingConfig, addEnhancedExercise]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
