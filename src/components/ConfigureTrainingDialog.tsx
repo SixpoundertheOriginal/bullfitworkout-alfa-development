@@ -22,6 +22,8 @@ import { useExercises } from "@/hooks/useExercises";
 import { Exercise, MuscleGroup } from "@/types/exercise";
 import { useTrainingSetupPersistence } from "@/hooks/useTrainingSetupPersistence";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { EnhancedWorkoutSetupWizard } from "./training/enhanced/EnhancedWorkoutSetupWizard";
+import { EnhancedTrainingConfig } from "@/types/training-setup";
 
 interface ConfigureTrainingDialogProps {
   open: boolean;
@@ -96,6 +98,7 @@ export function ConfigureTrainingDialog({
   const { exercises } = useExercises();
   const { storedConfig, saveConfig, clearConfig } = useTrainingSetupPersistence();
   const { setTrainingConfig } = useWorkoutStore();
+  const [useEnhancedWizard, setUseEnhancedWizard] = useState(true);
 
   const [stepCompleteSound, setStepCompleteSound] = useState<HTMLAudioElement | null>(null);
   const [selectSound, setSelectSound] = useState<HTMLAudioElement | null>(null);
@@ -293,6 +296,33 @@ export function ConfigureTrainingDialog({
         return "Continue";
     }
   };
+
+  const handleEnhancedComplete = (config: EnhancedTrainingConfig) => {
+    // Convert enhanced config to legacy format for compatibility
+    const legacyConfig = {
+      trainingType: config.trainingFocus.category,
+      tags: config.trainingFocus.primaryMuscles,
+      duration: config.goals.timeBudget,
+      rankedExercises: config.rankedExercises
+    };
+    
+    setTrainingConfig(legacyConfig);
+    onStartTraining(legacyConfig);
+    toast.success("Smart workout generated!", {
+      description: `${config.estimatedCalories} calories • ${config.estimatedXP} XP expected`
+    });
+  };
+
+  // Show enhanced wizard if enabled
+  if (useEnhancedWizard) {
+    return (
+      <EnhancedWorkoutSetupWizard 
+        open={open}
+        onOpenChange={onOpenChange}
+        onComplete={handleEnhancedComplete}
+      />
+    );
+  }
 
   const renderStepIndicator = () => {
     return (
