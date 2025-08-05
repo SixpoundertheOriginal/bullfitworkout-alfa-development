@@ -137,7 +137,7 @@ export function EnhancedWorkoutSetupWizard({
     ].filter(Boolean) as string[];
 
     const config: EnhancedTrainingConfig = {
-      trainingFocus: selectedFocus,
+      focus: selectedFocus,  // Changed from trainingFocus to focus
       goals,
       estimatedCalories,
       estimatedXP,

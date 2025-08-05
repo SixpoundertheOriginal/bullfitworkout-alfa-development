@@ -19,7 +19,7 @@ export interface TrainingGoals {
 }
 
 export interface EnhancedTrainingConfig {
-  trainingFocus: TrainingFocus;
+  focus: TrainingFocus;
   goals: TrainingGoals;
   estimatedCalories: number;
   estimatedXP: number;

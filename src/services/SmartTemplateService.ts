@@ -38,6 +38,27 @@ export class SmartTemplateService {
     userId: string
   ): Promise<SmartTemplateResult> {
     try {
+      // Input validation with detailed logging
+      if (!focus) {
+        console.error('❌ SmartTemplate: Missing focus parameter');
+        return this.generateFallbackTemplate(this.getDefaultFocus(), goals);
+      }
+      
+      if (!focus.category) {
+        console.error('❌ SmartTemplate: Missing focus.category:', focus);
+        return this.generateFallbackTemplate(this.getDefaultFocus(), goals);
+      }
+      
+      if (!goals) {
+        console.error('❌ SmartTemplate: Missing goals parameter');
+        return this.generateFallbackTemplate(focus, this.getDefaultGoals());
+      }
+
+      console.log('✅ SmartTemplate: Valid inputs received', { 
+        focusCategory: focus.category, 
+        targetTonnage: goals.targetTonnage 
+      });
+
       // 1. Fetch user's historical workout data
       const historicalData = await this.fetchUserWorkoutHistory(userId, focus.category);
       
@@ -61,9 +82,11 @@ export class SmartTemplateService {
         aiRecommendations
       };
     } catch (error) {
-      console.error('Error generating smart template:', error);
-      // Fallback to basic template
-      return this.generateFallbackTemplate(focus, goals);
+      console.error('❌ SmartTemplate generation failed:', error);
+      // Ensure fallback has valid data
+      const safeFocus = focus && focus.category ? focus : this.getDefaultFocus();
+      const safeGoals = goals || this.getDefaultGoals();
+      return this.generateFallbackTemplate(safeFocus, safeGoals);
     }
   }
 
@@ -273,7 +296,10 @@ Provide exactly 3 bullet points with specific, actionable recommendations for op
    * Generate fallback template when smart generation fails
    */
   private static generateFallbackTemplate(focus: TrainingFocus, goals: TrainingGoals): SmartTemplateResult {
-    const fallbackExercises = (focus.recommendedExercises || []).slice(0, 4).map((name, index) => ({
+    // Ensure we have valid exercises array
+    const exercises = focus.recommendedExercises || this.getDefaultExercises(focus.category);
+    
+    const fallbackExercises = exercises.slice(0, 4).map((name, index) => ({
       name,
       sets: 3,
       reps: goals.repRange === 'Strength (3-6)' ? 5 : 10,
@@ -288,5 +314,51 @@ Provide exactly 3 bullet points with specific, actionable recommendations for op
       estimatedTonnage: this.calculateEstimatedTonnage(fallbackExercises),
       aiRecommendations: ['Start with comfortable weights and focus on proper form']
     };
+  }
+
+  /**
+   * Get default focus when none provided
+   */
+  private static getDefaultFocus(): TrainingFocus {
+    return {
+      category: 'Full Body',
+      description: 'Balanced full-body workout',
+      subFocus: ['General fitness'],
+      primaryMuscles: ['chest', 'back', 'legs'],
+      recommendedExercises: ['Push-ups', 'Pull-ups', 'Squats', 'Plank']
+    };
+  }
+
+  /**
+   * Get default goals when none provided
+   */
+  private static getDefaultGoals(): TrainingGoals {
+    return {
+      targetTonnage: 3000,
+      timeBudget: 45,
+      repRange: 'Hypertrophy (8-12)',
+      structure: 'Straight Sets',
+      restStyle: 'Adaptive',
+      tonnageLevel: 'Moderate',
+      includeIsometrics: false,
+      includeUnilateral: false,
+      includeCore: true
+    };
+  }
+
+  /**
+   * Get default exercises for a category
+   */
+  private static getDefaultExercises(category: string): string[] {
+    const defaultExercises: Record<string, string[]> = {
+      'Push': ['Push-ups', 'Dips', 'Incline Push-ups', 'Pike Push-ups'],
+      'Pull': ['Pull-ups', 'Chin-ups', 'Rows', 'Lat Pulldowns'],
+      'Legs': ['Squats', 'Lunges', 'Calf Raises', 'Leg Press'],
+      'Full Body': ['Burpees', 'Mountain Climbers', 'Jumping Jacks', 'Planks'],
+      'Arms': ['Bicep Curls', 'Tricep Dips', 'Hammer Curls', 'Close Push-ups'],
+      'Core': ['Planks', 'Crunches', 'Leg Raises', 'Russian Twists']
+    };
+    
+    return defaultExercises[category] || defaultExercises['Full Body'];
   }
 }

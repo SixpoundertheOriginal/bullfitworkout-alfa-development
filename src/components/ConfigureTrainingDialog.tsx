@@ -300,8 +300,8 @@ export function ConfigureTrainingDialog({
   const handleEnhancedComplete = (config: EnhancedTrainingConfig) => {
     // Convert enhanced config to legacy format for compatibility
     const legacyConfig = {
-      trainingType: config.trainingFocus.category,
-      tags: config.trainingFocus.primaryMuscles,
+      trainingType: config.focus.category,
+      tags: config.focus.primaryMuscles,
       duration: config.goals.timeBudget,
       rankedExercises: config.rankedExercises
     };

@@ -64,6 +64,13 @@ const Index = () => {
         return;
       }
 
+      // Validate required data before attempting smart template generation
+      if (!config?.focus || !config?.goals) {
+        console.error('Missing required config data:', { focus: !!config?.focus, goals: !!config?.goals });
+        toast.error("Incomplete workout configuration. Please try again.");
+        return;
+      }
+
       // Generate smart template with AI recommendations
       const smartTemplate = await SmartTemplateService.generateSmartTemplate(
         config.focus,
