@@ -29,9 +29,19 @@ export const LastWorkoutSummary: React.FC<LastWorkoutSummaryProps> = ({ workouts
   }
 
   const lastWorkout = workouts[0];
-  const exerciseCount = lastWorkout.exercise_sets?.length || 0;
-  const totalVolume = lastWorkout.exercise_sets?.reduce((sum: number, set: any) => 
-    sum + (set.weight * set.reps), 0) || 0;
+  console.log('LastWorkoutSummary - workout data:', lastWorkout);
+  
+  // Count unique exercises, not total sets
+  const uniqueExercises = new Set(lastWorkout.exercise_sets?.map((set: any) => set.exercise_name) || []).size;
+  
+  // Calculate total volume from exercise sets
+  const totalVolume = lastWorkout.exercise_sets?.reduce((sum: number, set: any) => {
+    const volume = (set.weight || 0) * (set.reps || 0);
+    console.log('Set volume calculation:', { weight: set.weight, reps: set.reps, volume });
+    return sum + volume;
+  }, 0) || 0;
+  
+  console.log('Total volume calculated:', totalVolume, 'from', lastWorkout.exercise_sets?.length, 'sets');
 
   const handleViewDetails = () => {
     window.location.href = `/workout/${lastWorkout.id}`;
@@ -62,7 +72,7 @@ export const LastWorkoutSummary: React.FC<LastWorkoutSummaryProps> = ({ workouts
               Duration
             </div>
             <div className="text-sm font-medium text-white">
-              {Math.round((lastWorkout.duration || 0) / 60)}m
+              {lastWorkout.duration ? Math.round(lastWorkout.duration / 60) : 0}m
             </div>
           </div>
           <div className="space-y-1">
@@ -71,7 +81,7 @@ export const LastWorkoutSummary: React.FC<LastWorkoutSummaryProps> = ({ workouts
               Volume
             </div>
             <div className="text-sm font-medium text-white">
-              {Math.round(totalVolume).toLocaleString()}kg
+              {totalVolume > 0 ? `${Math.round(totalVolume).toLocaleString()}kg` : '0kg'}
             </div>
           </div>
           <div className="space-y-1">
@@ -80,7 +90,7 @@ export const LastWorkoutSummary: React.FC<LastWorkoutSummaryProps> = ({ workouts
               Exercises
             </div>
             <div className="text-sm font-medium text-white">
-              {exerciseCount}
+              {uniqueExercises}
             </div>
           </div>
         </div>

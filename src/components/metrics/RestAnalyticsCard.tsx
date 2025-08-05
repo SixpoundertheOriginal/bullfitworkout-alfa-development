@@ -18,10 +18,14 @@ export const RestAnalyticsCard: React.FC = () => {
   useEffect(() => {
     const fetchRestAnalytics = async () => {
       try {
+        console.log('Fetching rest time patterns...');
         const data = await getRestTimePatterns();
+        console.log('Rest time patterns received:', data);
         setPatterns(data);
       } catch (error) {
         console.error('Failed to fetch rest analytics:', error);
+        // Set mock data for now if no data exists
+        setPatterns([]);
       } finally {
         setLoading(false);
       }
@@ -69,9 +73,27 @@ export const RestAnalyticsCard: React.FC = () => {
             Recovery Insights
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center text-gray-400">
-            Complete more workouts to see rest time insights
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="text-sm text-gray-400">Avg Rest Time</div>
+              <div className="text-xl font-semibold text-white">
+                60s
+              </div>
+              <div className="text-xs text-gray-500">Default</div>
+            </div>
+            <div className="space-y-1">
+              <div className="text-sm text-gray-400">Efficiency Trend</div>
+              <div className="flex items-center gap-2">
+                <Minus className="h-4 w-4 text-gray-400" />
+                <span className="text-lg font-medium text-white">
+                  Stable
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="text-center text-gray-400 text-sm">
+            Complete more workouts with rest tracking to see detailed insights
           </div>
         </CardContent>
       </Card>
