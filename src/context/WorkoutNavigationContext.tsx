@@ -27,9 +27,10 @@ export function WorkoutNavigationContextProvider({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isActive, updateLastActiveRoute } = useWorkoutStore();
+  const { isActive, updateLastActiveRoute, clearWorkoutState } = useWorkoutStore();
   const { isVisible } = usePageVisibility();
   const [showDialog, setShowDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [lastPath, setLastPath] = useState<string>(location.pathname);
 
@@ -83,19 +84,65 @@ export function WorkoutNavigationContextProvider({
               You have an active workout. Are you sure you want to leave? Your progress will be saved and you can return any time.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-4">
+            <div className="flex gap-2 w-full">
+              <AlertDialogCancel 
+                onClick={() => setShowDialog(false)}
+                className="flex-1"
+              >
+                Return to Workout
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (pendingNavigation) {
+                    navigate(pendingNavigation);
+                  }
+                  setShowDialog(false);
+                }}
+                className="flex-1"
+              >
+                Leave Workout
+              </AlertDialogAction>
+            </div>
+            <button
+              onClick={() => {
+                setShowDialog(false);
+                setShowCancelDialog(true);
+              }}
+              className="text-sm text-muted-foreground hover:text-destructive transition-colors underline-offset-4 hover:underline"
+            >
+              🗑 Cancel Workout
+            </button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Workout Confirmation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Cancel Workout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this workout? All progress will be lost and cannot be recovered.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDialog(false)}>
-              Return to Workout
+            <AlertDialogCancel onClick={() => setShowCancelDialog(false)}>
+              Go Back
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                clearWorkoutState();
+                setShowCancelDialog(false);
                 if (pendingNavigation) {
                   navigate(pendingNavigation);
+                } else {
+                  navigate('/');
                 }
-                setShowDialog(false);
               }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Leave Workout
+              Confirm Cancel
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
