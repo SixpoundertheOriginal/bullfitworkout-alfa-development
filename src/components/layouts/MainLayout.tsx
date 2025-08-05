@@ -22,7 +22,7 @@ const getPageTitle = (pathname: string): string => {
     case "/workout-complete":
       return "Workout Complete";
     case "/all-exercises":
-      return "All Exercises";
+      return "Exercise Library";
     case "/workouts":
       return "Workouts";
     default:
