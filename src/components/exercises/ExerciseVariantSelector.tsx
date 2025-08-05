@@ -84,15 +84,21 @@ export const ExerciseVariantSelector: React.FC<ExerciseVariantSelectorProps> = (
         </div>
         
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span>
-            Last: {formatDistanceToNow(new Date(lastPerformed), { addSuffix: true })}
-          </span>
+          {lastPerformed && (
+            <span>
+              Last: {formatDistanceToNow(new Date(lastPerformed), { addSuffix: true })}
+            </span>
+          )}
           <span className={getTrendColor(progressionTrend)}>
             {progressionTrend}
           </span>
-          <span>
-            PR: {personalBest.weight}kg × {personalBest.reps}
-          </span>
+          {personalBest ? (
+            <span>
+              PR: {personalBest.weight}kg × {personalBest.reps}
+            </span>
+          ) : (
+            <span>No PR yet</span>
+          )}
         </div>
       </CardHeader>
 
