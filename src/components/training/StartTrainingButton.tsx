@@ -28,6 +28,7 @@ export const StartTrainingButton = ({
   const navigate = useNavigate();
   const { startWorkout, updateLastActiveRoute } = useWorkoutStore();
   const [isTouched, setIsTouched] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   
   const handleStartClick = () => {
     // Haptic feedback for mobile devices
@@ -40,25 +41,31 @@ export const StartTrainingButton = ({
       return;
     }
     
-    // If forceReset is true, we'll navigate with the reset parameter
-    if (forceReset) {
-      navigate(`/training-session?type=${trainingType}&reset=true`, {
+    // Set pressed state for animation
+    setIsPressed(true);
+    
+    // Delay navigation to let animation play
+    setTimeout(() => {
+      // If forceReset is true, we'll navigate with the reset parameter
+      if (forceReset) {
+        navigate(`/training-session?type=${trainingType}&reset=true`, {
+          state: { trainingType }
+        });
+        return;
+      }
+      
+      // Otherwise start workout normally
+      startWorkout();
+      updateLastActiveRoute('/training-session');
+      
+      navigate(`/training-session?type=${trainingType}`, {
         state: { trainingType }
       });
-      return;
-    }
-    
-    // Otherwise start workout normally
-    startWorkout();
-    updateLastActiveRoute('/training-session');
-    
-    navigate(`/training-session?type=${trainingType}`, {
-      state: { trainingType }
-    });
-    
-    toast({
-      title: "Workout started!"
-    });
+      
+      toast({
+        title: "Workout started!"
+      });
+    }, 1500); // 1.5 second delay for animation
   };
 
   const handleTouchStart = () => {
