@@ -1,5 +1,5 @@
 
-import { Clock, User as UserIcon, Dumbbell, BarChart3, Zap } from "lucide-react";
+import { Clock, User as UserIcon, Dumbbell, BarChart3, Zap, Bot } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useWorkoutNavigation } from "@/context/WorkoutNavigationContext";
 import { useWorkoutStore } from "@/store/workoutStore";
@@ -16,6 +16,7 @@ export const BottomNav = () => {
     if (path === "/workouts" && location.pathname === "/workouts") return true;
     if (path === "/profile" && location.pathname === "/profile") return true;
     if (path === "/all-exercises" && location.pathname === "/all-exercises") return true;
+    if (path === "/ai-coach" && location.pathname === "/ai-coach") return true;
     return false;
   };
   
@@ -30,7 +31,7 @@ export const BottomNav = () => {
   }
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 grid grid-cols-4 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom" style={{ gridTemplateColumns: isWorkoutActive ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)' }}>
+    <nav className="fixed bottom-0 left-0 right-0 grid grid-cols-5 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom" style={{ gridTemplateColumns: isWorkoutActive ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)' }}>
       <NavButton 
         icon={<Clock size={20} />} 
         label="Home" 
@@ -52,6 +53,12 @@ export const BottomNav = () => {
           highlight={true}
         />
       )}
+      <NavButton 
+        icon={<Bot size={20} />} 
+        label="AI Coach"
+        active={isActive('/ai-coach')}
+        onClick={() => confirmNavigation('/ai-coach')}
+      />
       <NavButton 
         icon={<Dumbbell size={20} />} 
         label="Exercises"
