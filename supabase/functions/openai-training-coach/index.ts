@@ -191,7 +191,7 @@ async function getUserTrainingData(userId: string) {
     };
   }) || [];
 
-  // Calculate exercise stats
+  // Calculate exercise stats with rest time analytics
   const exerciseStats = exerciseSets?.reduce((acc, set) => {
     if (!set.completed) return acc;
     
@@ -202,7 +202,8 @@ async function getUserTrainingData(userId: string) {
         total_sets: 0,
         max_weight: 0,
         total_reps: 0,
-        workouts_performed: new Set()
+        workouts_performed: new Set(),
+        rest_times: []
       };
     }
     acc[set.exercise_name].volume += set.weight * set.reps;
@@ -211,6 +212,12 @@ async function getUserTrainingData(userId: string) {
     acc[set.exercise_name].total_reps += set.reps;
     acc[set.exercise_name].max_weight = Math.max(acc[set.exercise_name].max_weight, set.weight);
     acc[set.exercise_name].workouts_performed.add(set.workout_id);
+    
+    // Track rest times for analytics
+    if (set.rest_time && set.rest_time > 0) {
+      acc[set.exercise_name].rest_times.push(set.rest_time);
+    }
+    
     return acc;
   }, {} as Record<string, { 
     volume: number; 
@@ -219,7 +226,28 @@ async function getUserTrainingData(userId: string) {
     max_weight: number;
     total_reps: number;
     workouts_performed: Set<string>;
+    rest_times: number[];
   }>) || {};
+
+  // Calculate rest time analytics for each exercise
+  const exerciseRestAnalytics = Object.entries(exerciseStats).reduce((acc, [name, stats]) => {
+    if (stats.rest_times.length > 0) {
+      const avgRestTime = stats.rest_times.reduce((sum, time) => sum + time, 0) / stats.rest_times.length;
+      const minRestTime = Math.min(...stats.rest_times);
+      const maxRestTime = Math.max(...stats.rest_times);
+      acc[name] = {
+        average_rest: Math.round(avgRestTime),
+        min_rest: minRestTime,
+        max_rest: maxRestTime,
+        rest_consistency: stats.rest_times.length > 1 ? 
+          Math.round(stats.rest_times.reduce((variance, time) => {
+            const diff = time - avgRestTime;
+            return variance + (diff * diff);
+          }, 0) / stats.rest_times.length) : 0
+      };
+    }
+    return acc;
+  }, {} as Record<string, { average_rest: number; min_rest: number; max_rest: number; rest_consistency: number }>);
 
   // Convert sets to arrays for serialization
   const topExercises = Object.entries(exerciseStats)
@@ -230,7 +258,8 @@ async function getUserTrainingData(userId: string) {
       total_sets: stats.total_sets,
       max_weight: stats.max_weight,
       total_reps: stats.total_reps,
-      workouts_performed: stats.workouts_performed.size
+      workouts_performed: stats.workouts_performed.size,
+      average_rest_time: exerciseRestAnalytics[name]?.average_rest || null
     }))
     .sort((a, b) => b.volume - a.volume)
     .slice(0, 10);
@@ -243,7 +272,8 @@ async function getUserTrainingData(userId: string) {
     allWorkouts: detailedWorkouts, // Full workout history for analysis
     topExercises,
     personalRecords: personalRecords || [],
-    exerciseBreakdown: exerciseStats // Detailed exercise statistics
+    exerciseBreakdown: exerciseStats, // Detailed exercise statistics
+    restAnalytics: exerciseRestAnalytics // Rest time analytics per exercise
   };
 }
 
@@ -256,7 +286,12 @@ RECENT PERFORMANCE SUMMARY:
 
 TOP EXERCISES BY PERFORMANCE:
 ${data.topExercises.slice(0, 6).map((ex: any) => 
-  `- ${ex.name}: ${ex.volume.toFixed(1)}kg total volume, ${ex.total_sets} sets across ${ex.workouts_performed} workouts (max: ${ex.max_weight}kg)`
+  `- ${ex.name}: ${ex.volume.toFixed(1)}kg total volume, ${ex.total_sets} sets across ${ex.workouts_performed} workouts (max: ${ex.max_weight}kg)${ex.average_rest_time ? ` | Avg rest: ${ex.average_rest_time}s` : ''}`
+).join('\n')}
+
+REST TIME ANALYTICS BY EXERCISE:
+${Object.entries(data.restAnalytics || {}).slice(0, 8).map(([exercise, analytics]: [string, any]) => 
+  `- ${exercise}: ${analytics.average_rest}s avg (${analytics.min_rest}s-${analytics.max_rest}s range), consistency: ${analytics.rest_consistency < 100 ? 'excellent' : analytics.rest_consistency < 400 ? 'good' : 'needs improvement'}`
 ).join('\n')}
 
 RECENT PERSONAL RECORDS:
@@ -270,9 +305,14 @@ ${data.recentWorkouts.slice(0, 5).map((w: any) => {
   const exerciseDetails = w.exercises.map((ex: any) => {
     const completedSets = ex.sets.filter((set: any) => set.completed);
     const setDetails = completedSets.map((set: any) => 
-      `${set.weight}kg×${set.reps}`
+      `${set.weight}kg×${set.reps}${set.rest_time ? ` (${set.rest_time}s rest)` : ''}`
     ).join(', ');
-    return `  • ${ex.exercise_name}: ${completedSets.length} sets [${setDetails}]`;
+    
+    // Calculate average rest time for this exercise in this workout
+    const restTimes = completedSets.map((set: any) => set.rest_time).filter(Boolean);
+    const avgRest = restTimes.length > 0 ? Math.round(restTimes.reduce((sum: number, time: number) => sum + time, 0) / restTimes.length) : null;
+    
+    return `  • ${ex.exercise_name}: ${completedSets.length} sets [${setDetails}]${avgRest ? ` | Avg rest: ${avgRest}s` : ''}`;
   }).join('\n');
   
   return `📅 ${workoutDate} - ${w.name} (${w.training_type}, ${Math.round(w.duration)}min):
