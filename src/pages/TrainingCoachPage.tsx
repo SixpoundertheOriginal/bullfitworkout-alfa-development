@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useChatPersistence } from '@/hooks/useChatPersistence';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -201,9 +202,43 @@ export default function TrainingCoachPage() {
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                        {message.content}
-                      </p>
+                       <div className="text-sm leading-relaxed">
+                         {message.role === 'assistant' ? (
+                           <div className="prose prose-sm max-w-none dark:prose-invert
+                             prose-headings:text-foreground prose-headings:font-semibold
+                             prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-2
+                             prose-strong:text-foreground prose-strong:font-bold
+                             prose-em:text-foreground prose-em:italic
+                             prose-ul:text-foreground prose-ul:mb-2
+                             prose-li:text-foreground prose-li:mb-1
+                             prose-ol:text-foreground prose-ol:mb-2
+                             prose-blockquote:text-muted-foreground prose-blockquote:border-l-border
+                             prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
+                             [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                             <ReactMarkdown
+                               components={{
+                                 h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-foreground">{children}</h1>,
+                                 h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-foreground">{children}</h2>,
+                                 h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-foreground">{children}</h3>,
+                                 p: ({ children }) => <p className="mb-2 last:mb-0 text-foreground leading-relaxed">{children}</p>,
+                                 strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                                 em: ({ children }) => <em className="italic text-foreground">{children}</em>,
+                                 ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-foreground">{children}</ul>,
+                                 ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-foreground">{children}</ol>,
+                                 li: ({ children }) => <li className="text-foreground">{children}</li>,
+                                 code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
+                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-border pl-4 italic text-muted-foreground mb-2">{children}</blockquote>,
+                               }}
+                             >
+                               {message.content}
+                             </ReactMarkdown>
+                           </div>
+                         ) : (
+                           <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                             {message.content}
+                           </p>
+                         )}
+                       </div>
                       <p className="text-xs opacity-70 mt-2">
                         {message.timestamp.toLocaleTimeString([], {
                           hour: '2-digit',
