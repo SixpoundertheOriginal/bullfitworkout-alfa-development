@@ -176,106 +176,108 @@ export default function TrainingCoachPage() {
         )}
 
         {/* Chat Messages */}
-        <Card className="h-[500px] flex flex-col">
+        <Card className="flex flex-col">
           <CardContent className="flex-1 p-0">
-            <ScrollArea className="h-full p-6">
-              <div className="space-y-4">
-                {isLoaded && messages?.length > 0 ? messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex items-start gap-3 ${
-                      message.role === 'user' ? 'justify-end' : ''
-                    }`}
-                  >
-                    {message.role === 'assistant' && (
-                      <Avatar className="h-8 w-8">
+            <div className="h-[60vh] max-h-[600px] min-h-[400px]">
+              <ScrollArea className="h-full">
+                <div className="p-6 space-y-4">
+                  {isLoaded && messages?.length > 0 ? messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex items-start gap-3 ${
+                        message.role === 'user' ? 'justify-end' : ''
+                      }`}
+                    >
+                      {message.role === 'assistant' && (
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarFallback className="bg-primary/10">
+                            <Bot className="h-4 w-4 text-primary" />
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      <div
+                        className={`max-w-[75%] rounded-lg px-4 py-3 ${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground ml-auto'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <div className="text-sm leading-relaxed">
+                          {message.role === 'assistant' ? (
+                            <div className="space-y-2 overflow-hidden">
+                              <ReactMarkdown
+                                components={{
+                                  h1: ({ children }) => <h1 className="text-base font-bold mb-2 text-foreground">{children}</h1>,
+                                  h2: ({ children }) => <h2 className="text-sm font-semibold mb-2 text-foreground">{children}</h2>,
+                                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-foreground">{children}</h3>,
+                                  p: ({ children }) => <p className="mb-2 last:mb-0 text-foreground leading-relaxed text-sm">{children}</p>,
+                                  strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                                  em: ({ children }) => <em className="italic text-foreground">{children}</em>,
+                                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-foreground pl-2">{children}</ul>,
+                                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-foreground pl-2">{children}</ol>,
+                                  li: ({ children }) => <li className="text-foreground text-sm break-words">{children}</li>,
+                                  code: ({ children }) => <code className="bg-muted-foreground/20 px-1 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
+                                  blockquote: ({ children }) => <blockquote className="border-l-4 border-border pl-3 italic text-muted-foreground mb-2 text-sm">{children}</blockquote>,
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
+                              {message.content}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-xs opacity-70 mt-2">
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+
+                      {message.role === 'user' && (
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarFallback className="bg-secondary">
+                            <User className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  )) : (
+                    !isLoaded && (
+                      <div className="flex items-center justify-center p-8">
+                        <Skeleton className="h-4 w-48" />
+                      </div>
+                    )
+                  )}
+                  
+                  {isLoading && (
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarFallback className="bg-primary/10">
                           <Bot className="h-4 w-4 text-primary" />
                         </AvatarFallback>
                       </Avatar>
-                    )}
-                    
-                    <div
-                      className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground ml-auto'
-                          : 'bg-muted'
-                      }`}
-                    >
-                       <div className="text-sm leading-relaxed">
-                         {message.role === 'assistant' ? (
-                           <div className="space-y-2">
-                             <ReactMarkdown
-                               components={{
-                                 h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-foreground">{children}</h1>,
-                                 h2: ({ children }) => <h2 className="text-base font-semibold mb-2 text-foreground">{children}</h2>,
-                                 h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-foreground">{children}</h3>,
-                                 p: ({ children }) => <p className="mb-2 last:mb-0 text-foreground leading-relaxed">{children}</p>,
-                                 strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
-                                 em: ({ children }) => <em className="italic text-foreground">{children}</em>,
-                                 ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-foreground">{children}</ul>,
-                                 ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-foreground">{children}</ol>,
-                                 li: ({ children }) => <li className="text-foreground">{children}</li>,
-                                 code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
-                                 blockquote: ({ children }) => <blockquote className="border-l-4 border-border pl-4 italic text-muted-foreground mb-2">{children}</blockquote>,
-                               }}
-                             >
-                               {message.content}
-                             </ReactMarkdown>
-                           </div>
-                         ) : (
-                           <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                             {message.content}
-                           </p>
-                         )}
-                       </div>
-                      <p className="text-xs opacity-70 mt-2">
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-
-                    {message.role === 'user' && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-secondary">
-                          <User className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                )) : (
-                  !isLoaded && (
-                    <div className="flex items-center justify-center p-8">
-                      <Skeleton className="h-4 w-48" />
-                    </div>
-                  )
-                )}
-                
-                {isLoading && (
-                  <div className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary/10">
-                        <Bot className="h-4 w-4 text-primary" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="bg-muted rounded-lg px-4 py-3 max-w-[80%]">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-48" />
-                        <Skeleton className="h-4 w-32" />
+                      <div className="bg-muted rounded-lg px-4 py-3 max-w-[75%]">
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-48" />
+                          <Skeleton className="h-4 w-32" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-                
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+            </div>
           </CardContent>
 
-          {/* Input Area */}
-          <div className="border-t p-4">
+          {/* Input Area - Fixed at bottom */}
+          <div className="border-t bg-background p-4 rounded-b-lg">
             {messages.length <= 1 && (
               <div className="mb-4">
                 <p className="text-sm text-muted-foreground mb-3">Try asking:</p>
