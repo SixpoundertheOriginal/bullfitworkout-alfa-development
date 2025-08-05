@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ import { processWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
 import { useWeightUnit } from '@/context/WeightUnitContext';
 import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
 import { toast } from "@/hooks/use-toast";
+import { useWorkoutById } from "@/hooks/useWorkoutById";
 
 interface ExerciseSet {
   weight: number;
@@ -138,6 +139,7 @@ const restoreFromRecoveryData = (recoveryData: RecoveryData, workoutStore: any):
 
 export const WorkoutCompletionEnhanced = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     exercises, 
     startTime, 
@@ -145,9 +147,17 @@ export const WorkoutCompletionEnhanced = () => {
     resetSession, 
     getExerciseDisplayName,
     isActive,
-    workoutStatus 
+    workoutStatus,
+    setSavedWorkout 
   } = useWorkoutStore();
   const { weightUnit } = useWeightUnit();
+  
+  // Check for saved workout ID from navigation state
+  const savedWorkoutId = location.state?.workoutId;
+  const isFromSuccessfulSave = location.state?.success && savedWorkoutId;
+  
+  // Fetch saved workout if we have an ID
+  const { workout: savedWorkout, loading: savedWorkoutLoading } = useWorkoutById(savedWorkoutId);
   
   // ALL HOOKS MUST BE CALLED AT THE TOP - NO CONDITIONAL HOOKS
   const [showCelebration, setShowCelebration] = useState(true);
@@ -155,8 +165,8 @@ export const WorkoutCompletionEnhanced = () => {
   const [isRecovering, setIsRecovering] = useState(false);
   const [shouldFixCorruption, setShouldFixCorruption] = useState(false);
 
-  // Check if we have a completed workout based on store state
-  const hasCompletedWorkout = workoutStatus === 'saved' || (!isActive && Object.keys(exercises).length > 0);
+  // Check if we have a completed workout - prioritize saved workout from backend
+  const hasCompletedWorkout = Boolean(savedWorkout) || workoutStatus === 'saved' || (!isActive && Object.keys(exercises).length > 0);
   
   // Detect corruption: user reached this page but no workout data OR corrupted time data
   const isTimeCorrupted = elapsedTime > (12 * 60 * 60); // More than 12 hours
@@ -178,9 +188,17 @@ export const WorkoutCompletionEnhanced = () => {
     }
   }, [isTimeCorrupted, elapsedTime]);
 
-  // Check for recovery data on mount
+  // Store saved workout ID for future reference
   useEffect(() => {
-    if (!hasCompletedWorkout) {
+    if (savedWorkoutId && isFromSuccessfulSave) {
+      console.log('📝 Storing saved workout ID:', savedWorkoutId);
+      setSavedWorkout(savedWorkoutId);
+    }
+  }, [savedWorkoutId, isFromSuccessfulSave, setSavedWorkout]);
+
+  // Check for recovery data only if no saved workout and no store data
+  useEffect(() => {
+    if (!savedWorkout && !hasCompletedWorkout && !savedWorkoutLoading) {
       console.log('🔍 No completed workout found, checking for recovery data...');
       const recovery = checkForRecoveryData();
       if (recovery) {
@@ -190,11 +208,36 @@ export const WorkoutCompletionEnhanced = () => {
         console.log('❌ No recovery data available');
       }
     }
-  }, [hasCompletedWorkout]);
+  }, [savedWorkout, hasCompletedWorkout, savedWorkoutLoading]);
 
-  // Create completed workout data from store or recovery data
+  // Create completed workout data - prioritize saved workout from backend
   const completedWorkout: CompletedWorkout | null = useMemo(() => {
+    // First priority: Saved workout from backend (successful save)
+    if (savedWorkout) {
+      console.log('✅ Using saved workout from backend:', savedWorkout.id);
+      
+      // Transform saved workout to CompletedWorkout format
+      const exerciseData: Record<string, ExerciseSet[]> = {};
+      Object.entries(savedWorkout.exercises).forEach(([name, sets]) => {
+        exerciseData[name] = sets.map(set => ({
+          weight: set.weight || 0,
+          reps: set.reps || 0,
+          completed: set.completed || false,
+          restTime: (set as any).rest_time || set.restTime || 60
+        }));
+      });
+
+      const workoutDate = new Date(savedWorkout.date);
+      return {
+        startTime: workoutDate.getTime(),
+        endTime: workoutDate.getTime() + (savedWorkout.duration * 60 * 1000), // duration is in minutes
+        exercises: exerciseData
+      };
+    }
+    
+    // Fallback: Use store data if available
     if (hasCompletedWorkout && startTime) {
+      console.log('⚠️ Falling back to store data for completed workout');
       const exerciseData: Record<string, ExerciseSet[]> = {};
       Object.entries(exercises).forEach(([name, data]) => {
         const sets = getExerciseSets(data);
@@ -212,8 +255,9 @@ export const WorkoutCompletionEnhanced = () => {
         exercises: exerciseData
       };
     }
+    
     return null;
-  }, [hasCompletedWorkout, startTime, elapsedTime, exercises]);
+  }, [savedWorkout, hasCompletedWorkout, startTime, elapsedTime, exercises]);
 
   // Clear workout after completion
   useEffect(() => {
@@ -338,8 +382,20 @@ export const WorkoutCompletionEnhanced = () => {
 
   // NOW ALL CONDITIONAL LOGIC AND EARLY RETURNS COME AFTER ALL HOOKS
 
-  // Show corruption recovery UI
-  if (isCorrupted && recoveryData) {
+  // Show loading state while fetching saved workout
+  if (savedWorkoutLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading your completed workout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show corruption recovery UI only if no saved workout
+  if (!savedWorkout && isCorrupted && recoveryData) {
     const exerciseCount = Object.keys(recoveryData.exercises || {}).length;
     const duration = Math.round((recoveryData.elapsedTime || 0) / 60);
 
@@ -427,8 +483,8 @@ export const WorkoutCompletionEnhanced = () => {
     );
   }
 
-  // Show no data found UI (true corruption with no recovery data)
-  if (isCorrupted && !recoveryData) {
+  // Show no data found UI only if no saved workout (true corruption with no recovery data)
+  if (!savedWorkout && isCorrupted && !recoveryData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 flex items-center justify-center">
         <Card className="w-full max-w-md mx-4">

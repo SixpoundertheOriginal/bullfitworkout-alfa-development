@@ -31,7 +31,8 @@ export interface WorkoutState {
   startTime: string | null;
   workoutStatus: WorkoutStatus;
   isPaused: boolean;
-  lastCompletionTime: number | null; // NEW: Track completion timestamp
+  lastCompletionTime: number | null;
+  lastSavedWorkoutId: string | null; // NEW: Track last saved workout ID
   
   // Configuration
   trainingConfig: TrainingConfig | null;
@@ -64,6 +65,7 @@ export interface WorkoutState {
   setWorkoutStatus: (status: WorkoutStatus) => void;
   pauseWorkout: () => void;
   resumeWorkout: () => void;
+  setSavedWorkout: (workoutId: string) => void;
   
   // Rest timer management
   startRestTimer: (timerId: string, targetTime: number) => void;
@@ -153,7 +155,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       startTime: null,
       workoutStatus: 'idle',
       isPaused: false,
-      lastCompletionTime: null, // NEW: Initialize completion time
+      lastCompletionTime: null,
+      lastSavedWorkoutId: null, // NEW: Initialize saved workout ID
       
       // Configuration
       trainingConfig: null,
@@ -388,6 +391,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
           savingErrors: [],
+          // Keep lastSavedWorkoutId for post-save continuity
         });
         console.log("🔄 Workout session reset - all storage cleared");
       },
@@ -421,7 +425,7 @@ export const useWorkoutStore = create<WorkoutState>()(
           workoutStatus: 'saved',
           isActive: false,
           explicitlyEnded: true,
-          lastCompletionTime: completionTime, // NEW: Store completion time in state
+          lastCompletionTime: completionTime,
           lastTabActivity: Date.now(),
         });
         
@@ -433,6 +437,11 @@ export const useWorkoutStore = create<WorkoutState>()(
         // Reset session immediately - no delay to prevent race conditions
         get().resetSession();
       },
+      
+      setSavedWorkout: (workoutId) => set({ 
+        lastSavedWorkoutId: workoutId,
+        lastTabActivity: Date.now(),
+      }),
       
       markAsFailed: (error) => set((state) => ({ 
         workoutStatus: 'failed',
