@@ -30,7 +30,7 @@ export const BottomNav = () => {
   }
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 grid grid-cols-5 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 grid grid-cols-4 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom" style={{ gridTemplateColumns: isWorkoutActive ? 'repeat(5, 1fr)' : 'repeat(4, 1fr)' }}>
       <NavButton 
         icon={<Clock size={20} />} 
         label="Home" 
@@ -43,20 +43,15 @@ export const BottomNav = () => {
         active={isActive('/overview')}
         onClick={() => confirmNavigation('/overview')} 
       />
-      <NavButton 
-        icon={<Zap size={20} />} 
-        label="Training"
-        active={isActive('/training-session')}
-        onClick={() => {
-          if (isWorkoutActive) {
-            confirmNavigation('/training-session');
-          } else {
-            // Redirect to home for workout setup wizard
-            confirmNavigation('/');
-          }
-        }}
-        highlight={isWorkoutActive}
-      />
+      {isWorkoutActive && (
+        <NavButton 
+          icon={<Zap size={20} />} 
+          label="Training"
+          active={isActive('/training-session')}
+          onClick={() => confirmNavigation('/training-session')}
+          highlight={true}
+        />
+      )}
       <NavButton 
         icon={<Dumbbell size={20} />} 
         label="Exercises"
