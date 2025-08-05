@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FinishWorkoutDialog } from "@/components/training/FinishWorkoutDialog";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -93,6 +94,7 @@ const TrainingSessionPage = () => {
   const [showRestTimerModal, setShowRestTimerModal] = useState(false);
   const [restTimerResetSignal, setRestTimerResetSignal] = useState(0);
   const [pageLoaded, setPageLoaded] = useState(false);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
 
   const exerciseCount = Object.keys(storeExercises).length;
   const hasExercises = exerciseCount > 0;
@@ -306,9 +308,15 @@ const TrainingSessionPage = () => {
   const handleShowRestTimer = () => { setShowRestTimerModal(true); playBell(); };
   const handleRestTimerComplete = () => { setShowRestTimerModal(false); playBell(); };
 
-  const handleFinishWorkout = async () => {
+  const handleFinishWorkout = () => {
+    // Show confirmation dialog instead of finishing immediately
+    setShowFinishDialog(true);
+  };
+
+  const handleConfirmFinish = async () => {
     // Handle empty workout case
     if (!hasExercises) {
+      setShowFinishDialog(false);
       toast({
         title: "Empty workout",
         description: "You haven't added any exercises. Do you want to end this session?",
@@ -325,6 +333,7 @@ const TrainingSessionPage = () => {
     }
 
     try {
+      setShowFinishDialog(false);
       setIsSaving(true);
       
       // Actually save the workout to the database using useWorkoutSave
@@ -661,6 +670,23 @@ const TrainingSessionPage = () => {
         onOpenChange={setIsAddExerciseSheetOpen}
         onSelectExercise={handleAddExercise}
         trainingType={trainingConfig?.trainingType}
+      />
+
+      <FinishWorkoutDialog
+        open={showFinishDialog}
+        onOpenChange={setShowFinishDialog}
+        onConfirm={handleConfirmFinish}
+        workoutStats={{
+          exerciseCount,
+          completedSets,
+          totalSets,
+          elapsedTime,
+          estimatedTonnage: Object.values(storeExercises).reduce((total, exerciseData) => {
+            const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
+            return total + sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
+          }, 0)
+        }}
+        isSaving={isSaving}
       />
       </div>
     </WorkoutSessionLayout>
