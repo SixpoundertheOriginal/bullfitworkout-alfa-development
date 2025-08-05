@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, TrendingUp, Target, Zap } from 'lucide-react';
+import { Send, Bot, User, TrendingUp, Target, Zap, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useChatPersistence } from '@/hooks/useChatPersistence';
 
 interface Message {
   id: string;
@@ -25,7 +26,7 @@ interface TrainingInsight {
 
 export default function TrainingCoachPage() {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, addMessage, clearMessages, isLoaded } = useChatPersistence();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [insights, setInsights] = useState<TrainingInsight[]>([]);
@@ -39,17 +40,6 @@ export default function TrainingCoachPage() {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    // Initialize with welcome message
-    const welcomeMessage: Message = {
-      id: 'welcome',
-      role: 'assistant',
-      content: "Hi! I'm your AI Training Coach. I have access to your complete workout history and can help you analyze your progress, identify patterns, and optimize your training. What would you like to know about your fitness journey?",
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
-  }, []);
-
   const sendMessage = async () => {
     if (!input.trim() || !user || isLoading) return;
 
@@ -60,7 +50,7 @@ export default function TrainingCoachPage() {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    addMessage({ role: 'user', content: input });
     setInput('');
     setIsLoading(true);
 
@@ -92,7 +82,7 @@ export default function TrainingCoachPage() {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      addMessage({ role: 'assistant', content: data.reply });
       
       if (data.trainingInsights) {
         setInsights(data.trainingInsights.map((text: string, index: number) => ({
@@ -115,7 +105,10 @@ export default function TrainingCoachPage() {
         content: "I'm having trouble accessing your training data right now. Please try again in a moment.",
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      addMessage({ 
+        role: 'assistant', 
+        content: "I'm having trouble accessing your training data right now. Please try again in a moment." 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -151,11 +144,22 @@ export default function TrainingCoachPage() {
         {/* Header */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Bot className="h-6 w-6 text-primary" />
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Bot className="h-6 w-6 text-primary" />
+                </div>
+                AI Training Coach
               </div>
-              AI Training Coach
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearMessages}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Clear Chat
+              </Button>
             </CardTitle>
           </CardHeader>
         </Card>

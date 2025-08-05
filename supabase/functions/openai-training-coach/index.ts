@@ -84,13 +84,17 @@ Keep responses conversational but data-driven. Always reference their actual tra
     console.log('OpenAI response generated successfully');
 
     // Store conversation in database for context
-    await supabase.from('ai_conversations').insert({
-      user_id: userId,
-      message_type: 'coach',
-      user_message: message,
-      ai_response: reply,
-      training_data_snapshot: trainingData,
-    }).catch(err => console.warn('Failed to store conversation:', err));
+    try {
+      await supabase.from('ai_conversations').insert({
+        user_id: userId,
+        message_type: 'coach',
+        user_message: message,
+        ai_response: reply,
+        training_data_snapshot: trainingData,
+      });
+    } catch (dbError) {
+      console.warn('Failed to store conversation:', dbError);
+    }
 
     return new Response(JSON.stringify({ 
       reply,
