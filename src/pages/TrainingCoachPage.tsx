@@ -204,17 +204,7 @@ export default function TrainingCoachPage() {
                     >
                        <div className="text-sm leading-relaxed">
                          {message.role === 'assistant' ? (
-                           <div className="prose prose-sm max-w-none dark:prose-invert
-                             prose-headings:text-foreground prose-headings:font-semibold
-                             prose-p:text-foreground prose-p:leading-relaxed prose-p:mb-2
-                             prose-strong:text-foreground prose-strong:font-bold
-                             prose-em:text-foreground prose-em:italic
-                             prose-ul:text-foreground prose-ul:mb-2
-                             prose-li:text-foreground prose-li:mb-1
-                             prose-ol:text-foreground prose-ol:mb-2
-                             prose-blockquote:text-muted-foreground prose-blockquote:border-l-border
-                             prose-code:text-foreground prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                             [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                           <div className="space-y-2">
                              <ReactMarkdown
                                components={{
                                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2 text-foreground">{children}</h1>,
