@@ -3,6 +3,7 @@ import { Bot, User, RefreshCw, AlertCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ChatMessage } from '@/hooks/useEnhancedChatState';
 
 interface OptimizedChatMessageProps {
@@ -50,6 +51,7 @@ const OptimizedChatMessage = memo(({ message, onRetry }: OptimizedChatMessagePro
           {isAssistant ? (
             <div className="space-y-2 overflow-hidden">
               <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({ children }) => <h1 className="text-base font-bold mb-2 text-foreground">{children}</h1>,
                   h2: ({ children }) => <h2 className="text-sm font-semibold mb-2 text-foreground">{children}</h2>,
@@ -62,6 +64,26 @@ const OptimizedChatMessage = memo(({ message, onRetry }: OptimizedChatMessagePro
                   li: ({ children }) => <li className="text-foreground text-sm break-words">{children}</li>,
                   code: ({ children }) => <code className="bg-muted-foreground/20 px-1 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
                   blockquote: ({ children }) => <blockquote className="border-l-4 border-border pl-3 italic text-muted-foreground mb-2 text-sm">{children}</blockquote>,
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-4">
+                      <table className="min-w-full border-collapse border border-border rounded-lg">
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  thead: ({ children }) => <thead className="bg-muted/50">{children}</thead>,
+                  tbody: ({ children }) => <tbody>{children}</tbody>,
+                  tr: ({ children }) => <tr className="border-b border-border hover:bg-muted/30">{children}</tr>,
+                  th: ({ children }) => (
+                    <th className="border border-border px-3 py-2 text-left font-semibold text-foreground text-xs">
+                      {children}
+                    </th>
+                  ),
+                  td: ({ children }) => (
+                    <td className="border border-border px-3 py-2 text-foreground text-xs">
+                      {children}
+                    </td>
+                  ),
                 }}
               >
                 {message.content}
