@@ -1,24 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, TrendingUp, Target, Zap, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Send, Bot, TrendingUp, Target, Zap, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useChatPersistence } from '@/hooks/useChatPersistence';
-import ReactMarkdown from 'react-markdown';
+import { useEnhancedChatState } from '@/hooks/useEnhancedChatState';
+import VirtualizedChatContainer from '@/components/chat/VirtualizedChatContainer';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
 
 interface TrainingInsight {
   type: 'trend' | 'goal' | 'performance';
@@ -27,45 +18,49 @@ interface TrainingInsight {
 
 export default function TrainingCoachPage() {
   const { user } = useAuth();
-  const { messages, addMessage, clearMessages, isLoaded } = useChatPersistence();
+  const { 
+    messages, 
+    addMessage, 
+    updateMessageStatus, 
+    retryMessage, 
+    clearMessages, 
+    isLoaded, 
+    isLoading,
+    setLoading,
+    setError,
+    getRecentContext 
+  } = useEnhancedChatState();
+  
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [insights, setInsights] = useState<TrainingInsight[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim() || !user || isLoading) return;
 
     // Add user message immediately
-    addMessage({ role: 'user', content: input });
+    const userMessage = addMessage({ role: 'user', content: input });
     const userInput = input; // Store input before clearing
     setInput('');
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
 
     try {
       console.log('Sending message to training coach...');
+      
+      // Mark user message as delivered
+      updateMessageStatus(userMessage.id, 'delivered');
       
       const { data, error } = await supabase.functions.invoke('openai-training-coach', {
         body: {
           message: userInput,
           userId: user.id,
-          conversationHistory: messages.slice(-8).map(m => ({
-            role: m.role,
-            content: m.content
-          }))
+          conversationHistory: getRecentContext()
         }
       });
 
       if (error) {
         console.error('Training coach error:', error);
+        updateMessageStatus(userMessage.id, 'failed');
         throw error;
       }
 
@@ -91,6 +86,9 @@ export default function TrainingCoachPage() {
 
     } catch (error) {
       console.error('Error sending message:', error);
+      updateMessageStatus(userMessage.id, 'failed');
+      setError('Failed to send message');
+      
       toast({
         title: "Error",
         description: "Failed to get response from AI coach. Please try again.",
@@ -102,7 +100,7 @@ export default function TrainingCoachPage() {
         content: "I'm having trouble accessing your training data right now. Please try again in a moment." 
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -178,102 +176,12 @@ export default function TrainingCoachPage() {
         {/* Chat Messages */}
         <Card className="flex flex-col">
           <CardContent className="flex-1 p-0">
-            <div className="h-[60vh] max-h-[600px] min-h-[400px]">
-              <ScrollArea className="h-full">
-                <div className="p-6 space-y-4">
-                  {isLoaded && messages?.length > 0 ? messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex items-start gap-3 ${
-                        message.role === 'user' ? 'justify-end' : ''
-                      }`}
-                    >
-                      {message.role === 'assistant' && (
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarFallback className="bg-primary/10">
-                            <Bot className="h-4 w-4 text-primary" />
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      
-                      <div
-                        className={`max-w-[75%] rounded-lg px-4 py-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground ml-auto'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="text-sm leading-relaxed">
-                          {message.role === 'assistant' ? (
-                            <div className="space-y-2 overflow-hidden">
-                              <ReactMarkdown
-                                components={{
-                                  h1: ({ children }) => <h1 className="text-base font-bold mb-2 text-foreground">{children}</h1>,
-                                  h2: ({ children }) => <h2 className="text-sm font-semibold mb-2 text-foreground">{children}</h2>,
-                                  h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 text-foreground">{children}</h3>,
-                                  p: ({ children }) => <p className="mb-2 last:mb-0 text-foreground leading-relaxed text-sm">{children}</p>,
-                                  strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
-                                  em: ({ children }) => <em className="italic text-foreground">{children}</em>,
-                                  ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-foreground pl-2">{children}</ul>,
-                                  ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-foreground pl-2">{children}</ol>,
-                                  li: ({ children }) => <li className="text-foreground text-sm break-words">{children}</li>,
-                                  code: ({ children }) => <code className="bg-muted-foreground/20 px-1 py-0.5 rounded text-xs font-mono text-foreground">{children}</code>,
-                                  blockquote: ({ children }) => <blockquote className="border-l-4 border-border pl-3 italic text-muted-foreground mb-2 text-sm">{children}</blockquote>,
-                                }}
-                              >
-                                {message.content}
-                              </ReactMarkdown>
-                            </div>
-                          ) : (
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">
-                              {message.content}
-                            </p>
-                          )}
-                        </div>
-                        <p className="text-xs opacity-70 mt-2">
-                          {message.timestamp.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-
-                      {message.role === 'user' && (
-                        <Avatar className="h-8 w-8 flex-shrink-0">
-                          <AvatarFallback className="bg-secondary">
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  )) : (
-                    !isLoaded && (
-                      <div className="flex items-center justify-center p-8">
-                        <Skeleton className="h-4 w-48" />
-                      </div>
-                    )
-                  )}
-                  
-                  {isLoading && (
-                    <div className="flex items-start gap-3">
-                      <Avatar className="h-8 w-8 flex-shrink-0">
-                        <AvatarFallback className="bg-primary/10">
-                          <Bot className="h-4 w-4 text-primary" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-muted rounded-lg px-4 py-3 max-w-[75%]">
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-48" />
-                          <Skeleton className="h-4 w-32" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-            </div>
+            <VirtualizedChatContainer
+              messages={messages}
+              isLoading={isLoading}
+              isLoaded={isLoaded}
+              onRetry={retryMessage}
+            />
           </CardContent>
 
           {/* Input Area - Fixed at bottom */}
