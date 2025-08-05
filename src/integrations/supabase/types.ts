@@ -52,6 +52,36 @@ export type Database = {
           },
         ]
       }
+      ai_conversations: {
+        Row: {
+          ai_response: string
+          created_at: string
+          id: string
+          message_type: string
+          training_data_snapshot: Json | null
+          user_id: string
+          user_message: string
+        }
+        Insert: {
+          ai_response: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          training_data_snapshot?: Json | null
+          user_id: string
+          user_message: string
+        }
+        Update: {
+          ai_response?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          training_data_snapshot?: Json | null
+          user_id?: string
+          user_message?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           all_day: boolean | null
