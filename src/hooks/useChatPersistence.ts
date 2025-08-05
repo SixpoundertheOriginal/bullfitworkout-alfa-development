@@ -65,7 +65,12 @@ export const useChatPersistence = () => {
       id: Date.now().toString(),
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, newMessage]);
+    console.log('Adding message to chat:', newMessage);
+    setMessages(prev => {
+      const updated = [...prev, newMessage];
+      console.log('Updated messages array:', updated);
+      return updated;
+    });
     return newMessage;
   };
 

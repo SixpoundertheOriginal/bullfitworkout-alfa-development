@@ -43,14 +43,9 @@ export default function TrainingCoachPage() {
   const sendMessage = async () => {
     if (!input.trim() || !user || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-    };
-
+    // Add user message immediately
     addMessage({ role: 'user', content: input });
+    const userInput = input; // Store input before clearing
     setInput('');
     setIsLoading(true);
 
@@ -59,7 +54,7 @@ export default function TrainingCoachPage() {
       
       const { data, error } = await supabase.functions.invoke('openai-training-coach', {
         body: {
-          message: input,
+          message: userInput,
           userId: user.id,
           conversationHistory: messages.slice(-8).map(m => ({
             role: m.role,
@@ -75,14 +70,16 @@ export default function TrainingCoachPage() {
 
       console.log('Training coach response:', data);
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.reply,
-        timestamp: new Date(),
-      };
-
-      addMessage({ role: 'assistant', content: data.reply });
+      if (data?.reply) {
+        console.log('Adding assistant message:', data.reply);
+        addMessage({ role: 'assistant', content: data.reply });
+      } else {
+        console.error('No reply in response data:', data);
+        addMessage({ 
+          role: 'assistant', 
+          content: "I received your message but couldn't generate a proper response. Please try again." 
+        });
+      }
       
       if (data.trainingInsights) {
         setInsights(data.trainingInsights.map((text: string, index: number) => ({
@@ -99,12 +96,6 @@ export default function TrainingCoachPage() {
         variant: "destructive",
       });
       
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: "I'm having trouble accessing your training data right now. Please try again in a moment.",
-        timestamp: new Date(),
-      };
       addMessage({ 
         role: 'assistant', 
         content: "I'm having trouble accessing your training data right now. Please try again in a moment." 
@@ -188,7 +179,7 @@ export default function TrainingCoachPage() {
           <CardContent className="flex-1 p-0">
             <ScrollArea className="h-full p-6">
               <div className="space-y-4">
-                {messages.map((message) => (
+                {isLoaded && messages?.length > 0 ? messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex items-start gap-3 ${
@@ -229,7 +220,13 @@ export default function TrainingCoachPage() {
                       </Avatar>
                     )}
                   </div>
-                ))}
+                )) : (
+                  !isLoaded && (
+                    <div className="flex items-center justify-center p-8">
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                  )
+                )}
                 
                 {isLoading && (
                   <div className="flex items-start gap-3">
