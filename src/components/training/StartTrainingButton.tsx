@@ -57,36 +57,40 @@ export const StartTrainingButton = ({
   
   return (
     <div className="py-8 px-6"> {/* Premium spacing container */}
-      <div 
-        onClick={handleStartClick}
-        className={cn(
-          "relative flex items-center justify-center cursor-pointer group",
-          "w-64 h-64 mx-auto my-8", // Large size with vertical margins
-          "transition-all duration-300 ease-out",
-          "hover:scale-[1.02] active:scale-[0.95]", // Micro-interactions
-          className
-        )}
-        style={{
-          filter: 'drop-shadow(0 20px 40px rgba(139, 92, 246, 0.15)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1))'
-        }}
-      >
+        <div 
+          onClick={handleStartClick}
+          className={cn(
+            "relative flex items-center justify-center cursor-pointer group",
+            "w-64 h-64 mx-auto my-8", // Large size with vertical margins
+            "transition-all duration-500 ease-out",
+            "hover:scale-[1.05] active:scale-[0.92]", // Enhanced micro-interactions
+            "transform-gpu", // Hardware acceleration
+            className
+          )}
+          style={{
+            filter: 'drop-shadow(0 25px 50px rgba(139, 92, 246, 0.2)) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15))',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease-out'
+          }}
+        >
         {/* Background glow effect */}
         <div 
-          className="absolute inset-0 rounded-full opacity-60 group-hover:opacity-80 transition-opacity duration-500"
+          className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-90 group-active:opacity-100 transition-all duration-700"
           style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(236,72,153,0.2) 40%, transparent 70%)',
-            filter: 'blur(20px)',
-            transform: 'scale(1.2)'
+            background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(236,72,153,0.3) 40%, transparent 70%)',
+            filter: 'blur(25px)',
+            transform: 'scale(1.2)',
+            animation: 'pulse 4s ease-in-out infinite'
           }}
         />
         
         {/* Outer progress ring with sophisticated gradient */}
         <div 
-          className="absolute inset-0 rounded-full p-3 group-hover:rotate-12 transition-transform duration-700 ease-out"
+          className="absolute inset-0 rounded-full p-3 group-hover:rotate-12 group-active:rotate-6 transition-all duration-700 ease-out"
           style={{
             background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F97316 100%)',
-            backgroundSize: '200% 200%',
-            animation: 'gradient-shift 8s ease infinite'
+            backgroundSize: '300% 300%',
+            animation: 'gradient-shift 6s ease infinite',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 0 30px rgba(139, 92, 246, 0.3)'
           }}
         >
           {/* Inner glassmorphism container */}
@@ -117,7 +121,7 @@ export const StartTrainingButton = ({
             
             {/* Content container */}
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center transform group-active:scale-95 transition-transform duration-150">
+              <div className="text-center transform group-active:scale-90 transition-all duration-200 ease-out group-hover:scale-105">
                 <div 
                   className="text-white font-bold mb-2 tracking-wide"
                   style={{

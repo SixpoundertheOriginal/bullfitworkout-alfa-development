@@ -45,10 +45,11 @@ export const WeeklySummaryStats = React.memo(() => {
   const dateRangeText = getDateRangeText();
 
   const cardStyle = {
-    background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%)',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
+    background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    filter: 'drop-shadow(0 10px 20px rgba(139, 92, 246, 0.15)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
+    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(139, 92, 246, 0.1)'
   };
 
   const innerHighlightStyle = {
@@ -72,7 +73,7 @@ export const WeeklySummaryStats = React.memo(() => {
       <div className="grid grid-cols-2 gap-4">
         {/* Workouts */}
         <div 
-          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           style={cardStyle}
         >
           <div 
@@ -91,7 +92,7 @@ export const WeeklySummaryStats = React.memo(() => {
 
         {/* Total Volume */}
         <div 
-          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           style={cardStyle}
         >
           <div 
@@ -115,7 +116,7 @@ export const WeeklySummaryStats = React.memo(() => {
 
         {/* Total Reps */}
         <div 
-          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           style={cardStyle}
         >
           <div 
@@ -134,7 +135,7 @@ export const WeeklySummaryStats = React.memo(() => {
 
         {/* Total Sets */}
         <div 
-          className="p-4 rounded-xl text-start relative overflow-hidden group"
+          className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           style={cardStyle}
         >
           <div 
@@ -154,7 +155,7 @@ export const WeeklySummaryStats = React.memo(() => {
 
       {/* Most Active Day - spans full width */}
       <div 
-        className="p-4 rounded-xl text-start relative overflow-hidden group"
+        className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
         style={cardStyle}
       >
         <div 
