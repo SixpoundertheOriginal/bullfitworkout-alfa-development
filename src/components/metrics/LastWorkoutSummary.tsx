@@ -31,17 +31,21 @@ export const LastWorkoutSummary: React.FC<LastWorkoutSummaryProps> = ({ workouts
   const lastWorkout = workouts[0];
   console.log('LastWorkoutSummary - workout data:', lastWorkout);
   
+  // Get exercise data from the correct property
+  const exerciseData = lastWorkout.exercises || lastWorkout.exercise_sets || [];
+  console.log('Exercise data:', exerciseData);
+  
   // Count unique exercises, not total sets
-  const uniqueExercises = new Set(lastWorkout.exercise_sets?.map((set: any) => set.exercise_name) || []).size;
+  const uniqueExercises = new Set(exerciseData.map((set: any) => set.exercise_name) || []).size;
   
   // Calculate total volume from exercise sets
-  const totalVolume = lastWorkout.exercise_sets?.reduce((sum: number, set: any) => {
+  const totalVolume = exerciseData.reduce((sum: number, set: any) => {
     const volume = (set.weight || 0) * (set.reps || 0);
     console.log('Set volume calculation:', { weight: set.weight, reps: set.reps, volume });
     return sum + volume;
   }, 0) || 0;
   
-  console.log('Total volume calculated:', totalVolume, 'from', lastWorkout.exercise_sets?.length, 'sets');
+  console.log('Total volume calculated:', totalVolume, 'from', exerciseData.length, 'sets');
 
   const handleViewDetails = () => {
     window.location.href = `/workout/${lastWorkout.id}`;
