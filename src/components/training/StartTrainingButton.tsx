@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play } from 'lucide-react';
 import { CircularGradientButton } from '@/components/CircularGradientButton';
@@ -27,6 +27,7 @@ export const StartTrainingButton = ({
 }: StartTrainingButtonProps) => {
   const navigate = useNavigate();
   const { startWorkout, updateLastActiveRoute } = useWorkoutStore();
+  const [isTouched, setIsTouched] = useState(false);
   
   const handleStartClick = () => {
     // Haptic feedback for mobile devices
@@ -59,17 +60,29 @@ export const StartTrainingButton = ({
       title: "Workout started!"
     });
   };
+
+  const handleTouchStart = () => {
+    setIsTouched(true);
+  };
+
+  const handleTouchEnd = () => {
+    setIsTouched(false);
+  };
   
   return (
     <div className="py-8 px-6"> {/* Premium spacing container */}
         <div 
           onClick={handleStartClick}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className={cn(
             "relative flex items-center justify-center cursor-pointer group",
             "w-64 h-64 mx-auto my-8", // Large size with vertical margins
             "transition-all duration-500 ease-out",
             "hover:scale-[1.05] active:scale-[0.95]", // Enhanced micro-interactions with stronger press
             "transform-gpu", // Hardware acceleration
+            // Mobile touch state classes
+            isTouched && "scale-[1.05]",
             className
           )}
           style={{
@@ -79,7 +92,12 @@ export const StartTrainingButton = ({
         >
         {/* Background glow effect */}
         <div 
-          className="absolute inset-0 rounded-full opacity-50 group-hover:opacity-90 group-active:opacity-100 transition-all duration-700 group-active:duration-75"
+          className={cn(
+            "absolute inset-0 rounded-full opacity-50 transition-all duration-700 group-active:duration-75",
+            "group-hover:opacity-90 group-active:opacity-100",
+            // Mobile touch states
+            isTouched && "opacity-90"
+          )}
           style={{
             background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(236,72,153,0.3) 40%, transparent 70%)',
             filter: 'blur(25px)',
@@ -90,7 +108,12 @@ export const StartTrainingButton = ({
         
         {/* Intense press glow burst */}
         <div 
-          className="absolute inset-0 rounded-full opacity-0 group-active:opacity-100 transition-all duration-75"
+          className={cn(
+            "absolute inset-0 rounded-full opacity-0 transition-all duration-75",
+            "group-active:opacity-100",
+            // Mobile touch burst effect
+            isTouched && "opacity-100"
+          )}
           style={{
             background: 'radial-gradient(circle, rgba(139,92,246,0.8) 0%, rgba(236,72,153,0.6) 30%, rgba(249,115,22,0.4) 60%, transparent 80%)',
             filter: 'blur(35px)',
@@ -101,7 +124,12 @@ export const StartTrainingButton = ({
         
         {/* Outer progress ring with sophisticated gradient */}
         <div 
-          className="absolute inset-0 rounded-full p-3 group-hover:rotate-12 group-active:rotate-6 transition-all duration-700 ease-out group-active:duration-100"
+          className={cn(
+            "absolute inset-0 rounded-full p-3 transition-all duration-700 ease-out group-active:duration-100",
+            "group-hover:rotate-12 group-active:rotate-6",
+            // Mobile touch rotation
+            isTouched && "rotate-12"
+          )}
           style={{
             background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F97316 100%)',
             backgroundSize: '300% 300%',
@@ -138,7 +166,12 @@ export const StartTrainingButton = ({
             
             {/* Content container */}
             <div className="w-full h-full flex items-center justify-center">
-              <div className="text-center transform group-active:scale-90 transition-all duration-75 ease-out group-hover:scale-105">
+              <div className={cn(
+                "text-center transform transition-all duration-75 ease-out",
+                "group-active:scale-90 group-hover:scale-105",
+                // Mobile touch scaling
+                isTouched && "scale-105"
+              )}>
                 <div 
                   className="text-white font-bold mb-2 tracking-wide"
                   style={{
