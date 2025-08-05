@@ -62,7 +62,7 @@ export const saveWorkout = async ({
       errors: []
     });
 
-    // Format exercise sets for the function call
+    // Format exercise sets for the function call with actual rest times
     const formattedSets = Object.entries(exercises).flatMap(([exerciseName, sets], exerciseIndex) => {
       return sets.map((set, setIndex) => ({
         exercise_name: exerciseName,
@@ -70,7 +70,7 @@ export const saveWorkout = async ({
         reps: set.reps || 0,
         set_number: setIndex + 1,
         completed: set.completed || false,
-        rest_time: set.restTime || 60
+        rest_time: set.restTime || 60 // This should now contain actual measured rest time
       }));
     });
 

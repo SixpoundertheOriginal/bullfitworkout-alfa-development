@@ -57,11 +57,22 @@ export const useEnhancedRestAnalytics = () => {
     };
 
     // Update the session in state
-    setRestSessions(prev => 
-      prev.map(session => 
+    setRestSessions(prev => {
+      const updatedSessions = prev.map(session => 
         session === activeRestRef.current ? completedSession : session
-      )
-    );
+      );
+      
+      // Store completed rest sessions in localStorage for workout save integration
+      try {
+        const completedSessions = updatedSessions.filter(s => s.actualRestTime !== undefined);
+        localStorage.setItem('rest-analytics-sessions', JSON.stringify(completedSessions));
+        console.log('📊 Rest analytics saved to localStorage');
+      } catch (error) {
+        console.warn('Failed to save rest analytics to localStorage:', error);
+      }
+      
+      return updatedSessions;
+    });
 
     // Log to analytics service
     await logRestTime({
@@ -168,6 +179,14 @@ export const useEnhancedRestAnalytics = () => {
   const resetAnalytics = useCallback(() => {
     setRestSessions([]);
     activeRestRef.current = null;
+    
+    // Clear localStorage as well
+    try {
+      localStorage.removeItem('rest-analytics-sessions');
+      console.log('📊 Rest analytics cleared from localStorage');
+    } catch (error) {
+      console.warn('Failed to clear rest analytics from localStorage:', error);
+    }
   }, []);
 
   return {

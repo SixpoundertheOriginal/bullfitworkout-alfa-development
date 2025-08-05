@@ -146,13 +146,46 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
       
       console.log("Saving workout with data:", workoutData);
       
-      // Convert ExerciseSet to EnhancedExerciseSet by ensuring isEditing is always defined
+      // Get actual rest times from the rest analytics service
+      let actualRestTimes = new Map<string, number>();
+      try {
+        // Try to get rest data from localStorage where the rest analytics hook stores it
+        const restDataRaw = localStorage.getItem('rest-analytics-sessions');
+        if (restDataRaw) {
+          const restData = JSON.parse(restDataRaw);
+          if (Array.isArray(restData)) {
+            restData.forEach((session: any) => {
+              if (session.exerciseName && session.setNumber && session.actualRestTime) {
+                const key = `${session.exerciseName}-${session.setNumber}`;
+                actualRestTimes.set(key, Math.round(session.actualRestTime));
+              }
+            });
+            console.log(`📊 Loaded ${actualRestTimes.size} actual rest time measurements`);
+          }
+        }
+      } catch (error) {
+        console.warn('Could not load rest analytics data:', error);
+      }
+      
+      // Convert ExerciseSet to EnhancedExerciseSet and inject actual rest times
       const enhancedExercises: Record<string, EnhancedExerciseSet[]> = {};
       Object.entries(exercises).forEach(([exerciseName, sets]) => {
-        enhancedExercises[exerciseName] = sets.map(set => ({
-          ...set,
-          isEditing: set.isEditing === undefined ? false : set.isEditing
-        }));
+        enhancedExercises[exerciseName] = sets.map((set, setIndex) => {
+          // Try to get actual rest time from analytics for this specific set
+          let actualRestTime = set.restTime || 60; // fallback to preset
+          
+          const restKey = `${exerciseName}-${setIndex + 1}`;
+          if (actualRestTimes.has(restKey)) {
+            actualRestTime = actualRestTimes.get(restKey)!;
+            console.log(`📊 Using actual rest time for ${exerciseName} set ${setIndex + 1}: ${actualRestTime}s`);
+          }
+          
+          return {
+            ...set,
+            restTime: actualRestTime,
+            isEditing: set.isEditing === undefined ? false : set.isEditing
+          };
+        });
       });
       
       const saveResult = await saveWorkout({
