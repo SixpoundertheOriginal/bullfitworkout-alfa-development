@@ -139,7 +139,7 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
         training_type: trainingConfig?.trainingType || 'strength',
         start_time: startTime.toISOString(),
         end_time: now.toISOString(),
-        duration: cleanedElapsedTime || 0,
+        duration: Math.round((cleanedElapsedTime || 0) / 60), // Convert seconds to minutes
         notes: null,
         metadata: trainingConfig ? JSON.stringify({ trainingConfig }) : null
       };
