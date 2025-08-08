@@ -31,6 +31,8 @@ export interface WorkoutState {
   startTime: string | null;
   workoutStatus: WorkoutStatus;
   isPaused: boolean;
+  pausedAt: number | null;
+  totalPausedMs: number;
   lastCompletionTime: number | null;
   lastSavedWorkoutId: string | null; // NEW: Track last saved workout ID
   
@@ -158,6 +160,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       startTime: null,
       workoutStatus: 'idle',
       isPaused: false,
+      pausedAt: null,
+      totalPausedMs: 0,
       lastCompletionTime: null,
       lastSavedWorkoutId: null, // NEW: Initialize saved workout ID
       
@@ -250,14 +254,21 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       }),
 
-      pauseWorkout: () => set({ 
+      pauseWorkout: () => set((state) => ({ 
         isPaused: true,
+        pausedAt: Date.now(),
         lastTabActivity: Date.now(),
-      }),
+      })),
 
-      resumeWorkout: () => set({ 
-        isPaused: false,
-        lastTabActivity: Date.now(),
+      resumeWorkout: () => set((state) => {
+        const now = Date.now();
+        const additionalPaused = state.pausedAt ? (now - state.pausedAt) : 0;
+        return { 
+          isPaused: false,
+          pausedAt: null,
+          totalPausedMs: (state.totalPausedMs || 0) + additionalPaused,
+          lastTabActivity: Date.now(),
+        };
       }),
       
       getExerciseDisplayName: (exerciseName) => {
@@ -354,6 +365,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           startTime: now.toISOString(),
           elapsedTime: 0,
           isPaused: false,
+          pausedAt: null,
+          totalPausedMs: 0,
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
         });
@@ -390,6 +403,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           activeRestTimers: new Map(),
           isActive: false,
           isPaused: false,
+          pausedAt: null,
+          totalPausedMs: 0,
           explicitlyEnded: true,
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
@@ -543,6 +558,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           startTime: null,
           workoutStatus: 'idle',
           isPaused: false,
+          pausedAt: null,
+          totalPausedMs: 0,
           trainingConfig: null,
           activeRestTimers: new Map(),
           isActive: false,
@@ -665,6 +682,8 @@ export const useWorkoutStore = create<WorkoutState>()(
           startTime: state.startTime,
           workoutStatus: state.workoutStatus,
           isPaused: state.isPaused,
+          pausedAt: state.pausedAt,
+          totalPausedMs: state.totalPausedMs,
           trainingConfig: state.trainingConfig,
           isActive: state.isActive,
           lastActiveRoute: state.lastActiveRoute,
@@ -825,10 +844,11 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (rehydratedState && rehydratedState.isActive && !rehydratedState.corruptionDetected) {
             if (rehydratedState.isActive && rehydratedState.startTime) {
               const storedStartTime = new Date(rehydratedState.startTime);
-              const currentTime = new Date();
-              const calculatedElapsedTime = Math.floor(
-                (currentTime.getTime() - storedStartTime.getTime()) / 1000
-              );
+              const now = Date.now();
+              const pausedMs = (rehydratedState.totalPausedMs || 0) + ((rehydratedState.isPaused && rehydratedState.pausedAt) ? (now - rehydratedState.pausedAt) : 0);
+              const calculatedElapsedTime = Math.max(0, Math.floor(
+                (now - storedStartTime.getTime() - pausedMs) / 1000
+              ));
               
               if (calculatedElapsedTime > (rehydratedState.elapsedTime || 0)) {
                 setTimeout(() => {
@@ -852,7 +872,7 @@ export const useWorkoutStore = create<WorkoutState>()(
 );
 
 export const useWorkoutPageVisibility = () => {
-  const { isActive, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
+  const { isActive, isPaused, pausedAt, totalPausedMs, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
   
   React.useEffect(() => {
     if (!document || !isActive) return;
@@ -861,10 +881,11 @@ export const useWorkoutPageVisibility = () => {
       if (document.visibilityState === 'visible' && isActive) {
         if (startTime) {
           const storedStartTime = new Date(startTime);
-          const currentTime = new Date();
-          const calculatedElapsedTime = Math.floor(
-            (currentTime.getTime() - storedStartTime.getTime()) / 1000
-          );
+          const now = Date.now();
+          const pausedMs = (totalPausedMs || 0) + ((isPaused && pausedAt) ? (now - pausedAt) : 0);
+          const calculatedElapsedTime = Math.max(0, Math.floor(
+            (now - storedStartTime.getTime() - pausedMs) / 1000
+          ));
           
           setElapsedTime(calculatedElapsedTime);
           console.log(`Updated elapsed time after tab switch: ${calculatedElapsedTime}s`);

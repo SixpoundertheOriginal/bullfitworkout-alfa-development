@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import { useLayout } from "@/context/LayoutContext";
 import { DateRangeFilter } from "@/components/date-filters/DateRangeFilter";
 import { MainMenu } from "@/components/navigation/MainMenu";
+import { useWorkoutPageVisibility } from "@/store/workoutStore";
 
 // Function to get page title based on the current route
 const getPageTitle = (pathname: string): string => {
@@ -49,6 +50,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   const location = useLocation();
   const { isFilterVisible } = useLayout();
   const title = getPageTitle(location.pathname);
+  useWorkoutPageVisibility();
   
   // Prevent layout shifts during route changes
   useLayoutEffect(() => {
