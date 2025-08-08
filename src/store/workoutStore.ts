@@ -289,22 +289,36 @@ setRestTimerMaxSeconds: (maxSeconds) => set({
   lastTabActivity: Date.now(),
 }),
       
-      getExerciseConfig: (exerciseName) => {
-        const state = get();
-        const exerciseData = state.exercises[exerciseName];
-        
-        if (!exerciseData) return null;
-        
-        if (Array.isArray(exerciseData)) {
-          // Convert legacy format to new format
-          return {
-            name: exerciseName,
-            sets: exerciseData
-          };
-        }
-        
-        return exerciseData as WorkoutExerciseConfig;
-      },
+getExerciseDisplayName: (exerciseName) => {
+  const state = get();
+  const exerciseData = state.exercises[exerciseName];
+  
+  if (!exerciseData || Array.isArray(exerciseData)) {
+    return exerciseName; // Legacy format
+  }
+  
+  const config = exerciseData as WorkoutExerciseConfig;
+  const primaryModifier = config.variant?.primaryModifier;
+  
+  return primaryModifier ? `${exerciseName} • ${primaryModifier}` : exerciseName;
+},
+      
+getExerciseConfig: (exerciseName) => {
+  const state = get();
+  const exerciseData = state.exercises[exerciseName];
+  
+  if (!exerciseData) return null;
+  
+  if (Array.isArray(exerciseData)) {
+    // Convert legacy format to new format
+    return {
+      name: exerciseName,
+      sets: exerciseData
+    };
+  }
+  
+  return exerciseData as WorkoutExerciseConfig;
+},
       
 startRestTimer: (timerId, targetTime) => set((state) => {
   const newTimers = new Map(state.activeRestTimers);
@@ -483,10 +497,6 @@ resetSession: () => {
         get().resetSession();
       },
       
-      setSavedWorkout: (workoutId) => set({ 
-        lastSavedWorkoutId: workoutId,
-        lastTabActivity: Date.now(),
-      }),
       
       markAsFailed: (error) => set((state) => ({ 
         workoutStatus: 'failed',
