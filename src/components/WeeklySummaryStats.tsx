@@ -2,21 +2,38 @@
 import React from 'react';
 import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
-import { format } from "date-fns";
+import { format, differenceInCalendarDays, subDays } from "date-fns";
 
 export const WeeklySummaryStats = React.memo(() => {
   const { dateRange } = useDateRange();
   const { data: stats, isLoading } = useBasicWorkoutStats(dateRange);
+
+  // Compute previous equal-length range for deltas
+  const prevRange = React.useMemo(() => {
+    if (!dateRange?.from) return undefined;
+    const from = dateRange.from;
+    const to = dateRange.to || new Date();
+    const days = Math.max(1, differenceInCalendarDays(to, from) + 1);
+    const prevTo = subDays(from, 1);
+    const prevFrom = subDays(from, days);
+    return { from: prevFrom, to: prevTo };
+  }, [dateRange]);
+  const { data: prevStats } = useBasicWorkoutStats(prevRange);
+
+  const computeDelta = (current?: number, previous?: number): number | null => {
+    if (typeof current !== 'number' || typeof previous !== 'number' || previous === 0) return null;
+    const pct = ((current - previous) / previous) * 100;
+    if (!isFinite(pct)) return null;
+    return pct;
+  };
 
   // Calculate date range text
   const getDateRangeText = () => {
     if (!dateRange || !dateRange.from) {
       return "All time";
     }
-    
     const from = dateRange.from;
     const to = dateRange.to || new Date();
-    
     return `${format(from, "MMM d")} - ${format(to, "MMM d")}`;
   };
 
@@ -43,6 +60,20 @@ export const WeeklySummaryStats = React.memo(() => {
   const totalSets = isLoading ? "..." : stats?.weeklySets?.toString() || "0";
   const mostActiveDay = getMostActiveDay();
   const dateRangeText = getDateRangeText();
+
+  const DeltaBadge: React.FC<{ value: number | null }> = ({ value }) => {
+    if (value === null) return null;
+    const up = value > 0; const down = value < 0;
+    const cls = up ? "text-green-400 bg-green-400/10" : down ? "text-red-400 bg-red-400/10" : "text-gray-400 bg-gray-400/10";
+    const sign = up ? "+" : down ? "−" : "";
+    const rounded = Math.round(Math.abs(value));
+    return <span className={`text-xs font-medium ${cls} px-2 py-0.5 rounded-md`}>{sign}{rounded}%</span>;
+  };
+
+  const deltaWorkouts = computeDelta(stats?.weeklyWorkouts, prevStats?.weeklyWorkouts);
+  const deltaVolume = computeDelta(stats?.weeklyVolume, prevStats?.weeklyVolume);
+  const deltaReps = computeDelta(stats?.weeklyReps, prevStats?.weeklyReps);
+  const deltaSets = computeDelta(stats?.weeklySets, prevStats?.weeklySets);
 
   const cardStyle = {
     background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
@@ -85,7 +116,10 @@ export const WeeklySummaryStats = React.memo(() => {
               <span className="text-lg mr-2">📅</span>
               <span className="text-sm text-muted-foreground">Workouts</span>
             </div>
-            <div className="text-xl font-semibold">{workoutsCount}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-xl font-semibold">{workoutsCount}</div>
+              {!isLoading && <DeltaBadge value={deltaWorkouts} />}
+            </div>
             <div className="text-xs text-muted-foreground opacity-80">{dateRangeText}</div>
           </div>
         </div>
@@ -104,12 +138,10 @@ export const WeeklySummaryStats = React.memo(() => {
               <span className="text-lg mr-2">🏋️</span>
               <span className="text-sm text-muted-foreground">Total Volume</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="text-xl font-semibold">{totalVolume}</div>
-              {!isLoading && stats?.weeklyVolume && stats.weeklyVolume > 0 && (
-                <span className="text-xs text-green-400 font-medium bg-green-400/10 px-2 py-0.5 rounded-md">+12%</span>
-              )}
-            </div>
+              <div className="flex items-center gap-2">
+                <div className="text-xl font-semibold">{totalVolume}</div>
+                {!isLoading && <DeltaBadge value={deltaVolume} />}
+              </div>
             <div className="text-xs text-muted-foreground opacity-80">Weight lifted</div>
           </div>
         </div>
@@ -128,7 +160,10 @@ export const WeeklySummaryStats = React.memo(() => {
               <span className="text-lg mr-2">💪</span>
               <span className="text-sm text-muted-foreground">Total Reps</span>
             </div>
-            <div className="text-xl font-semibold">{totalReps}</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xl font-semibold">{totalReps}</div>
+                {!isLoading && <DeltaBadge value={deltaReps} />}
+              </div>
             <div className="text-xs text-muted-foreground opacity-80">Repetitions</div>
           </div>
         </div>
@@ -147,7 +182,10 @@ export const WeeklySummaryStats = React.memo(() => {
               <span className="text-lg mr-2">📊</span>
               <span className="text-sm text-muted-foreground">Total Sets</span>
             </div>
-            <div className="text-xl font-semibold">{totalSets}</div>
+              <div className="flex items-center gap-2">
+                <div className="text-xl font-semibold">{totalSets}</div>
+                {!isLoading && <DeltaBadge value={deltaSets} />}
+              </div>
             <div className="text-xs text-muted-foreground opacity-80">Sets completed</div>
           </div>
         </div>
