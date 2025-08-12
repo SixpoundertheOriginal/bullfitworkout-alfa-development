@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CompactRestTimer } from '@/components/CompactRestTimer';
 import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
+import { getDisplayRestLabelByIndex, formatRestForDisplay } from '@/utils/restDisplay';
 
 interface SetRowProps {
   setNumber: number;
@@ -401,9 +402,21 @@ export const SetRow = ({
           </div>
           <div className="col-span-2 flex flex-col items-center text-gray-400 px-1">
             <Timer size={14} className="text-purple-400" />
-            <span className="font-mono text-xs text-white">
-              {formatRestTime(restTime)}
-            </span>
+            {(() => {
+              const label = getDisplayRestLabelByIndex(restTime, setNumber - 1);
+              if (label.type === 'start') {
+                return (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-300 mt-0.5">
+                    Start
+                  </span>
+                );
+              }
+              return (
+                <span className="font-mono text-xs text-white">
+                  {formatRestForDisplay(label)}
+                </span>
+              );
+            })()}
           </div>
           <div className="col-span-5 flex justify-center gap-1">
             {completed ? (

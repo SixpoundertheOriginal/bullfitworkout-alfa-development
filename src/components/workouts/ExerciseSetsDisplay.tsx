@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ClipboardEdit, Trash2, Clock, ArrowRight } from "lucide-react";
 import { ExerciseSet } from "@/types/exercise";
 import { cn } from "@/lib/utils";
+import { getDisplayRestLabelByIndex, formatRestForDisplay } from "@/utils/restDisplay";
+import { formatTime } from "@/utils/formatTime";
 
 interface ExerciseSetsDisplayProps {
   exerciseName: string;
@@ -24,10 +25,10 @@ export const ExerciseSetsDisplay: React.FC<ExerciseSetsDisplayProps> = ({
   onSelect,
   isSelected = false,
 }) => {
-  // Calculate average rest time
+  // Calculate average rest time (exclude first set)
   const completedSets = sets.filter(set => set.completed);
-  const restTimes = sets.map(set => set.restTime || 60);
-  const avgRestTime = restTimes.length ? 
+  const restTimes = sets.slice(1).map(set => (set.restTime ?? 0));
+  const avgRestTimeSec = restTimes.length ?
     restTimes.reduce((sum, time) => sum + time, 0) / restTimes.length : 0;
 
   const getRestTimeClass = (restTime: number | undefined) => {
@@ -84,7 +85,7 @@ export const ExerciseSetsDisplay: React.FC<ExerciseSetsDisplayProps> = ({
       
       <div className="flex items-center mb-2 text-xs text-gray-400">
         <Clock size={12} className="mr-1" />
-        <span>Avg Rest: <span className={getRestTimeClass(avgRestTime)}>{Math.round(avgRestTime)}s</span></span>
+        <span>Avg Rest: <span className={getRestTimeClass(avgRestTimeSec)}>{formatTime(Math.round(avgRestTimeSec))}</span></span>
       </div>
       
       <div className="grid grid-cols-5 gap-1 text-xs text-gray-400">
@@ -106,7 +107,10 @@ export const ExerciseSetsDisplay: React.FC<ExerciseSetsDisplayProps> = ({
           <div className="text-right font-mono">{set.weight}</div>
           <div className="text-right font-mono">{set.reps}</div>
           <div className={`text-right font-mono ${getRestTimeClass(set.restTime)}`}>
-            {formatRestTime(set.restTime)}
+            {(() => {
+              const label = getDisplayRestLabelByIndex(set.restTime, index);
+              return label.type === 'start' ? 'Start' : formatRestForDisplay(label);
+            })()}
           </div>
           <div className="text-right font-mono">{set.weight * set.reps}</div>
         </div>

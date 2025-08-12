@@ -251,11 +251,14 @@ export const processWorkoutMetrics = (
         metrics.setCount.failed += 1;
       }
       
-      // Enhanced rest time tracking for efficiency calculations
-      const restTime = set.restTime || 60;
-      exerciseRestTime += restTime;
-      totalRestTime += restTime;
-      restPeriods.push(restTime);
+      // Enhanced rest time tracking for efficiency calculations (exclude first set per exercise)
+      const isFirstSet = setIndex === 0;
+      const restTime = isFirstSet ? 0 : (set.restTime ?? 60);
+      if (!isFirstSet) {
+        exerciseRestTime += restTime;
+        totalRestTime += restTime;
+        restPeriods.push(restTime);
+      }
     });
 
     // Update muscle focus data

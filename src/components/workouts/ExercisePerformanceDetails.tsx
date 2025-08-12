@@ -6,6 +6,8 @@ import { Loader2, TrendingUp, TrendingDown, ArrowRight, Clock } from "lucide-rea
 import { ExerciseSet } from "@/types/exercise";
 import { ExercisePerformance } from "@/hooks/useExercisePerformance";
 import { useWeightUnit } from "@/context/WeightUnitContext";
+import { formatTime } from "@/utils/formatTime";
+
 
 interface ExercisePerformanceDetailsProps {
   exerciseName: string;
@@ -28,9 +30,9 @@ export const ExercisePerformanceDetails: React.FC<ExercisePerformanceDetailsProp
   const maxWeight = currentSets.reduce((max, set) => Math.max(max, set.weight), 0);
   const totalReps = completedSets.reduce((sum, set) => sum + set.reps, 0);
   
-  // Calculate average rest time
-  const restTimes = currentSets.map(set => set.restTime || 60);
-  const avgRestTime = restTimes.length ? 
+  // Calculate average rest time (exclude first set)
+  const restTimes = currentSets.slice(1).map(set => (set.restTime ?? 0));
+  const avgRestTimeSec = restTimes.length ?
     restTimes.reduce((sum, time) => sum + time, 0) / restTimes.length : 0;
   
   // Get performance trend indicators
@@ -61,7 +63,7 @@ export const ExercisePerformanceDetails: React.FC<ExercisePerformanceDetailsProp
           <span>{exerciseName} Performance</span>
           <div className="flex items-center text-sm font-normal">
             <Clock className="h-3 w-3 mr-1 text-purple-400" />
-            Average rest: <span className="font-mono ml-1">{Math.round(avgRestTime)}s</span>
+            Average rest: <span className="font-mono ml-1">{formatTime(Math.round(avgRestTimeSec))}</span>
           </div>
         </CardTitle>
       </CardHeader>
