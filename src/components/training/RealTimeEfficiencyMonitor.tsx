@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Clock, Zap, Target } from 'lucide-react';
 import { processWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
 import { WorkoutExercises } from '@/store/workoutStore';
+import { debugEfficiencyMetrics, validateEfficiencyInputs } from '@/utils/efficiencyDebug';
 
 interface RealTimeEfficiencyMonitorProps {
   exercises: WorkoutExercises;
@@ -38,22 +39,63 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
       }));
     });
 
+    // Convert elapsedTime from seconds to minutes for the processor
+    const elapsedMinutes = Math.max(1, elapsedTime / 60);
+    
     return processWorkoutMetrics(
       transformedExercises,
-      elapsedTime,
+      elapsedMinutes,
       weightUnit,
       { weight: 70, unit: 'kg' },
-      { start_time: new Date().toISOString(), duration: elapsedTime }
+      { start_time: new Date().toISOString(), duration: elapsedMinutes }
     );
   }, [exercises, elapsedTime, weightUnit]);
 
   // Calculate derived efficiency metrics from the processed metrics
   const efficiencyData = useMemo(() => {
+    // Guard against invalid data - only show metrics if we have substantial progress
+    const completedSets = Object.values(exercises).reduce((total, exerciseData) => {
+      const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
+      return total + sets.filter(set => set.completed).length;
+    }, 0);
+    
+    const elapsedSeconds = elapsedTime;
+    const elapsedMinutes = elapsedSeconds / 60;
+    const elapsedHours = elapsedSeconds / 3600;
+    
+    // Don't show metrics until meaningful progress (≥1 completed set and ≥5s elapsed)
+    if (completedSets < 1 || elapsedSeconds < 5) {
+      return {
+        efficiencyRating: 'poor' as const,
+        workoutDensityScore: 0,
+        volumePerHour: 0,
+        setsPerMinute: 0,
+        workToRestRatio: 0,
+        showMetrics: false
+      };
+    }
+
     const efficiencyScore = metrics.efficiencyMetrics?.efficiencyScore || 0;
     const workoutDensityScore = efficiencyScore;
-    const volumePerHour = (metrics.efficiencyMetrics?.volumePerActiveMinute || 0) * 60;
-    const setsPerMinute = metrics.densityMetrics?.setsPerMinute || 0;
+    
+    // Correct unit conversions with guards
+    const volumePerHour = elapsedHours > 0 ? metrics.totalVolume / elapsedHours : 0;
+    const setsPerMinute = elapsedMinutes > 0 ? completedSets / elapsedMinutes : 0;
     const workToRestRatio = metrics.efficiencyMetrics?.workToRestRatio || 0;
+    
+    // Debug metrics in development
+    debugEfficiencyMetrics({
+      totalVolume: metrics.totalVolume,
+      setsPerMinute,
+      volumePerHour,
+      workToRestRatio
+    }, 'RealTimeEfficiencyMonitor');
+    
+    // Validate inputs
+    const validation = validateEfficiencyInputs(metrics.totalVolume, elapsedSeconds, completedSets);
+    if (!validation.isValid) {
+      console.warn(`⚠️ Invalid efficiency inputs: ${validation.reason}`);
+    }
     
     const efficiencyRating = efficiencyScore >= 80 ? 'excellent' :
                            efficiencyScore >= 60 ? 'good' :
@@ -64,9 +106,10 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
       workoutDensityScore,
       volumePerHour,
       setsPerMinute,
-      workToRestRatio
+      workToRestRatio,
+      showMetrics: true
     };
-  }, [metrics]);
+  }, [metrics, exercises, elapsedTime]);
 
   const getEfficiencyColor = (rating: string) => {
     switch (rating) {
@@ -109,13 +152,13 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
             <div className="flex justify-between">
               <span className="text-gray-400">Density Score</span>
               <span className="font-mono text-white">
-                {efficiencyData.workoutDensityScore.toFixed(0)}/100
+                {efficiencyData.showMetrics ? `${efficiencyData.workoutDensityScore.toFixed(0)}/100` : '—'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Volume/Hour</span>
               <span className="font-mono text-white">
-                {efficiencyData.volumePerHour.toFixed(0)} {weightUnit}/hr
+                {efficiencyData.showMetrics ? `${Math.round(efficiencyData.volumePerHour)} ${weightUnit}/hr` : '—'}
               </span>
             </div>
           </div>
@@ -124,13 +167,13 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
             <div className="flex justify-between">
               <span className="text-gray-400">Sets/Min</span>
               <span className="font-mono text-white">
-                {efficiencyData.setsPerMinute.toFixed(1)}
+                {efficiencyData.showMetrics ? efficiencyData.setsPerMinute.toFixed(2) : '—'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Work:Rest</span>
               <span className="font-mono text-white">
-                {efficiencyData.workToRestRatio.toFixed(1)}:1
+                {efficiencyData.showMetrics ? `${efficiencyData.workToRestRatio.toFixed(2)}:1` : '—'}
               </span>
             </div>
           </div>
@@ -140,7 +183,9 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
         <div className="mt-3">
           <div className="flex justify-between text-xs mb-1">
             <span className="text-gray-400">Efficiency Progress</span>
-            <span className="text-gray-300">{efficiencyData.workoutDensityScore.toFixed(0)}%</span>
+            <span className="text-gray-300">
+              {efficiencyData.showMetrics ? `${efficiencyData.workoutDensityScore.toFixed(0)}%` : '—'}
+            </span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-2">
             <div 
@@ -150,7 +195,7 @@ export const RealTimeEfficiencyMonitor: React.FC<RealTimeEfficiencyMonitorProps>
                 efficiencyData.workoutDensityScore >= 40 ? 'bg-yellow-500' :
                 'bg-red-500'
               }`}
-              style={{ width: `${Math.min(efficiencyData.workoutDensityScore, 100)}%` }}
+              style={{ width: `${efficiencyData.showMetrics ? Math.min(efficiencyData.workoutDensityScore, 100) : 0}%` }}
             />
           </div>
         </div>
