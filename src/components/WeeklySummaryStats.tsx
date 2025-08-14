@@ -54,10 +54,18 @@ export const WeeklySummaryStats = React.memo(() => {
     return mostActiveDay ? `${mostActiveDay.charAt(0).toUpperCase() + mostActiveDay.slice(1)} (${maxCount})` : "None";
   };
 
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
   const workoutsCount = isLoading ? "..." : stats?.weeklyWorkouts?.toString() || "0";
   const totalVolume = isLoading ? "..." : `${Math.round(stats?.weeklyVolume || 0).toLocaleString()} kg`;
   const totalReps = isLoading ? "..." : stats?.weeklyReps?.toLocaleString() || "0";
   const totalSets = isLoading ? "..." : stats?.weeklySets?.toString() || "0";
+  const totalTime = isLoading ? "..." : formatDuration(stats?.weeklyDuration || 0);
   const mostActiveDay = getMostActiveDay();
   const dateRangeText = getDateRangeText();
 
@@ -74,6 +82,7 @@ export const WeeklySummaryStats = React.memo(() => {
   const deltaVolume = computeDelta(stats?.weeklyVolume, prevStats?.weeklyVolume);
   const deltaReps = computeDelta(stats?.weeklyReps, prevStats?.weeklyReps);
   const deltaSets = computeDelta(stats?.weeklySets, prevStats?.weeklySets);
+  const deltaTime = computeDelta(stats?.weeklyDuration, prevStats?.weeklyDuration);
 
   const cardStyle = {
     background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
@@ -100,7 +109,7 @@ export const WeeklySummaryStats = React.memo(() => {
         )}
       </div>
 
-      {/* 2x2 Grid for main metrics */}
+      {/* 2x3 Grid for main metrics */}
       <div className="grid grid-cols-2 gap-4">
         {/* Workouts */}
         <div 
@@ -187,6 +196,28 @@ export const WeeklySummaryStats = React.memo(() => {
                 {!isLoading && <DeltaBadge value={deltaSets} />}
               </div>
             <div className="text-xs text-muted-foreground opacity-80">Sets completed</div>
+          </div>
+        </div>
+
+        {/* Total Time */}
+        <div 
+          className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer col-span-2"
+          style={cardStyle}
+        >
+          <div 
+            className="absolute inset-0 rounded-xl opacity-50"
+            style={innerHighlightStyle}
+          />
+          <div className="relative z-10">
+            <div className="flex items-center mb-2">
+              <span className="text-lg mr-2">⏱️</span>
+              <span className="text-sm text-muted-foreground">Total Time</span>
+            </div>
+              <div className="flex items-center gap-2">
+                <div className="text-xl font-semibold">{totalTime}</div>
+                {!isLoading && <DeltaBadge value={deltaTime} />}
+              </div>
+            <div className="text-xs text-muted-foreground opacity-80">Time spent training</div>
           </div>
         </div>
       </div>

@@ -19,6 +19,7 @@ export interface BasicWorkoutStats {
   weeklyVolume: number;
   weeklyReps: number;
   weeklySets: number;
+  weeklyDuration: number;
   dailyWorkouts: Record<string, number>;
 }
 
@@ -120,6 +121,9 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
         
         const weeklySets = safeSets.filter(set => set.completed).length;
         
+        // Calculate weekly duration
+        const weeklyDuration = safePeriodWorkouts.reduce((sum, w) => sum + (w.duration || 0), 0);
+        
         // Calculate daily workout counts with a consistent day format
         const dailyWorkouts: Record<string, number> = {};
         safePeriodWorkouts.forEach(workout => {
@@ -172,6 +176,7 @@ export const useBasicWorkoutStats = (dateRange?: DateRange) => {
           weeklyVolume,
           weeklyReps,
           weeklySets,
+          weeklyDuration,
           dailyWorkouts
         };
       } catch (error) {
