@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1493,17 +1493,17 @@ export type Database = {
         Returns: undefined
       }
       save_workout_transaction: {
-        Args: { p_workout_data: Json; p_exercise_sets: Json }
+        Args: { p_exercise_sets: Json; p_workout_data: Json }
         Returns: Json
       }
       validate_rls_optimization: {
         Args: Record<PropertyKey, never>
         Returns: {
-          table_name: string
-          rls_enabled: boolean
-          policy_count: number
           index_count: number
+          policy_count: number
+          rls_enabled: boolean
           status: string
+          table_name: string
         }[]
       }
     }
