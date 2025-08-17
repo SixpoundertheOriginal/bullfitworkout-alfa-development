@@ -12,9 +12,7 @@ import { ConversationThreadList } from '@/components/ai/ConversationThreadList';
 import { EnhancedMessageBubble } from '@/components/ai/EnhancedMessageBubble';
 import { useThreadedConversation } from '@/hooks/useThreadedConversation';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { compressImage } from '@/lib/image';
+import { uploadImages } from '@/lib/uploadImage';
 export default function EnhancedTrainingCoachPage() {
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -66,39 +64,8 @@ export default function EnhancedTrainingCoachPage() {
 
   const uploadFiles = async (files: File[]): Promise<UploadedImage[]> => {
     if (!user) return [];
-    const results: UploadedImage[] = [];
     const limit = 4 - selectedImages.length;
-    for (const file of files.slice(0, limit)) {
-      if (!file.type.startsWith('image/')) continue;
-      try {
-        const compressed = await compressImage(file);
-        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webp`;
-        const { data, error } = await supabase.storage
-          .from('ai-coach-images')
-          .upload(fileName, compressed);
-        if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage
-          .from('ai-coach-images')
-          .getPublicUrl(fileName);
-        results.push({
-          id: data?.id || Math.random().toString(36).substr(2, 9),
-          url: publicUrl,
-          type: 'general',
-          metadata: {
-            timestamp: new Date(),
-            description: file.name,
-          },
-        });
-      } catch (err) {
-        console.error('Upload error:', err);
-        toast({
-          title: 'Upload failed',
-          description: 'Failed to upload image. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    }
-    return results;
+    return uploadImages(files, user.id, limit);
   };
 
   // Handle paste events for images
