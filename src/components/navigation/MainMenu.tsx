@@ -16,10 +16,15 @@ export const MainMenu = () => {
 
   return (
     <Sheet>
-      <SheetTrigger className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors">
-        <div className="w-6 h-0.5 bg-white/90 mb-1"></div>
-        <div className="w-6 h-0.5 bg-white/90 mb-1"></div>
-        <div className="w-6 h-0.5 bg-white/90"></div>
+      <SheetTrigger asChild>
+        <button
+          className="p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
+          aria-label="Open menu"
+        >
+          <div className="w-6 h-0.5 bg-white/90 mb-1" />
+          <div className="w-6 h-0.5 bg-white/90 mb-1" />
+          <div className="w-6 h-0.5 bg-white/90" />
+        </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[300px] bg-gray-900 border-gray-800 text-white flex flex-col justify-between">
         <div>
