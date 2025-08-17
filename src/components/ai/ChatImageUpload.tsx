@@ -6,6 +6,7 @@ import type { UploadedImage } from './ImageUpload';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/image';
 interface ChatImageUploadProps {
   onImagesSelect: (images: UploadedImage[]) => void;
   maxImages?: number;
@@ -20,49 +21,6 @@ export function ChatImageUpload({
   className 
 }: ChatImageUploadProps) {
   const { user } = useAuth();
-
-  const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      const img = new Image();
-
-      img.onload = () => {
-        const maxWidth = 1024;
-        const maxHeight = 1024;
-        let { width, height } = img as HTMLImageElement;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height = (height * maxWidth) / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = (width * maxHeight) / height;
-            height = maxHeight;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            const compressedFile = new File([blob!], file.name, {
-              type: 'image/webp',
-              lastModified: Date.now(),
-            });
-            resolve(compressedFile);
-          },
-          'image/webp',
-          0.8
-        );
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
