@@ -52,6 +52,80 @@ export type Database = {
           },
         ]
       }
+      ai_conversation_messages: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          images: Json | null
+          metadata: Json | null
+          role: string | null
+          thread_id: string | null
+          training_data_snapshot: Json | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          images?: Json | null
+          metadata?: Json | null
+          role?: string | null
+          thread_id?: string | null
+          training_data_snapshot?: Json | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          images?: Json | null
+          metadata?: Json | null
+          role?: string | null
+          thread_id?: string | null
+          training_data_snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversation_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversation_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_conversation_threads: {
+        Row: {
+          context_tags: string[] | null
+          created_at: string | null
+          id: string
+          is_archived: boolean | null
+          message_count: number | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          context_tags?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_archived?: boolean | null
+          message_count?: number | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          context_tags?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_archived?: boolean | null
+          message_count?: number | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_conversations: {
         Row: {
           ai_response: string

@@ -19,9 +19,29 @@ serve(async (req) => {
   }
 
   try {
-    const { message, userId, conversationHistory = [] } = await req.json();
+    const { message, userId, threadId, images = [], conversationHistory = [] } = await req.json();
 
-    console.log('Training coach request:', { userId, messageLength: message.length });
+    console.log('Training coach request:', { userId, messageLength: message.length, images: images.length, threadId });
+
+    // Get or create conversation thread
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      const { data: newThread, error: threadError } = await supabase
+        .from('ai_conversation_threads')
+        .insert({
+          user_id: userId,
+          title: message.length > 50 ? message.substring(0, 50) + '...' : message,
+          context_tags: detectContextTags(message)
+        })
+        .select()
+        .single();
+      
+      if (threadError) {
+        console.error('Failed to create thread:', threadError);
+      } else {
+        currentThreadId = newThread.id;
+      }
+    }
 
     // Get user's training data
     const trainingData = await getUserTrainingData(userId);
@@ -30,32 +50,55 @@ serve(async (req) => {
       totalVolume: trainingData.totalVolume 
     });
 
-    // Build context-aware system prompt
-    const systemPrompt = `You are an AI Training Coach with access to the user's complete workout history. Your role is to:
+    // Process images if provided
+    let imageAnalysis = '';
+    if (images.length > 0) {
+      console.log('Processing', images.length, 'images');
+      imageAnalysis = await analyzeImages(images, trainingData);
+    }
+
+    // Build enhanced system prompt with vision capabilities
+    const systemPrompt = `You are an AI Training Coach with access to the user's complete workout history and image analysis capabilities. Your role is to:
 
 1. Analyze their training data and provide personalized insights
 2. Answer questions about their progress, patterns, and performance
 3. Suggest improvements based on their actual training history
-4. Help them understand their strengths and areas for improvement
+4. Analyze workout photos, form checks, and progress photos when provided
+5. Help them understand their strengths and areas for improvement
 
 USER'S TRAINING DATA:
 ${formatTrainingDataForAI(trainingData)}
+
+${imageAnalysis ? `IMAGE ANALYSIS:\n${imageAnalysis}\n` : ''}
 
 GUIDELINES:
 - Be encouraging but honest about their progress
 - Use specific data from their workouts when making recommendations
 - Suggest realistic goals based on their current performance
-- If they ask about specific exercises, reference their actual performance with those exercises
+- If analyzing images, provide specific technical feedback on form, equipment, or progress
 - Focus on actionable advice that builds on their existing routine
 - If you notice concerning patterns (overtraining, imbalances), point them out constructively
+- For form checks: be specific about angles, positioning, and safety
+- For progress photos: note changes and suggest areas for focus
 
 Keep responses conversational but data-driven. Always reference their actual training data when relevant.`;
 
-    // Prepare messages for OpenAI
+    // Prepare messages for OpenAI (with vision support if images present)
+    const userMessage = images.length > 0 ? {
+      role: 'user',
+      content: [
+        { type: 'text', text: message },
+        ...images.map(img => ({
+          type: 'image_url',
+          image_url: { url: img.url }
+        }))
+      ]
+    } : { role: 'user', content: message };
+
     const messages = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.slice(-10), // Keep last 10 messages for context
-      { role: 'user', content: message }
+      userMessage
     ];
 
     console.log('Sending to OpenAI with', messages.length, 'messages');
@@ -67,10 +110,9 @@ Keep responses conversational but data-driven. Always reference their actual tra
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: images.length > 0 ? 'gpt-4.1-2025-04-14' : 'gpt-4.1-2025-04-14',
         messages,
-        temperature: 0.7,
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
       }),
     });
 
@@ -83,21 +125,33 @@ Keep responses conversational but data-driven. Always reference their actual tra
 
     console.log('OpenAI response generated successfully');
 
-    // Store conversation in database for context
+    // Store conversation in enhanced threading system
     try {
-      await supabase.from('ai_conversations').insert({
-        user_id: userId,
-        message_type: 'coach',
-        user_message: message,
-        ai_response: reply,
-        training_data_snapshot: trainingData,
-      });
+      if (currentThreadId) {
+        // Store user message
+        await supabase.from('ai_conversation_messages').insert({
+          thread_id: currentThreadId,
+          role: 'user',
+          content: message,
+          images: images,
+          training_data_snapshot: trainingData
+        });
+
+        // Store assistant response
+        await supabase.from('ai_conversation_messages').insert({
+          thread_id: currentThreadId,
+          role: 'assistant',
+          content: reply,
+          training_data_snapshot: trainingData
+        });
+      }
     } catch (dbError) {
       console.warn('Failed to store conversation:', dbError);
     }
 
     return new Response(JSON.stringify({ 
       reply,
+      threadId: currentThreadId,
       trainingInsights: generateQuickInsights(trainingData)
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -336,4 +390,48 @@ function generateQuickInsights(data: any) {
   }
   
   return insights;
+}
+
+function detectContextTags(message: string): string[] {
+  const tags = [];
+  const lowerMessage = message.toLowerCase();
+  
+  if (lowerMessage.includes('form') || lowerMessage.includes('technique') || lowerMessage.includes('posture')) {
+    tags.push('form-check');
+  }
+  if (lowerMessage.includes('progress') || lowerMessage.includes('before') || lowerMessage.includes('after')) {
+    tags.push('progress');
+  }
+  if (lowerMessage.includes('nutrition') || lowerMessage.includes('diet') || lowerMessage.includes('meal')) {
+    tags.push('nutrition');
+  }
+  if (lowerMessage.includes('equipment') || lowerMessage.includes('gear') || lowerMessage.includes('gym')) {
+    tags.push('equipment');
+  }
+  if (lowerMessage.includes('pain') || lowerMessage.includes('injury') || lowerMessage.includes('hurt')) {
+    tags.push('recovery');
+  }
+  
+  return tags;
+}
+
+async function analyzeImages(images: any[], trainingData: any): Promise<string> {
+  try {
+    const imageDescriptions = images.map((img, index) => {
+      const type = img.type || 'general';
+      return `Image ${index + 1} (${type}): ${img.metadata?.description || 'Workout-related image'}`;
+    });
+
+    return `IMAGES PROVIDED:
+${imageDescriptions.join('\n')}
+
+Based on the user's training history, provide specific feedback about:
+1. Form and technique if exercise photos
+2. Progress comparison if before/after photos  
+3. Equipment setup and safety
+4. Environmental factors that might affect training`;
+  } catch (error) {
+    console.error('Error analyzing images:', error);
+    return 'Images provided but analysis temporarily unavailable.';
+  }
 }
