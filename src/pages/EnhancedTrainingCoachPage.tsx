@@ -6,13 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
-import { ImageUpload, type UploadedImage } from '@/components/ai/ImageUpload';
+import type { UploadedImage } from '@/components/ai/ImageUpload';
 import { ChatImageUpload } from '@/components/ai/ChatImageUpload';
 import { ConversationThreadList } from '@/components/ai/ConversationThreadList';
 import { EnhancedMessageBubble } from '@/components/ai/EnhancedMessageBubble';
 import { useThreadedConversation } from '@/hooks/useThreadedConversation';
 import { cn } from '@/lib/utils';
-
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 export default function EnhancedTrainingCoachPage() {
   const { user } = useAuth();
   const [input, setInput] = useState('');
@@ -60,27 +61,98 @@ export default function EnhancedTrainingCoachPage() {
     }
   };
 
+  // Image helpers
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 1024;
+        const maxHeight = 1024;
+        let { width, height } = img as HTMLImageElement;
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob!], file.name, {
+              type: 'image/webp',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/webp',
+          0.8
+        );
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const uploadFiles = async (files: File[]): Promise<UploadedImage[]> => {
+    if (!user) return [];
+    const results: UploadedImage[] = [];
+    const limit = 4 - selectedImages.length;
+    for (const file of files.slice(0, limit)) {
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        const compressed = await compressImage(file);
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webp`;
+        const { data, error } = await supabase.storage
+          .from('ai-coach-images')
+          .upload(fileName, compressed);
+        if (error) throw error;
+        const { data: { publicUrl } } = supabase.storage
+          .from('ai-coach-images')
+          .getPublicUrl(fileName);
+        results.push({
+          id: data?.id || Math.random().toString(36).substr(2, 9),
+          url: publicUrl,
+          type: 'general',
+          metadata: {
+            timestamp: new Date(),
+            description: file.name,
+          },
+        });
+      } catch (err) {
+        console.error('Upload error:', err);
+        toast({
+          title: 'Upload failed',
+          description: 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    }
+    return results;
+  };
+
   // Handle paste events for images
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (!items) return;
-
+    const files: File[] = [];
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile();
-        if (file && selectedImages.length < 4) {
-          const url = URL.createObjectURL(file);
-          setSelectedImages(prev => [...prev, {
-            id: Math.random().toString(36).substr(2, 9),
-            url,
-            type: 'general',
-            metadata: { 
-              timestamp: new Date(),
-              description: file.name
-            }
-          }]);
-        }
+        if (file) files.push(file);
       }
+    }
+    if (!files.length) return;
+    const uploaded = await uploadFiles(files);
+    if (uploaded.length) {
+      setSelectedImages(prev => [...prev, ...uploaded].slice(0, 4));
     }
   };
 
@@ -95,27 +167,16 @@ export default function EnhancedTrainingCoachPage() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    
-    imageFiles.slice(0, 4 - selectedImages.length).forEach(file => {
-      const url = URL.createObjectURL(file);
-      setSelectedImages(prev => [...prev, {
-        id: Math.random().toString(36).substr(2, 9),
-        url,
-        type: 'general',
-        metadata: { 
-          timestamp: new Date(),
-          description: file.name
-        }
-      }]);
-    });
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+    if (!files.length) return;
+    const uploaded = await uploadFiles(files);
+    if (uploaded.length) {
+      setSelectedImages(prev => [...prev, ...uploaded]);
+    }
   };
-
   const quickActions = [
     "Analyze my form in this video",
     "Compare my progress photos",

@@ -14,7 +14,7 @@ import Auth from "@/pages/Auth";
 import AllExercisesPage from "@/pages/AllExercisesPage";
 import Overview from "@/pages/Overview";
 import { WorkoutManagementPage } from "@/pages/WorkoutManagementPage";
-import TrainingCoachPage from "@/pages/TrainingCoachPage";
+import EnhancedTrainingCoachPage from "@/pages/EnhancedTrainingCoachPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -124,7 +124,7 @@ export const RouterProvider = () => {
             <Route path="/ai-coach" element={
               <ProtectedRoute>
                 <MainLayout>
-                  <TrainingCoachPage />
+                  <EnhancedTrainingCoachPage />
                 </MainLayout>
               </ProtectedRoute>
             } />

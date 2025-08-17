@@ -1,10 +1,11 @@
 import React from 'react';
-import { Paperclip, Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { UploadedImage } from './ImageUpload';
-
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 interface ChatImageUploadProps {
   onImagesSelect: (images: UploadedImage[]) => void;
   maxImages?: number;
@@ -18,30 +19,92 @@ export function ChatImageUpload({
   disabled = false,
   className 
 }: ChatImageUploadProps) {
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+  const { user } = useAuth();
 
-    const newImages: UploadedImage[] = [];
-    
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+
+      img.onload = () => {
+        const maxWidth = 1024;
+        const maxHeight = 1024;
+        let { width, height } = img as HTMLImageElement;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            const compressedFile = new File([blob!], file.name, {
+              type: 'image/webp',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/webp',
+          0.8
+        );
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !user) return;
+
+    const uploadedImages: UploadedImage[] = [];
     for (let i = 0; i < Math.min(files.length, maxImages); i++) {
       const file = files[i];
-      if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file);
-        newImages.push({
-          id: Math.random().toString(36).substr(2, 9),
-          url,
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        const compressed = await compressImage(file);
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webp`;
+        const { data, error } = await supabase.storage
+          .from('ai-coach-images')
+          .upload(fileName, compressed);
+        if (error) throw error;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('ai-coach-images')
+          .getPublicUrl(fileName);
+
+        uploadedImages.push({
+          id: data?.id || Math.random().toString(36).substr(2, 9),
+          url: publicUrl,
           type: 'general',
           metadata: {
             timestamp: new Date(),
-            description: file.name
-          }
+            description: file.name,
+          },
+        });
+      } catch (err) {
+        console.error('Upload error:', err);
+        toast({
+          title: 'Upload failed',
+          description: 'Failed to upload image. Please try again.',
+          variant: 'destructive',
         });
       }
     }
 
-    onImagesSelect(newImages);
-    e.target.value = ''; // Reset input
+    if (uploadedImages.length) onImagesSelect(uploadedImages);
+    e.target.value = '';
   };
 
   return (
