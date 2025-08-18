@@ -60,19 +60,31 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const effectiveSize = iconOnly ? (size === "lg" ? "icon-lg" : "icon") : size
     const effectiveIconPosition = iconOnly ? "none" : iconPosition
 
+    const commonClassName = cn(
+      buttonVariants({ 
+        variant, 
+        size: effectiveSize, 
+        shape,
+        iconPosition: effectiveIconPosition,
+        className 
+      }),
+      "transition-all duration-200 ease-in-out",
+      props.disabled && "btn-disabled"
+    )
+
+    // IMPORTANT: When asChild is true, Slot requires exactly one child element.
+    // Do NOT render additional siblings like `icon` to avoid React.Children.only error.
+    if (asChild) {
+      return (
+        <Comp className={commonClassName} ref={ref as any} {...props}>
+          {children}
+        </Comp>
+      )
+    }
+
     return (
       <Comp
-        className={cn(
-          buttonVariants({ 
-            variant, 
-            size: effectiveSize, 
-            shape,
-            iconPosition: effectiveIconPosition,
-            className 
-          }),
-          "transition-all duration-200 ease-in-out",
-          props.disabled && "btn-disabled"
-        )}
+        className={commonClassName}
         ref={ref}
         {...props}
       >
