@@ -8,28 +8,34 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import type { UploadedImage } from '@/components/ai/ImageUpload';
 import { ChatImageUpload } from '@/components/ai/ChatImageUpload';
-import { ConversationThreadList } from '@/components/ai/ConversationThreadList';
+import { EnhancedConversationThreadList } from '@/components/ai/EnhancedConversationThreadList';
+import { MobileOptimizedChatInput } from '@/components/ai/MobileOptimizedChatInput';
 import { EnhancedMessageBubble } from '@/components/ai/EnhancedMessageBubble';
 import { useThreadedConversation } from '@/hooks/useThreadedConversation';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { uploadImages } from '@/lib/uploadImage';
 export default function EnhancedTrainingCoachPage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [input, setInput] = useState('');
   const [selectedImages, setSelectedImages] = useState<UploadedImage[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [isDragging, setIsDragging] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const {
     currentThreadId,
     messages,
     isLoading,
+    threads,
     loadThreadMessages,
+    loadThreads,
     startNewThread,
     sendMessage,
     retryMessage,
+    deleteThread,
+    toggleArchiveThread,
   } = useThreadedConversation();
 
   // Auto-scroll to bottom when new messages arrive
@@ -37,13 +43,10 @@ export default function EnhancedTrainingCoachPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-resize textarea
+  // Handle mobile responsive sidebar
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-    }
-  }, [input]);
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const handleSendMessage = async () => {
     if (!input.trim() && selectedImages.length === 0) return;
@@ -178,17 +181,22 @@ export default function EnhancedTrainingCoachPage() {
             </Button>
           </div>
           
-          {(sidebarOpen || window.innerWidth >= 1024) && (
-            <ConversationThreadList
+          {(sidebarOpen || !isMobile) && (
+            <EnhancedConversationThreadList
+              threads={threads}
               currentThreadId={currentThreadId || undefined}
               onThreadSelect={(id) => {
                 loadThreadMessages(id);
-                if (window.innerWidth < 1024) setSidebarOpen(false);
+                if (isMobile) setSidebarOpen(false);
               }}
               onNewThread={() => {
                 startNewThread();
-                if (window.innerWidth < 1024) setSidebarOpen(false);
+                if (isMobile) setSidebarOpen(false);
               }}
+              onDeleteThread={deleteThread}
+              onArchiveThread={toggleArchiveThread}
+              onRefresh={loadThreads}
+              loading={false}
             />
           )}
         </div>
@@ -290,103 +298,25 @@ export default function EnhancedTrainingCoachPage() {
         </ScrollArea>
 
         {/* Input Area */}
-        <div className="border-t bg-background/95 backdrop-blur-sm p-4">
-          <div className="max-w-4xl mx-auto">
-            {/* Selected Images Preview */}
-            {selectedImages.length > 0 && (
-              <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{selectedImages.length} image(s) selected</span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {selectedImages.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img 
-                        src={image.url} 
-                        alt="Preview" 
-                        className="w-16 h-16 object-cover rounded-md" 
-                      />
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                      <Badge 
-                        variant="secondary" 
-                        className="absolute bottom-0 left-0 text-xs capitalize"
-                      >
-                        {image.type}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Input Row */}
-            <div className="flex gap-3 items-end">
-              {/* Image Upload Button */}
-              <ChatImageUpload
-                onImagesSelect={(newImages) => {
-                  setSelectedImages(prev => [...prev, ...newImages.slice(0, 4 - prev.length)]);
-                }}
-                maxImages={4 - selectedImages.length}
-                disabled={selectedImages.length >= 4}
-              />
-
-              {/* Text Input */}
-              <div className="flex-1 relative">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  onPaste={handlePaste}
-                  placeholder="Ask about your training, upload form check photos, or share progress pics... (Ctrl+V to paste images)"
-                  disabled={isLoading}
-                  className="resize-none min-h-[44px] max-h-[120px] pr-12 bg-background border-2 focus:border-primary"
-                  rows={1}
-                />
-                
-                {/* Character count */}
-                {input.length > 100 && (
-                  <div className="absolute bottom-2 right-12 text-xs text-muted-foreground">
-                    {input.length}/2000
-                  </div>
-                )}
-              </div>
-
-              {/* Send Button */}
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={(!input.trim() && selectedImages.length === 0) || isLoading}
-                className="h-11 w-11 p-0 shrink-0"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Quick Actions */}
-            {messages.length === 0 && (
-              <div className="mt-3 flex gap-2 flex-wrap">
-                {quickActions.slice(0, 2).map((action) => (
-                  <Button
-                    key={action}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setInput(action)}
-                    className="text-xs h-8 px-3 text-muted-foreground hover:text-foreground"
-                  >
-                    {action}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="max-w-4xl mx-auto">
+          <MobileOptimizedChatInput
+            value={input}
+            onChange={setInput}
+            onSend={handleSendMessage}
+            onPaste={handlePaste}
+            selectedImages={selectedImages}
+            onImagesSelect={(newImages) => {
+              setSelectedImages(prev => [...prev, ...newImages.slice(0, 4 - prev.length)]);
+            }}
+            onImageRemove={(index) => {
+              setSelectedImages(prev => prev.filter((_, i) => i !== index));
+            }}
+            disabled={isLoading}
+            placeholder="Ask about your training, upload form check photos, or share progress pics..."
+            quickActions={quickActions}
+            onQuickAction={setInput}
+            showQuickActions={messages.length === 0}
+          />
         </div>
       </main>
     </div>
