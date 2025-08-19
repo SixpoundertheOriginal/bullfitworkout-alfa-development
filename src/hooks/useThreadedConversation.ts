@@ -71,6 +71,24 @@ export const useThreadedConversation = () => {
     }
   }, [user]);
 
+  // Load all threads for the user
+  const loadThreads = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_conversation_threads')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setThreads(data || []);
+    } catch (error) {
+      console.error('Error loading threads:', error);
+    }
+  }, [user]);
+
   // Start a new conversation thread
   const startNewThread = useCallback(() => {
     setCurrentThreadId(null);
@@ -82,7 +100,9 @@ export const useThreadedConversation = () => {
       status: 'delivered'
     }]);
     setError(null);
-  }, []);
+    // Refresh threads list to ensure we have latest data
+    loadThreads();
+  }, [loadThreads]);
 
   // Send a message with optional images
   const sendMessage = useCallback(async (content: string, images: UploadedImage[] = []) => {
@@ -190,23 +210,6 @@ export const useThreadedConversation = () => {
     await sendMessage(message.content, message.images || []);
   }, [messages, sendMessage]);
 
-  // Load all threads for the user
-  const loadThreads = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('ai_conversation_threads')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      setThreads(data || []);
-    } catch (error) {
-      console.error('Error loading threads:', error);
-    }
-  }, [user]);
 
   // Delete a conversation thread
   const deleteThread = useCallback(async (threadId: string) => {
