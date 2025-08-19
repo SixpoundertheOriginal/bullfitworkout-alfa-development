@@ -146,9 +146,9 @@ export default function EnhancedTrainingCoachPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row w-full bg-gradient-to-br from-background to-muted/20">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-gradient-to-br from-background to-muted/20">
       {/* Mobile Navigation Header */}
-      <div className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+      <div className="lg:hidden flex-shrink-0 sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between p-4">
           <Button
             variant="ghost"
@@ -157,7 +157,7 @@ export default function EnhancedTrainingCoachPage() {
             className="flex items-center gap-2"
           >
             <Menu className="h-4 w-4" />
-            <span className="font-semibold">AI Coach</span>
+            <span className="font-semibold text-sm">AI Coach</span>
           </Button>
           <Button onClick={startNewThread} variant="ghost" size="sm">
             <Plus className="h-4 w-4" />
@@ -167,7 +167,7 @@ export default function EnhancedTrainingCoachPage() {
 
       {/* Main Container */}
       <div 
-        className="flex-1 flex min-h-0"
+        className="flex-1 flex min-h-0 overflow-hidden"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -186,10 +186,10 @@ export default function EnhancedTrainingCoachPage() {
         {/* Conversation Thread Sidebar */}
         <div className={cn(
           "lg:flex lg:w-80 lg:flex-shrink-0 lg:border-r lg:bg-background",
-          "fixed inset-y-0 left-0 z-40 w-80 bg-background border-r transform transition-transform duration-300",
+          "fixed inset-y-0 left-0 z-40 w-72 sm:w-80 bg-background border-r transform transition-transform duration-300",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}>
-          <div className="flex flex-col h-full w-full">
+          <div className="flex flex-col h-full w-full overflow-hidden">
             {/* Desktop Header */}
             <div className="hidden lg:flex items-center justify-between p-4 border-b">
               <h2 className="font-semibold text-lg">Conversations</h2>
@@ -240,7 +240,7 @@ export default function EnhancedTrainingCoachPage() {
         )}
 
         {/* Main Chat Area */}
-        <main className="flex-1 flex flex-col min-h-0">
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden w-full">
           {/* Desktop Chat Header */}
           <div className="hidden lg:flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur-sm">
             <div className="flex items-center gap-3">
@@ -322,8 +322,8 @@ export default function EnhancedTrainingCoachPage() {
           </ScrollArea>
 
           {/* Input Area */}
-          <div className="p-4 border-t bg-background/95 backdrop-blur-sm">
-            <div className="max-w-4xl mx-auto">
+          <div className="flex-shrink-0 p-3 lg:p-4 border-t bg-background/95 backdrop-blur-sm">
+            <div className="max-w-4xl mx-auto w-full">
               <MobileOptimizedChatInput
                 value={input}
                 onChange={setInput}
