@@ -13,6 +13,7 @@ export interface ExerciseSet {
   restTime: number;
   completed: boolean;
   isEditing: boolean;
+  isWarmup?: boolean;
   // Enhanced timing metadata
   metadata?: {
     startTime?: string;

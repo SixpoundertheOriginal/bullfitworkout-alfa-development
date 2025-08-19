@@ -22,6 +22,7 @@ interface SetRowProps {
   restTime?: number;
   completed: boolean;
   isEditing: boolean;
+  isWarmup?: boolean;
   exerciseName: string;
   onComplete: () => void;
   onEdit: () => void;
@@ -35,6 +36,7 @@ interface SetRowProps {
   onRepsIncrement: (value: number) => void;
   onDurationIncrement?: (value: number) => void;
   onRestTimeIncrement?: (value: number) => void;
+  onWarmupToggle?: () => void;
   weightUnit: string;
   currentVolume?: number;
   exerciseData?: Exercise;
@@ -52,6 +54,7 @@ export const SetRow = ({
   restTime = 60,
   completed,
   isEditing,
+  isWarmup = false,
   exerciseName,
   onComplete,
   onEdit,
@@ -65,6 +68,7 @@ export const SetRow = ({
   onRepsIncrement,
   onDurationIncrement,
   onRestTimeIncrement,
+  onWarmupToggle,
   weightUnit,
   currentVolume,
   exerciseData,
@@ -201,9 +205,17 @@ export const SetRow = ({
     >
       {isEditing ? (
         <div className="grid grid-cols-12 gap-2 items-center">
-          <div className="col-span-1 text-center font-medium text-gray-400">
-            #{setNumber}
-          </div>
+          <button
+            onClick={onWarmupToggle}
+            className={cn(
+              "col-span-1 text-center font-medium transition-all duration-200 hover:scale-110 cursor-pointer select-none",
+              isWarmup 
+                ? "text-orange-400 bg-orange-400/20 rounded-full px-2 py-1" 
+                : "text-gray-400 hover:text-orange-400"
+            )}
+          >
+            {isWarmup ? "W" : `#${setNumber}`}
+          </button>
           <div className="col-span-4 flex items-center gap-1 min-w-0">
             <button 
               type="button"
@@ -356,9 +368,17 @@ export const SetRow = ({
         </div>
       ) : (
         <div className="grid grid-cols-12 gap-1 items-center px-1">
-          <div className="col-span-1 text-center font-medium text-gray-400">
-            #{setNumber}
-          </div>
+          <button
+            onClick={onWarmupToggle}
+            className={cn(
+              "col-span-1 text-center font-medium transition-all duration-200 hover:scale-110 cursor-pointer select-none",
+              isWarmup 
+                ? "text-orange-400 bg-orange-400/20 rounded-full px-1 py-1 text-xs" 
+                : "text-gray-400 hover:text-orange-400"
+            )}
+          >
+            {isWarmup ? "W" : `#${setNumber}`}
+          </button>
           <div className="col-span-2">
             <TooltipProvider>
               <Tooltip>

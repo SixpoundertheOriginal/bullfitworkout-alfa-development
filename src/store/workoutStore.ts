@@ -97,6 +97,7 @@ export interface WorkoutState {
   
   // Exercise management
   handleCompleteSet: (exerciseName: string, setIndex: number) => void;
+  toggleWarmupSet: (exerciseName: string, setIndex: number) => void;
   deleteExercise: (exerciseName: string) => void;
   
   // Utility functions
@@ -199,7 +200,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         lastTabActivity: Date.now(),
       })),
       
-      addEnhancedExercise: (exercise, sets = [{ weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false }]) => set((state) => {
+      addEnhancedExercise: (exercise, sets = [{ weight: 0, reps: 0, restTime: 60, completed: false, isEditing: false, isWarmup: false }]) => set((state) => {
         const exerciseName = typeof exercise === 'string' ? exercise : exercise.name;
         
         // Check if exercise already exists
@@ -520,6 +521,32 @@ resetSession: () => {
             ...config,
             sets: config.sets.map((set, i) => 
               i === setIndex ? { ...set, completed: true } : set
+            )
+          };
+        }
+        
+        return { 
+          exercises: newExercises,
+          lastTabActivity: Date.now(),
+        };
+      }),
+
+      toggleWarmupSet: (exerciseName, setIndex) => set((state) => {
+        const newExercises = { ...state.exercises };
+        const exerciseData = newExercises[exerciseName];
+        
+        if (Array.isArray(exerciseData)) {
+          // Legacy format - add isWarmup property
+          newExercises[exerciseName] = exerciseData.map((set, i) => 
+            i === setIndex ? { ...set, isWarmup: !set.isWarmup } : set
+          );
+        } else if (exerciseData) {
+          // New format
+          const config = exerciseData as WorkoutExerciseConfig;
+          newExercises[exerciseName] = {
+            ...config,
+            sets: config.sets.map((set, i) => 
+              i === setIndex ? { ...set, isWarmup: !set.isWarmup } : set
             )
           };
         }

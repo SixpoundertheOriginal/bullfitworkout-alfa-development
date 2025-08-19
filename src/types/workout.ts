@@ -34,6 +34,7 @@ export type ExerciseSet = {
   completed: boolean;
   set_number: number;
   rest_time?: number | null;
+  is_warmup?: boolean | null;
   created_at: string;
 };
 
@@ -60,6 +61,7 @@ export interface EnhancedExerciseSet {
   restTime: number;
   completed: boolean;
   isEditing: boolean;
+  isWarmup?: boolean;
   saveStatus?: 'pending' | 'saving' | 'saved' | 'failed';
   retryCount?: number;
 }

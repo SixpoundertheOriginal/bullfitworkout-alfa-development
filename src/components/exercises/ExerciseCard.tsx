@@ -22,7 +22,7 @@ interface ExerciseHistoryData {
 
 interface ExerciseCardProps {
   exercise: string;
-  sets: { weight: number; reps: number; restTime?: number; completed: boolean; isEditing?: boolean }[];
+  sets: { weight: number; reps: number; restTime?: number; completed: boolean; isEditing?: boolean; isWarmup?: boolean }[];
   onAddSet: () => void;
   onCompleteSet: (setIndex: number) => void;
   onRemoveSet: (setIndex: number) => void;
@@ -34,6 +34,7 @@ interface ExerciseCardProps {
   onWeightIncrement: (setIndex: number, increment: number) => void;
   onRepsIncrement: (setIndex: number, increment: number) => void;
   onRestTimeIncrement?: (setIndex: number, increment: number) => void;
+  onWarmupToggle?: (setIndex: number) => void;
   isActive: boolean;
   onShowRestTimer: () => void;
   onResetRestTimer: () => void;
@@ -87,6 +88,7 @@ const ExerciseCard = ({
   onWeightIncrement,
   onRepsIncrement,
   onRestTimeIncrement,
+  onWarmupToggle,
   isActive,
   onShowRestTimer,
   onResetRestTimer,
@@ -166,6 +168,7 @@ const ExerciseCard = ({
                 restTime={set.restTime}
                 completed={set.completed}
                 isEditing={set.isEditing || false}
+                isWarmup={set.isWarmup || false}
                 exerciseName={exercise}
                 onComplete={() => onCompleteSet(index)}
                 onEdit={() => onEditSet(index)}
@@ -177,6 +180,7 @@ const ExerciseCard = ({
                 onWeightIncrement={(value) => onWeightIncrement(index, value)}
                 onRepsIncrement={(value) => onRepsIncrement(index, value)}
                 onRestTimeIncrement={onRestTimeIncrement ? (value) => onRestTimeIncrement(index, value) : undefined}
+                onWarmupToggle={() => onWarmupToggle?.(index)}
                 weightUnit={weightUnit}
                 currentVolume={set.weight * set.reps}
               />
