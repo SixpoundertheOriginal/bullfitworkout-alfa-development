@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { WorkoutSession, ExerciseSet } from '@/types/workout';
+import { formatLocalDate } from '@/utils/time';
 
 export interface TrainingDataSummary {
   totalWorkouts: number;
@@ -19,39 +20,21 @@ export interface TrainingDataSummary {
     restTime: number;
     intensity: number;
   };
+  earliestSessionUTC: string | null;
+  totalFetched: number;
+  pages: number;
+  minUTC: string | null;
+  maxUTC: string | null;
 }
 
 export class TrainingDataService {
   static async getUserTrainingData(userId: string): Promise<TrainingDataSummary> {
     console.log('Fetching comprehensive training data for user:', userId);
-    
-    // Fetch recent workouts (last 3 months)
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    
-    const { data: workouts } = await supabase
-      .from('workout_sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('start_time', threeMonthsAgo.toISOString())
-      .order('start_time', { ascending: false });
-
-    // Fetch exercise sets for recent workouts
-    const workoutIds = workouts?.map(w => w.id) || [];
-    const { data: exerciseSets } = await supabase
-      .from('exercise_sets')
-      .select('*')
-      .in('workout_id', workoutIds);
-
-    // Fetch personal records
-    const { data: personalRecords } = await supabase
-      .from('personal_records')
-      .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .limit(20);
-
-    return this.processTrainingData(workouts || [], exerciseSets || [], personalRecords || []);
+    const { data, error } = await supabase.functions.invoke('ai-training-data', {
+      body: { userId }
+    });
+    if (error) throw error;
+    return data as TrainingDataSummary;
   }
 
   private static processTrainingData(
@@ -176,25 +159,29 @@ export class TrainingDataService {
   }
 
   static formatDataForAI(data: TrainingDataSummary): string {
+    const earliest = data.earliestSessionUTC
+      ? formatLocalDate(data.earliestSessionUTC)
+      : 'N/A';
     return `
 TRAINING DATA SUMMARY:
+- Earliest Workout: ${earliest}
 - Total Workouts: ${data.totalWorkouts}
 - Total Volume: ${data.totalVolume.toFixed(1)}kg
 - Total Sets: ${data.totalSets}
 - Recent Trend: ${data.recentTrends.strengthTrend} (${data.recentTrends.volumeChange.toFixed(1)}% volume change)
 
 TOP EXERCISES:
-${data.topExercises.slice(0, 5).map(ex => 
+${data.topExercises.slice(0, 5).map(ex =>
   `- ${ex.name}: ${ex.volume.toFixed(1)}kg total volume`
 ).join('\n')}
 
 RECENT PERSONAL RECORDS:
-${data.personalRecords.slice(0, 3).map(pr => 
-  `- ${pr.exercise_name}: ${pr.value}${pr.unit} (${new Date(pr.date).toLocaleDateString()})`
+${data.personalRecords.slice(0, 3).map(pr =>
+  `- ${pr.exercise_name}: ${pr.value}${pr.unit} (${formatLocalDate(pr.date)})`
 ).join('\n')}
 
 MUSCLE GROUP BALANCE:
-${Object.entries(data.muscleGroupBalance).map(([group, volume]) => 
+${Object.entries(data.muscleGroupBalance).map(([group, volume]) =>
   `- ${group}: ${volume.toFixed(1)}kg`
 ).join('\n')}
 
