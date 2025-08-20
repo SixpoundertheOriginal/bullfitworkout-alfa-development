@@ -173,7 +173,7 @@ const Index = () => {
 
         <div className="mt-3">
           <DateRangeProvider>
-            <WeeklySummaryStats position="under-start" />
+            <WeeklySummaryStats />
           </DateRangeProvider>
         </div>
 
