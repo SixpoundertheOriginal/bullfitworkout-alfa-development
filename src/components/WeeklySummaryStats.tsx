@@ -1,12 +1,15 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
 import { format, differenceInCalendarDays, subDays, getDay, startOfWeek } from "date-fns";
-import { Calendar, Dumbbell, Repeat, Layers, Clock } from "lucide-react";
+import { Calendar, Dumbbell, Repeat, Layers, Clock, Info, RefreshCw } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { OpenAIService } from '@/services/openAIService';
+import items from '@/data/epic_equivalents.json';
+import { bestEpicMatch, formatEquivalence, EpicItem } from '@/lib/equivalence';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Smart comparison utility
 function getSmartComparison(
@@ -240,37 +243,30 @@ export const WeeklySummaryStats = React.memo(() => {
   const period = format(periodStart, "yyyy-'W'II");
   const locale = (user?.user_metadata as any)?.locale || navigator.language || 'en-US';
 
-  const motivationRef = useRef<HTMLDivElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true);
-        observer.disconnect();
-      }
-    }, { threshold: 0.1 });
-    if (motivationRef.current) {
-      observer.observe(motivationRef.current);
-    }
-    return () => observer.disconnect();
-  }, []);
-
   const openAI = OpenAIService.getInstance();
-  const { data: motivationText, refetch: refetchMotivation, isFetching: loadingMotivation } = useQuery({
+  const { data: motivation, refetch: refetchMotivation, isFetching: loadingMotivation } = useQuery({
     queryKey: ['motivation', user?.id, period, locale],
-    queryFn: () => openAI.generateMotivationForPeriod({
-      tonnage: stats?.weeklyVolume || 0,
-      sets: stats?.weeklySets || 0,
-      reps: stats?.weeklyReps || 0,
-      deltaPct: stats?.volumeDeltaPct || 0,
-      period,
-      periodType,
-      locale,
-    }),
-    enabled: isVisible && !!stats,
+    queryFn: () => {
+      console.info('motivation fetch start');
+      return openAI.generateMotivationForPeriod({
+        tonnage: stats?.weeklyVolume || 0,
+        sets: stats?.weeklySets || 0,
+        reps: stats?.weeklyReps || 0,
+        deltaPct: stats?.volumeDeltaPct || 0,
+        period,
+        periodType,
+        locale,
+        style: 'epic',
+      });
+    },
+    enabled: !!stats,
     staleTime: Infinity,
   });
+  useEffect(() => {
+    if (motivation) {
+      console.info('motivation fetch complete', motivation.item?.id);
+    }
+  }, [motivation]);
 
   // Get current day of week (1 = Monday, 7 = Sunday)
   const currentDate = new Date();
@@ -371,24 +367,48 @@ export const WeeklySummaryStats = React.memo(() => {
   {/* Week Progress Bar */}
   <WeekProgressBar currentDay={currentDayOfWeek} />
 
-  <div ref={motivationRef} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
-    <div className="flex items-center justify-between mb-1">
-      <span className="text-sm text-muted-foreground">Weekly Tonnage</span>
-      <button
-        onClick={() => refetchMotivation()}
-        disabled={loadingMotivation}
-        className="text-xs text-zinc-400 hover:text-white"
-      >
-        ↻
-      </button>
-    </div>
-    <div className="text-xl font-semibold">
-      {(weekStats.volume.current || 0).toLocaleString()} kg lifted
-    </div>
-    <div className="text-xs text-muted-foreground mt-1">
-      {loadingMotivation ? 'Loading...' : motivationText || 'Keep it up!'}
-    </div>
-  </div>
+  {(() => {
+    const tonnage = weekStats.volume.current || 0;
+    const delta = stats?.volumeDeltaPct || 0;
+    const match = bestEpicMatch(tonnage, items as EpicItem[]);
+    const baseItem = motivation?.item || (tonnage > 0 ? { ...match.item, n: match.n } : undefined);
+    const equivalence = baseItem ? formatEquivalence({ item: baseItem, n: baseItem.n }) : undefined;
+    const trendColor = delta > 0 ? 'bg-green-500/20 text-green-400' : delta < 0 ? 'bg-red-500/20 text-red-400' : 'bg-zinc-700 text-zinc-300';
+    const coachLine = loadingMotivation ? 'Loading...' : motivation?.text || 'Keep lifting—every rep counts.';
+    return (
+      <div className="bg-zinc-900/50 rounded-2xl p-4 border border-zinc-800 mb-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-muted-foreground">Weekly Tonnage</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full ${trendColor}`}>{delta > 0 ? `+${delta}%` : `${delta}%`}</span>
+            {baseItem && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-zinc-400" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-zinc-900 border border-zinc-700 text-xs max-w-xs">{baseItem.fact}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <button onClick={() => refetchMotivation()} disabled={loadingMotivation} className="text-zinc-400 hover:text-white">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-semibold">{tonnage.toLocaleString(locale)} kg</span>
+          {baseItem && (
+            <span className="px-2 py-0.5 bg-zinc-800 rounded-full text-xs flex items-center gap-1">
+              {baseItem.emoji && <span>{baseItem.emoji}</span>}
+              <span>{equivalence?.text}</span>
+            </span>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">{coachLine}</div>
+      </div>
+    );
+  })()}
 
   {/* Stats Grid */}
   <div className="grid grid-cols-2 gap-3">
