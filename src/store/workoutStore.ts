@@ -308,7 +308,10 @@ setSetStartTime: (exerciseId, setNumber) => set((state) => {
   const key = `${exerciseId}_${setNumber}`;
   const timings = new Map(state.setTimings);
   const current = timings.get(key) || {};
-  timings.set(key, { ...current, startTime: Date.now() });
+  // Only record the first interaction time
+  if (!current.startTime) {
+    timings.set(key, { ...current, startTime: Date.now() });
+  }
   return { setTimings: timings, lastTabActivity: Date.now() };
 }),
 
@@ -316,7 +319,19 @@ setSetEndTime: (exerciseId, setNumber) => set((state) => {
   const key = `${exerciseId}_${setNumber}`;
   const timings = new Map(state.setTimings);
   const current = timings.get(key) || {};
-  timings.set(key, { ...current, endTime: Date.now() });
+  const endTime = Date.now();
+  let estimatedDuration: number;
+  if (current.startTime) {
+    // Calculate actual duration in seconds and cap at 3 minutes
+    estimatedDuration = Math.min(
+      Math.floor((endTime - current.startTime) / 1000),
+      180
+    );
+  } else {
+    // Fallback default estimate (40s) if no start interaction
+    estimatedDuration = 40;
+  }
+  timings.set(key, { ...current, endTime, estimatedDuration });
   return { setTimings: timings, lastTabActivity: Date.now() };
 }),
 
