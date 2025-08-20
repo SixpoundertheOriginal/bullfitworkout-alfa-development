@@ -86,7 +86,7 @@ export class OpenAIService {
     }
   }
 
-  async generateMotivationForPeriod(params: {
+  async generateMotivationForPeriod(input: {
     tonnage: number;
     sets: number;
     reps: number;
@@ -94,11 +94,12 @@ export class OpenAIService {
     period: string;
     periodType: 'week' | 'month';
     locale: string;
-  }): Promise<string> {
+    style?: 'epic' | 'calm' | 'data' | 'tough-love';
+  }): Promise<{ text: string; item?: { label: string; n: number; emoji?: string; fact: string } }> {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       const { data, error } = await supabase.functions.invoke('openai-motivation', {
-        body: params,
+        body: { ...input, style: input.style || 'epic' },
       });
 
       if (error) {
@@ -106,10 +107,15 @@ export class OpenAIService {
         throw new Error(`Edge function error: ${error.message}`);
       }
 
-      return data?.text || 'Keep pushing forward!';
+      const line = (data?.text as string)?.split('\n')[1]?.trim() || data?.text || 'Keep lifting—every rep counts.';
+      const item = data?.item
+        ? { label: data.item.label, n: data.item.n, emoji: data.item.emoji, fact: data.item.fact }
+        : undefined;
+
+      return { text: line, item };
     } catch (err) {
       console.error('generateMotivationForPeriod error:', err);
-      return 'Stay strong and keep moving!';
+      return { text: 'Keep lifting—every rep counts.' };
     }
   }
 

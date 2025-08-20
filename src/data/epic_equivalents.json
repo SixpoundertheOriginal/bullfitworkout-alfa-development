@@ -1,0 +1,18 @@
+[
+  {"id":"pyramid_block","label":"pyramid stone block","baseKg":2500,"fact":"Great Pyramid used ~2.3M blocks, each ~2–3 tons.","emoji":"🏛️"},
+  {"id":"city_bus","label":"city bus","baseKg":12000,"fact":"Typical single bus curb weight ~12 metric tons.","emoji":"🚌"},
+  {"id":"shipping_container_20ft","label":"20ft shipping container (empty)","baseKg":2200,"fact":"Standard 20ft container tare mass ~2.2 t.","emoji":"📦"},
+  {"id":"granite_monolith_small","label":"granite monolith","baseKg":10000,"fact":"Small single-piece marker stones can weigh ~10 t.","emoji":"🗿"},
+  {"id":"temple_bell","label":"temple bronze bell","baseKg":5000,"fact":"Large bronze bells often weigh several tons.","emoji":"🔔"},
+  {"id":"roman_marble_slab","label":"Roman marble slab","baseKg":300,"fact":"Large dressed slabs used for floors/walls ~300 kg.","emoji":"🏛️"},
+  {"id":"steel_ibeam_6m","label":"steel I-beam (6 m)","baseKg":1100,"fact":"Example W12×40 over ~6 m ≈ 1.1 t.","emoji":"🏗️"},
+  {"id":"battering_ram_small","label":"medieval battering ram","baseKg":1000,"fact":"Smaller rams around a metric ton.","emoji":"🛡️"},
+  {"id":"grand_piano","label":"grand piano","baseKg":300,"fact":"Concert grands weigh ~300 kg.","emoji":"🎹"},
+  {"id":"barbell","label":"barbell","baseKg":20,"fact":"Standard Olympic barbell ~20 kg.","emoji":"🏋️"},
+  {"id":"african_lion","label":"African lion","baseKg":190,"fact":"Adult male averages ~190 kg.","emoji":"🦁"},
+  {"id":"siberian_tiger","label":"Siberian tiger","baseKg":220,"fact":"Adult male can reach ~220 kg.","emoji":"🐯"},
+  {"id":"polar_bear","label":"polar bear","baseKg":450,"fact":"Adult males often ~450 kg.","emoji":"🐻"},
+  {"id":"gorilla","label":"silverback gorilla","baseKg":160,"fact":"Adult silverbacks weigh ~160 kg.","emoji":"🦍"},
+  {"id":"great_white_shark","label":"great white shark","baseKg":1100,"fact":"Large adults exceed ~1,000 kg.","emoji":"🦈"},
+  {"id":"asian_elephant","label":"Asian elephant","baseKg":4000,"fact":"Adult Asian elephants ~4 t.","emoji":"🐘"}
+]
