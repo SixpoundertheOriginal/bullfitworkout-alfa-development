@@ -508,6 +508,10 @@ export type Database = {
           set_number: number
           weight: number
           workout_id: string
+          estimated_set_duration: number | null
+          actual_start_time: string | null
+          actual_end_time: string | null
+          exercise_id: string | null
         }
         Insert: {
           completed?: boolean
@@ -519,6 +523,10 @@ export type Database = {
           set_number: number
           weight: number
           workout_id: string
+          estimated_set_duration?: number | null
+          actual_start_time?: string | null
+          actual_end_time?: string | null
+          exercise_id?: string | null
         }
         Update: {
           completed?: boolean
@@ -530,6 +538,10 @@ export type Database = {
           set_number?: number
           weight?: number
           workout_id?: string
+          estimated_set_duration?: number | null
+          actual_start_time?: string | null
+          actual_end_time?: string | null
+          exercise_id?: string | null
         }
         Relationships: [
           {
@@ -537,6 +549,47 @@ export type Database = {
             columns: ["workout_id"]
             isOneToOne: false
             referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      set_duration_patterns: {
+        Row: {
+          id: string
+          user_id: string
+          exercise_name: string
+          exercise_id: string | null
+          avg_duration_seconds: number
+          sample_count: number | null
+          last_updated: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          exercise_name: string
+          exercise_id?: string | null
+          avg_duration_seconds?: number
+          sample_count?: number | null
+          last_updated?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          exercise_name?: string
+          exercise_id?: string | null
+          avg_duration_seconds?: number
+          sample_count?: number | null
+          last_updated?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "set_duration_patterns_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
             referencedColumns: ["id"]
           },
         ]
@@ -1377,6 +1430,7 @@ export type Database = {
           updated_at: string
           weight: number | null
           weight_unit: string | null
+          rest_timer_preferences: Json | null
         }
         Insert: {
           age?: number | null
@@ -1392,6 +1446,7 @@ export type Database = {
           updated_at?: string
           weight?: number | null
           weight_unit?: string | null
+          rest_timer_preferences?: Json | null
         }
         Update: {
           age?: number | null
@@ -1407,6 +1462,7 @@ export type Database = {
           updated_at?: string
           weight?: number | null
           weight_unit?: string | null
+          rest_timer_preferences?: Json | null
         }
         Relationships: []
       }

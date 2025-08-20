@@ -22,6 +22,11 @@ import {
 // Export types for other components to use
 export type { ExerciseSet, WorkoutExerciseConfig, WorkoutExercises, WorkoutStatus, WorkoutError, RestTimerState };
 
+export interface RestTimerPreferences {
+  precisionMode: boolean;
+  showAdjustedRest: boolean;
+}
+
 export interface WorkoutState {
   // Core workout data
   exercises: WorkoutExercises;
@@ -48,6 +53,10 @@ export interface WorkoutState {
   restTimerBaselines: Map<string, number>;
   // Configurable max rest duration in seconds (auto-stop threshold)
   restTimerMaxSeconds: number;
+  // Track individual set timings
+  setTimings: Map<string, { startTime?: number; endTime?: number; estimatedDuration?: number }>;
+  // Rest timer preference settings
+  restTimerPreferences: RestTimerPreferences;
   
   // Session tracking
   isActive: boolean;
@@ -84,6 +93,9 @@ export interface WorkoutState {
   getRestTimerBaseline: (timerId: string) => number;
   clearAllRestTimers: () => void;
   setRestTimerMaxSeconds: (maxSeconds: number) => void;
+  setSetStartTime: (exerciseId: string, setNumber: number) => void;
+  setSetEndTime: (exerciseId: string, setNumber: number) => void;
+  updateRestTimerPreferences: (prefs: Partial<RestTimerPreferences>) => void;
   
   // Workout lifecycle actions
   startWorkout: () => void;
@@ -179,6 +191,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       activeRestTimers: new Map<string, RestTimerState>(),
       restTimerBaselines: new Map<string, number>(),
       restTimerMaxSeconds: 15 * 60, // 15 minutes default
+      setTimings: new Map<string, { startTime?: number; endTime?: number; estimatedDuration?: number }>(),
+      restTimerPreferences: { precisionMode: false, showAdjustedRest: true },
       
       // Session tracking
       isActive: false,
@@ -289,7 +303,28 @@ setRestTimerMaxSeconds: (maxSeconds) => set({
   restTimerMaxSeconds: Math.max(30, maxSeconds || 0),
   lastTabActivity: Date.now(),
 }),
-      
+
+setSetStartTime: (exerciseId, setNumber) => set((state) => {
+  const key = `${exerciseId}_${setNumber}`;
+  const timings = new Map(state.setTimings);
+  const current = timings.get(key) || {};
+  timings.set(key, { ...current, startTime: Date.now() });
+  return { setTimings: timings, lastTabActivity: Date.now() };
+}),
+
+setSetEndTime: (exerciseId, setNumber) => set((state) => {
+  const key = `${exerciseId}_${setNumber}`;
+  const timings = new Map(state.setTimings);
+  const current = timings.get(key) || {};
+  timings.set(key, { ...current, endTime: Date.now() });
+  return { setTimings: timings, lastTabActivity: Date.now() };
+}),
+
+updateRestTimerPreferences: (prefs) => set((state) => ({
+  restTimerPreferences: { ...state.restTimerPreferences, ...prefs },
+  lastTabActivity: Date.now(),
+})),
+
 getExerciseDisplayName: (exerciseName) => {
   const state = get();
   const exerciseData = state.exercises[exerciseName];
