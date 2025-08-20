@@ -40,6 +40,7 @@ const TrainingSessionPage = () => {
     resumeWorkout,
     resetSession,
     clearAllRestTimers,
+    handleCompleteSet,
     toggleWarmupSet,
     workoutStatus,
     markAsSaving,
