@@ -7,6 +7,67 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface WorkoutSet {
+  actual_start_time?: string;
+  actual_end_time?: string;
+  exercise_name: string;
+  exercise_id?: string;
+  rest_time?: number | null;
+  [key: string]: unknown;
+}
+
+const calculateRestTimes = (sets: WorkoutSet[]) => {
+  let lastEnd: number | null = null;
+  return sets.map((set) => {
+    const updated = { ...set };
+    if (set.actual_start_time && lastEnd) {
+      updated.rest_time = Math.round(
+        (new Date(set.actual_start_time).getTime() - lastEnd) / 1000,
+      );
+    }
+    if (set.actual_end_time) {
+      lastEnd = new Date(set.actual_end_time).getTime();
+    }
+    return updated;
+  });
+};
+
+const updateDurationPatterns = async (
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  sets: WorkoutSet[],
+) => {
+  for (const set of sets) {
+    if (set.actual_start_time && set.actual_end_time) {
+      const duration = Math.round(
+        (new Date(set.actual_end_time).getTime() -
+          new Date(set.actual_start_time).getTime()) / 1000,
+      );
+      const { data: existing } = await supabase
+        .from('set_duration_patterns')
+        .select('avg_duration_seconds, sample_count')
+        .eq('user_id', userId)
+        .eq('exercise_name', set.exercise_name)
+        .single();
+      const count = existing?.sample_count ? existing.sample_count + 1 : 1;
+      const avg = existing
+        ? Math.round(
+            (existing.avg_duration_seconds * existing.sample_count + duration) /
+              count,
+          )
+        : duration;
+      await supabase.from('set_duration_patterns').upsert({
+        user_id: userId,
+        exercise_name: set.exercise_name,
+        exercise_id: set.exercise_id || null,
+        avg_duration_seconds: avg,
+        sample_count: count,
+        last_updated: new Date().toISOString(),
+      }, { onConflict: 'user_id,exercise_name' });
+    }
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,7 +86,7 @@ serve(async (req) => {
 
     // Get request body
     const { workout_data, exercise_sets } = await req.json();
-    
+
     if (!workout_data || !exercise_sets || !workout_data.user_id) {
       return new Response(
         JSON.stringify({ error: "Missing required data" }),
@@ -33,7 +94,8 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing workout save for user ${workout_data.user_id} with ${exercise_sets.length} sets`);
+    const processedSets = calculateRestTimes(exercise_sets);
+    console.log(`Processing workout save for user ${workout_data.user_id} with ${processedSets.length} sets`);
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -48,7 +110,7 @@ serve(async (req) => {
     // Use transaction function for atomic operations
     const { data: result, error: transactionError } = await supabase.rpc('save_workout_transaction', {
       p_workout_data: workout_data,
-      p_exercise_sets: exercise_sets
+      p_exercise_sets: processedSets
     });
 
     if (transactionError) {
@@ -68,7 +130,7 @@ serve(async (req) => {
         }
 
         // 2. Then insert the exercise sets
-        const formattedSets = exercise_sets.map(set => ({
+        const formattedSets = processedSets.map(set => ({
           ...set,
           workout_id: workout.id
         }));
@@ -116,6 +178,7 @@ serve(async (req) => {
         } catch (analyticsError) {
           console.warn("Analytics refresh failed but workout was saved:", analyticsError);
         }
+        await updateDurationPatterns(supabase, workout_data.user_id, processedSets);
 
         return new Response(
           JSON.stringify({ workout_id: workout.id }),
@@ -134,6 +197,8 @@ serve(async (req) => {
       // Non-blocking error; workout saved successfully
       console.warn("Analytics refresh failed after transaction:", refreshError);
     }
+
+    await updateDurationPatterns(supabase, workout_data.user_id, processedSets);
 
     return new Response(
       JSON.stringify({ workout_id: result.workout_id }),
