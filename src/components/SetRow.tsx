@@ -13,6 +13,7 @@ import { CompactRestTimer } from '@/components/CompactRestTimer';
 import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
 import { getDisplayRestLabelByIndex, formatRestForDisplay } from '@/utils/restDisplay';
+import { useWorkoutStore } from '@/store/workoutStore';
 
 interface SetRowProps {
   setNumber: number;
@@ -83,12 +84,12 @@ export const SetRow = ({
   const { logRestTime } = useRestTimeAnalytics();
   const { generateTimerId, isTimerActive, stopTimer, getTimer } = useGlobalRestTimers();
   
-  const { 
+  const {
     weight: calculatedWeight,
     isAutoWeight,
     weightSource,
     updateWeight,
-    resetToAuto 
+    resetToAuto
   } = useExerciseWeight({
     exercise: exerciseData,
     userWeight,
@@ -97,6 +98,11 @@ export const SetRow = ({
 
   const displayUnit = weightUnit || globalWeightUnit;
   const displayWeight = isEditing ? weight : (isAutoWeight ? calculatedWeight : weight);
+
+  const { setSetStartTime, setSetEndTime } = useWorkoutStore();
+  const handleFirstInteraction = React.useCallback(() => {
+    setSetStartTime(exerciseName, setNumber);
+  }, [exerciseName, setNumber, setSetStartTime]);
 
   const formatRestTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -149,6 +155,8 @@ export const SetRow = ({
 
   const playCompleteAnimation = () => {
     setJustCompleted(true);
+    // Mark explicit set end time for duration tracking
+    setSetEndTime(exerciseName, setNumber);
     setTimeout(() => {
       setJustCompleted(false);
       onComplete();
@@ -227,12 +235,14 @@ export const SetRow = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Input 
+                  <Input
                     type="number"
                     min="0"
                     step="any"
                     value={weight}
+                    onFocus={handleFirstInteraction}
                     onChange={(e) => {
+                      handleFirstInteraction();
                       onWeightChange(e);
                       updateWeight(Number(e.target.value));
                     }}
@@ -292,12 +302,16 @@ export const SetRow = ({
                 >
                   <MinusCircle size={isMobile ? 20 : 18} />
                 </button>
-                <Input 
+                <Input
                   type="number"
                   min="0"
                   step="1"
                   value={reps}
-                  onChange={onRepsChange}
+                  onFocus={handleFirstInteraction}
+                  onChange={(e) => {
+                    handleFirstInteraction();
+                    onRepsChange(e);
+                  }}
                   className="workout-number-input text-center value-text px-1 py-2 w-full min-w-0"
                   placeholder="Reps"
                 />

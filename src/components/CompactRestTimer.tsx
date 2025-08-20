@@ -3,6 +3,7 @@ import { Timer, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
+import { useAdjustedRestTime } from '@/hooks/useAdjustedRestTime';
 
 interface CompactRestTimerProps {
   timerId: string;
@@ -28,6 +29,8 @@ export const CompactRestTimer = ({
   const elapsedTime = timerState?.elapsedTime || 0;
   const isCompleted = timerState?.isCompleted || false;
   const isOvertime = timerState?.isOvertime || false;
+
+  const { adjustedRest, hasEstimate } = useAdjustedRestTime(timerId, elapsedTime);
 
   const clearTimerInterval = () => {
     if (intervalRef.current) {
@@ -90,8 +93,6 @@ export const CompactRestTimer = ({
   };
 
   const progress = Math.min((elapsedTime / targetTime) * 100, 100);
-  const remainingTime = Math.max(targetTime - elapsedTime, 0);
-  const overtimeSeconds = Math.max(elapsedTime - targetTime, 0);
 
   // Check if this timer belongs to the currently active exercise
   const isForActiveExercise = isTimerForActiveExercise(timerId);
@@ -103,7 +104,7 @@ export const CompactRestTimer = ({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 p-2 rounded-lg",
+      "flex flex-col gap-1 p-2 rounded-lg",
       "bg-gradient-to-r from-primary/5 to-primary-glow/5",
       "border border-primary/10",
       "animate-fade-in",
@@ -112,7 +113,7 @@ export const CompactRestTimer = ({
       isOvertime && "from-amber-500/10 to-orange-400/10 border-amber-500/20",
       className
     )}>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {isCompleted ? (
           <CheckCircle size={14} className="text-emerald-400" />
         ) : (
@@ -120,33 +121,33 @@ export const CompactRestTimer = ({
         )}
         <span className={cn(
           "text-xs font-mono font-medium",
-          !isActive && "text-muted-foreground", // Muted text for inactive
-          isCompleted && !isOvertime && isActive ? "text-emerald-400" : 
-          isOvertime && isActive ? "text-amber-400" : 
+          !isActive && "text-muted-foreground",
+          isCompleted && isActive ? "text-emerald-400" :
           isActive ? "text-primary" : "text-muted-foreground"
         )}>
-          {!isActive ? formatTime(targetTime) : // Show target time when inactive
-           isCompleted && !isOvertime ? "Ready!" : 
-           isOvertime ? `+${formatTime(overtimeSeconds)}` : 
-           formatTime(remainingTime)}
+          {`Rest: ${formatTime(isActive ? elapsedTime : targetTime)}`}
+        </span>
+        <div className="flex-1 min-w-0">
+          <Progress
+            value={progress}
+            className={cn(
+              "h-1.5 bg-muted/50",
+              isCompleted && !isOvertime ? "[&>div]:bg-emerald-500" :
+              isOvertime ? "[&>div]:bg-amber-500" :
+              "[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary-glow"
+            )}
+          />
+        </div>
+        <span className="text-xs text-muted-foreground font-mono">
+          {formatTime(targetTime)}
         </span>
       </div>
-      
-      <div className="flex-1 min-w-0">
-        <Progress 
-          value={progress} 
-          className={cn(
-            "h-1.5 bg-muted/50",
-            isCompleted && !isOvertime ? "[&>div]:bg-emerald-500" : 
-            isOvertime ? "[&>div]:bg-amber-500" :
-            "[&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-primary-glow"
-          )}
-        />
-      </div>
-      
-      <span className="text-xs text-muted-foreground font-mono">
-        {formatTime(targetTime)}
-      </span>
+
+      {hasEstimate && (
+        <div className="ml-6 text-[10px] text-muted-foreground">
+          {`~${formatTime(adjustedRest)} actual`}
+        </div>
+      )}
     </div>
   );
 };
