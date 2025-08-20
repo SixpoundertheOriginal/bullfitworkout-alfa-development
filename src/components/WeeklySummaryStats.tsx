@@ -4,6 +4,7 @@ import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
 import { format, differenceInCalendarDays, subDays, getDay, startOfWeek } from "date-fns";
 import { Calendar, Dumbbell, Repeat, Layers, Clock } from "lucide-react";
+import MotivationCard from "./MotivationCard";
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { OpenAIService } from '@/services/openAIService';
@@ -371,23 +372,16 @@ export const WeeklySummaryStats = React.memo(() => {
   {/* Week Progress Bar */}
   <WeekProgressBar currentDay={currentDayOfWeek} />
 
-  <div ref={motivationRef} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
-    <div className="flex items-center justify-between mb-1">
-      <span className="text-sm text-muted-foreground">Weekly Tonnage</span>
-      <button
-        onClick={() => refetchMotivation()}
-        disabled={loadingMotivation}
-        className="text-xs text-zinc-400 hover:text-white"
-      >
-        ↻
-      </button>
-    </div>
-    <div className="text-xl font-semibold">
-      {(weekStats.volume.current || 0).toLocaleString()} kg lifted
-    </div>
-    <div className="text-xs text-muted-foreground mt-1">
-      {loadingMotivation ? 'Loading...' : motivationText || 'Keep it up!'}
-    </div>
+  <div ref={motivationRef}>
+    <MotivationCard
+      tonnage={weekStats.volume.current || 0}
+      deltaPct={stats?.volumeDeltaPct || 0}
+      coachCopy={motivationText || 'Keep it up!'}
+      loading={isLoading}
+      loadingCoach={loadingMotivation}
+      onRefresh={refetchMotivation}
+      locale={locale}
+    />
   </div>
 
   {/* Stats Grid */}
