@@ -11,7 +11,7 @@ import { ChatImageUpload } from '@/components/ai/ChatImageUpload';
 import { EnhancedConversationThreadList } from '@/components/ai/EnhancedConversationThreadList';
 import { MobileOptimizedChatInput } from '@/components/ai/MobileOptimizedChatInput';
 import { EnhancedMessageBubble } from '@/components/ai/EnhancedMessageBubble';
-import { useThreadedConversation } from '@/hooks/useThreadedConversation';
+import { useEnhancedThreadManager } from '@/hooks/useEnhancedThreadManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { uploadImages } from '@/lib/uploadImage';
@@ -28,7 +28,9 @@ export default function EnhancedTrainingCoachPage() {
     currentThreadId,
     messages,
     isLoading,
+    error,
     threads,
+    isInitialized,
     loadThreadMessages,
     loadThreads,
     startNewThread,
@@ -36,31 +38,22 @@ export default function EnhancedTrainingCoachPage() {
     retryMessage,
     deleteThread,
     toggleArchiveThread,
-  } = useThreadedConversation();
+  } = useEnhancedThreadManager();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize conversation on mount
-  useEffect(() => {
-    if (user && threads.length === 0) {
-      loadThreads();
-    }
-  }, [user, threads.length, loadThreads]);
+  // Show loading state until initialized
+  const isLoadingState = !isInitialized && !!user;
 
-  // Load most recent thread or start new one
+  // Display error state if needed
   useEffect(() => {
-    if (user && threads.length > 0 && !currentThreadId) {
-      const mostRecentThread = threads[0];
-      if (mostRecentThread) {
-        loadThreadMessages(mostRecentThread.id);
-      }
-    } else if (user && threads.length === 0 && messages.length === 0) {
-      startNewThread();
+    if (error) {
+      console.warn('AI Coach error:', error);
     }
-  }, [user, threads, currentThreadId, messages.length, loadThreadMessages, startNewThread]);
+  }, [error]);
 
   const handleSendMessage = async () => {
     if (!input.trim() && selectedImages.length === 0) return;
@@ -225,7 +218,7 @@ export default function EnhancedTrainingCoachPage() {
                 onDeleteThread={deleteThread}
                 onArchiveThread={toggleArchiveThread}
                 onRefresh={loadThreads}
-                loading={false}
+                loading={isLoadingState}
               />
             </div>
           </div>

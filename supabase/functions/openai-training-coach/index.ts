@@ -144,6 +144,22 @@ Keep responses conversational but data-driven. Always reference their actual tra
           content: reply,
           training_data_snapshot: trainingData
         });
+
+        // Update thread message count and timestamp
+        const { data: messageCount } = await supabase
+          .from('ai_conversation_messages')
+          .select('id', { count: 'exact' })
+          .eq('thread_id', currentThreadId);
+
+        await supabase
+          .from('ai_conversation_threads')
+          .update({ 
+            message_count: messageCount?.length || 0,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', currentThreadId);
+
+        console.log('Conversation stored successfully');
       }
     } catch (dbError) {
       console.warn('Failed to store conversation:', dbError);

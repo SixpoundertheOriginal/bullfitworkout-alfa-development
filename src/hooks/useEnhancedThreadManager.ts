@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { UploadedImage } from '@/components/ai/ImageUpload';
 
-export interface ThreadedMessage {
+export interface EnhancedThreadMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -23,17 +23,30 @@ export interface ConversationThread {
   is_archived: boolean;
 }
 
-export const useThreadedConversation = () => {
+export const useEnhancedThreadManager = () => {
   const { user } = useAuth();
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ThreadedMessage[]>([]);
+  const [messages, setMessages] = useState<EnhancedThreadMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [threads, setThreads] = useState<ConversationThread[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Cache for messages to avoid unnecessary fetches
+  const messageCache = useRef<Map<string, EnhancedThreadMessage[]>>(new Map());
+  const refreshTimeout = useRef<NodeJS.Timeout>();
 
-  // Load messages for a specific thread
-  const loadThreadMessages = useCallback(async (threadId: string) => {
+  // Enhanced thread loading with caching
+  const loadThreadMessages = useCallback(async (threadId: string, forceRefresh = false) => {
     if (!user) return;
+
+    // Check cache first unless force refresh
+    if (!forceRefresh && messageCache.current.has(threadId)) {
+      const cachedMessages = messageCache.current.get(threadId)!;
+      setMessages(cachedMessages);
+      setCurrentThreadId(threadId);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -51,7 +64,7 @@ export const useThreadedConversation = () => {
 
       console.log('Loaded messages:', data?.length || 0);
 
-      const formattedMessages: ThreadedMessage[] = (data || []).map(msg => ({
+      const formattedMessages: EnhancedThreadMessage[] = (data || []).map(msg => ({
         id: msg.id,
         role: msg.role as 'user' | 'assistant',
         content: msg.content || '',
@@ -60,15 +73,20 @@ export const useThreadedConversation = () => {
         status: 'delivered'
       }));
 
-      // Add welcome message if no messages exist
+      // Cache the messages
+      messageCache.current.set(threadId, formattedMessages);
+
+      // Add welcome message if no messages exist and it's the current thread
       if (formattedMessages.length === 0) {
-        formattedMessages.unshift({
+        const welcomeMessage: EnhancedThreadMessage = {
           id: 'welcome-' + Date.now(),
           role: 'assistant',
           content: "Hi! I'm your AI Training Coach. I have access to your complete workout history and can analyze images you share. What would you like to discuss about your fitness journey?",
           timestamp: new Date(),
           status: 'delivered'
-        });
+        };
+        formattedMessages.unshift(welcomeMessage);
+        messageCache.current.set(threadId, formattedMessages);
       }
 
       setMessages(formattedMessages);
@@ -86,7 +104,7 @@ export const useThreadedConversation = () => {
     }
   }, [user]);
 
-  // Load all threads for the user
+  // Enhanced thread loading with better error handling
   const loadThreads = useCallback(async () => {
     if (!user) return;
 
@@ -103,12 +121,32 @@ export const useThreadedConversation = () => {
       
       console.log('Loaded threads:', data?.length || 0);
       setThreads(data || []);
+      
+      // Mark as initialized after first successful load
+      if (!isInitialized) {
+        setIsInitialized(true);
+      }
     } catch (error) {
       console.error('Error loading threads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load conversations",
+        variant: "destructive",
+      });
     }
-  }, [user]);
+  }, [user, isInitialized]);
 
-  // Start a new conversation thread
+  // Debounced refresh to avoid excessive calls
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimeout.current) {
+      clearTimeout(refreshTimeout.current);
+    }
+    refreshTimeout.current = setTimeout(() => {
+      loadThreads();
+    }, 1000);
+  }, [loadThreads]);
+
+  // Start new conversation
   const startNewThread = useCallback(() => {
     setCurrentThreadId(null);
     setMessages([{
@@ -119,16 +157,17 @@ export const useThreadedConversation = () => {
       status: 'delivered'
     }]);
     setError(null);
-    // Refresh threads list to ensure we have latest data
-    loadThreads();
-  }, [loadThreads]);
+    
+    // Clear cache for a clean start
+    messageCache.current.clear();
+  }, []);
 
-  // Send a message with optional images
+  // Enhanced message sending with better state management
   const sendMessage = useCallback(async (content: string, images: UploadedImage[] = []) => {
     if (!user || !content.trim()) return;
 
     // Add user message immediately
-    const userMessage: ThreadedMessage = {
+    const userMessage: EnhancedThreadMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       role: 'user',
       content,
@@ -174,7 +213,7 @@ export const useThreadedConversation = () => {
 
       // Add AI response
       if (data?.reply) {
-        const assistantMessage: ThreadedMessage = {
+        const assistantMessage: EnhancedThreadMessage = {
           id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           role: 'assistant',
           content: data.reply,
@@ -182,15 +221,27 @@ export const useThreadedConversation = () => {
           status: 'delivered'
         };
 
-        setMessages(prev => [...prev, assistantMessage]);
+        setMessages(prev => {
+          const updatedMessages = [...prev, assistantMessage];
+          
+          // Update cache if we have a thread
+          if (currentThreadId) {
+            messageCache.current.set(currentThreadId, updatedMessages);
+          }
+          
+          return updatedMessages;
+        });
 
-        // Update current thread ID if we got one back
+        // Update current thread ID and refresh threads
         if (data.threadId && !currentThreadId) {
           setCurrentThreadId(data.threadId);
+          // Cache messages for the new thread
+          const allMessages = [...messages, userMessage, assistantMessage];
+          messageCache.current.set(data.threadId, allMessages);
         }
 
-        // Refresh threads list to update message counts
-        loadThreads();
+        // Schedule a refresh to update thread list with new message count
+        scheduleRefresh();
       }
 
     } catch (error) {
@@ -210,7 +261,7 @@ export const useThreadedConversation = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentThreadId, messages]);
+  }, [user, currentThreadId, messages, scheduleRefresh]);
 
   // Retry failed message
   const retryMessage = useCallback(async (messageId: string) => {
@@ -232,8 +283,7 @@ export const useThreadedConversation = () => {
     await sendMessage(message.content, message.images || []);
   }, [messages, sendMessage]);
 
-
-  // Delete a conversation thread
+  // Delete thread with cache cleanup
   const deleteThread = useCallback(async (threadId: string) => {
     if (!user) return;
 
@@ -252,6 +302,9 @@ export const useThreadedConversation = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
+
+      // Clean up cache
+      messageCache.current.delete(threadId);
 
       // Update local state
       setThreads(prev => prev.filter(t => t.id !== threadId));
@@ -309,17 +362,34 @@ export const useThreadedConversation = () => {
     }
   }, [user]);
 
-  // Load threads on user change
+  // Initialize on user change
   useEffect(() => {
-    if (user) {
+    if (user && !isInitialized) {
       loadThreads();
     }
-  }, [user, loadThreads]);
+  }, [user, isInitialized, loadThreads]);
 
-  // Clear current conversation
-  const clearConversation = useCallback(() => {
-    startNewThread();
-  }, [startNewThread]);
+  // Auto-load most recent thread
+  useEffect(() => {
+    if (user && threads.length > 0 && !currentThreadId && isInitialized) {
+      const mostRecentThread = threads.find(t => !t.is_archived);
+      if (mostRecentThread && mostRecentThread.message_count > 0) {
+        console.log('Auto-loading most recent thread:', mostRecentThread.id);
+        loadThreadMessages(mostRecentThread.id);
+      } else if (!mostRecentThread || mostRecentThread.message_count === 0) {
+        startNewThread();
+      }
+    }
+  }, [user, threads, currentThreadId, isInitialized, loadThreadMessages, startNewThread]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (refreshTimeout.current) {
+        clearTimeout(refreshTimeout.current);
+      }
+    };
+  }, []);
 
   return {
     currentThreadId,
@@ -327,13 +397,14 @@ export const useThreadedConversation = () => {
     isLoading,
     error,
     threads,
+    isInitialized,
     loadThreadMessages,
     loadThreads,
     startNewThread,
     sendMessage,
     retryMessage,
-    clearConversation,
     deleteThread,
-    toggleArchiveThread
+    toggleArchiveThread,
+    clearConversation: startNewThread
   };
 };
