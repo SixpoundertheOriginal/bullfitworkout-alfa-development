@@ -231,7 +231,11 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
   );
 };
 
-export const WeeklySummaryStats = React.memo(() => {
+interface WeeklySummaryStatsProps {
+  position?: 'under-start' | 'after-week';
+}
+
+export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: WeeklySummaryStatsProps) => {
   const { dateRange } = useDateRange();
   const { data: stats, isLoading } = useBasicWorkoutStats(dateRange);
   const { user } = useAuth();
@@ -347,163 +351,170 @@ export const WeeklySummaryStats = React.memo(() => {
 
   const mostActiveDay = getMostActiveDay();
 
+  const motivation = (
+    <div ref={motivationRef}>
+      <MotivationCard
+        tonnage={weekStats.volume.current || 0}
+        deltaPct={stats?.volumeDeltaPct || 0}
+        coachCopy={motivationText || 'Keep it up!'}
+        loading={isLoading}
+        loadingCoach={loadingMotivation}
+        onRefresh={refetchMotivation}
+        locale={locale}
+      />
+    </div>
+  );
+
   return (
-    <div className="space-y-4">
-      {/* Section Header */}
-      <div className="flex items-center justify-between pt-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-          📊 Your Week
-          {currentDayOfWeek <= 3 && weekStats.workouts.current > 0 && (
-            <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-              Building
-            </span>
+    <div>
+      {position === 'under-start' && motivation}
+      <div className={`${position === 'under-start' ? 'mt-4 ' : ''}space-y-4`}>
+        {/* Section Header */}
+        <div className="flex items-center justify-between pt-4">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            📊 Your Week
+            {currentDayOfWeek <= 3 && weekStats.workouts.current > 0 && (
+              <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                Building
+              </span>
+            )}
+          </h2>
+          {stats?.streakDays && stats.streakDays > 0 && (
+            <div className="rounded-xl bg-muted/40 px-2 py-1 text-xs">
+              🔥 {stats.streakDays}-Day Streak
+            </div>
           )}
-        </h2>
-        {stats?.streakDays && stats.streakDays > 0 && (
-          <div className="rounded-xl bg-muted/40 px-2 py-1 text-xs">
-            🔥 {stats.streakDays}-Day Streak
+        </div>
+
+        {/* Streak Badge */}
+        {stats?.streakDays && <StreakBadge days={stats.streakDays} />}
+
+        {/* Week Progress Bar */}
+        <WeekProgressBar currentDay={currentDayOfWeek} />
+
+        {position !== 'under-start' && motivation}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            icon={<Calendar className="w-4 h-4 text-purple-400" />}
+            title="Workouts"
+            value={weekStats.workouts.current}
+            comparison={getSmartComparison(
+              'workouts',
+              weekStats.workouts.current,
+              currentDayOfWeek,
+              weekStats.workouts.lastWeekTotal,
+              weekStats.workouts.lastWeekByDay
+            )}
+            encouragement={getEncouragement('workouts', {})}
+            isLoading={isLoading}
+          />
+
+          <StatCard
+            icon={<Dumbbell className="w-4 h-4 text-blue-400" />}
+            title="Total Volume"
+            value={`${(weekStats.volume.current / 1000).toFixed(1)}`}
+            unit="kg"
+            comparison={getSmartComparison(
+              'volume',
+              weekStats.volume.current,
+              currentDayOfWeek,
+              weekStats.volume.lastWeekTotal,
+              weekStats.volume.lastWeekByDay
+            )}
+            isLoading={isLoading}
+          />
+
+          <StatCard
+            icon={<Repeat className="w-4 h-4 text-orange-400" />}
+            title="Total Reps"
+            value={weekStats.reps.current}
+            comparison={getSmartComparison(
+              'reps',
+              weekStats.reps.current,
+              currentDayOfWeek,
+              weekStats.reps.lastWeekTotal,
+              weekStats.reps.lastWeekByDay
+            )}
+            isLoading={isLoading}
+          />
+
+          <StatCard
+            icon={<Layers className="w-4 h-4 text-green-400" />}
+            title="Total Sets"
+            value={weekStats.sets.current}
+            comparison={getSmartComparison(
+              'sets',
+              weekStats.sets.current,
+              currentDayOfWeek,
+              weekStats.sets.lastWeekTotal,
+              weekStats.sets.lastWeekByDay
+            )}
+            isLoading={isLoading}
+          />
+        </div>
+
+        {/* Total Time - Full Width */}
+        <StatCard
+          icon={<Clock className="w-4 h-4 text-zinc-400" />}
+          title="Total Time"
+          value={formatDuration(weekStats.time.current)}
+          comparison={getSmartComparison(
+            'time',
+            weekStats.time.current,
+            currentDayOfWeek,
+            weekStats.time.lastWeekTotal,
+            weekStats.time.lastWeekByDay
+          )}
+          encouragement={getEncouragement('time', {})}
+          isLoading={isLoading}
+        />
+
+        {/* Most Active Day */}
+        <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+          <div className="flex items-center mb-2">
+            <span className="text-lg mr-2">🔥</span>
+            <span className="text-sm text-muted-foreground">Most Active Day</span>
+          </div>
+          <div className="text-xl font-semibold">{mostActiveDay}</div>
+          <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
+        </div>
+
+        {/* Motivational message for Tuesday */}
+        {currentDayOfWeek === 2 && weekStats.workouts.current > 0 && (
+          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-purple-500/20">
+            <p className="text-xs text-purple-300 text-center">
+              Tuesday momentum achieved! Keep this energy going 🚀
+            </p>
           </div>
         )}
-      </div>
 
-      {/* Streak Badge */}
-      {stats?.streakDays && <StreakBadge days={stats.streakDays} />}
-
-  {/* Week Progress Bar */}
-  <WeekProgressBar currentDay={currentDayOfWeek} />
-
-  <div ref={motivationRef}>
-    <MotivationCard
-      tonnage={weekStats.volume.current || 0}
-      deltaPct={stats?.volumeDeltaPct || 0}
-      coachCopy={motivationText || 'Keep it up!'}
-      loading={isLoading}
-      loadingCoach={loadingMotivation}
-      onRefresh={refetchMotivation}
-      locale={locale}
-    />
-  </div>
-
-  {/* Stats Grid */}
-  <div className="grid grid-cols-2 gap-3">
-        <StatCard
-          icon={<Calendar className="w-4 h-4 text-purple-400" />}
-          title="Workouts"
-          value={weekStats.workouts.current}
-          comparison={getSmartComparison(
-            'workouts',
-            weekStats.workouts.current,
-            currentDayOfWeek,
-            weekStats.workouts.lastWeekTotal,
-            weekStats.workouts.lastWeekByDay
-          )}
-          encouragement={getEncouragement('workouts', {})}
-          isLoading={isLoading}
-        />
-        
-        <StatCard
-          icon={<Dumbbell className="w-4 h-4 text-blue-400" />}
-          title="Total Volume"
-          value={`${(weekStats.volume.current / 1000).toFixed(1)}`}
-          unit="kg"
-          comparison={getSmartComparison(
-            'volume',
-            weekStats.volume.current,
-            currentDayOfWeek,
-            weekStats.volume.lastWeekTotal,
-            weekStats.volume.lastWeekByDay
-          )}
-          isLoading={isLoading}
-        />
-        
-        <StatCard
-          icon={<Repeat className="w-4 h-4 text-orange-400" />}
-          title="Total Reps"
-          value={weekStats.reps.current}
-          comparison={getSmartComparison(
-            'reps',
-            weekStats.reps.current,
-            currentDayOfWeek,
-            weekStats.reps.lastWeekTotal,
-            weekStats.reps.lastWeekByDay
-          )}
-          isLoading={isLoading}
-        />
-        
-        <StatCard
-          icon={<Layers className="w-4 h-4 text-green-400" />}
-          title="Total Sets"
-          value={weekStats.sets.current}
-          comparison={getSmartComparison(
-            'sets',
-            weekStats.sets.current,
-            currentDayOfWeek,
-            weekStats.sets.lastWeekTotal,
-            weekStats.sets.lastWeekByDay
-          )}
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Total Time - Full Width */}
-      <StatCard
-        icon={<Clock className="w-4 h-4 text-zinc-400" />}
-        title="Total Time"
-        value={formatDuration(weekStats.time.current)}
-        comparison={getSmartComparison(
-          'time',
-          weekStats.time.current,
-          currentDayOfWeek,
-          weekStats.time.lastWeekTotal,
-          weekStats.time.lastWeekByDay
-        )}
-        encouragement={getEncouragement('time', {})}
-        isLoading={isLoading}
-      />
-
-      {/* Most Active Day */}
-      <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
-        <div className="flex items-center mb-2">
-          <span className="text-lg mr-2">🔥</span>
-          <span className="text-sm text-muted-foreground">Most Active Day</span>
-        </div>
-        <div className="text-xl font-semibold">{mostActiveDay}</div>
-        <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
-      </div>
-
-      {/* Motivational message for Tuesday */}
-      {currentDayOfWeek === 2 && weekStats.workouts.current > 0 && (
-        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-purple-500/20">
-          <p className="text-xs text-purple-300 text-center">
-            Tuesday momentum achieved! Keep this energy going 🚀
-          </p>
-        </div>
-      )}
-
-      {/* Quick Stats Section */}
-      <div className="mt-4 flex justify-around py-3 bg-zinc-900/30 rounded-xl">
-        <div className="text-center">
-          <p className="text-xs text-zinc-500">This Week</p>
-          <p className="text-sm font-bold text-white">{weekStats.workouts.current}/5</p>
-          <p className="text-xs text-zinc-600">workouts</p>
-        </div>
-        <div className="w-px bg-zinc-800" />
-        <div className="text-center">
-          <p className="text-xs text-zinc-500">Weekly Goal</p>
-          <p className="text-sm font-bold text-green-400">
-            {weekStats.workouts.current >= 3 ? "On Track" : "Building"}
-          </p>
-          <p className="text-xs text-zinc-600">
-            {Math.round((weekStats.workouts.current / 5) * 100)}% done
-          </p>
-        </div>
-        <div className="w-px bg-zinc-800" />
-        <div className="text-center">
-          <p className="text-xs text-zinc-500">Best Day</p>
-          <p className="text-sm font-bold text-purple-400">
-            {mostActiveDay.split(' ')[0] || "None"}
-          </p>
-          <p className="text-xs text-zinc-600">historically</p>
+        {/* Quick Stats Section */}
+        <div className="mt-4 flex justify-around py-3 bg-zinc-900/30 rounded-xl">
+          <div className="text-center">
+            <p className="text-xs text-zinc-500">This Week</p>
+            <p className="text-sm font-bold text-white">{weekStats.workouts.current}/5</p>
+            <p className="text-xs text-zinc-600">workouts</p>
+          </div>
+          <div className="w-px bg-zinc-800" />
+          <div className="text-center">
+            <p className="text-xs text-zinc-500">Weekly Goal</p>
+            <p className="text-sm font-bold text-green-400">
+              {weekStats.workouts.current >= 3 ? "On Track" : "Building"}
+            </p>
+            <p className="text-xs text-zinc-600">
+              {Math.round((weekStats.workouts.current / 5) * 100)}% done
+            </p>
+          </div>
+          <div className="w-px bg-zinc-800" />
+          <div className="text-center">
+            <p className="text-xs text-zinc-500">Best Day</p>
+            <p className="text-sm font-bold text-purple-400">
+              {mostActiveDay.split(' ')[0] || "None"}
+            </p>
+            <p className="text-xs text-zinc-600">historically</p>
+          </div>
         </div>
       </div>
     </div>

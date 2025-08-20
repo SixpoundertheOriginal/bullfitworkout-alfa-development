@@ -134,13 +134,13 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
-      <main className="flex-1 overflow-auto px-4 py-6 space-y-6 mt-12 pb-20">
+      <main className="flex-1 overflow-auto px-4 py-6 mt-12 pb-20">
 
         {/* <DateRangeProvider>
           <QuickStatsSection />
         </DateRangeProvider> */}
 
-        <section ref={sectionRef} className="mb-40 text-center relative z-10">
+        <section ref={sectionRef} className="text-center relative z-10">
           <div style={{ height: "12rem" }} className="relative">
             <div className={cn(
               "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
@@ -171,13 +171,15 @@ const Index = () => {
           </div>
         </section>
 
-        <div className="mt-32">
+        <div className="mt-3">
           <DateRangeProvider>
-            <WeeklySummaryStats />
+            <WeeklySummaryStats position="under-start" />
           </DateRangeProvider>
         </div>
 
-        <ExploreSection />
+        <div className="mt-6">
+          <ExploreSection />
+        </div>
       </main>
 
       <EnhancedWorkoutSetupWizard 
