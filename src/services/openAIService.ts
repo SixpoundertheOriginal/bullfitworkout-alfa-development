@@ -86,6 +86,33 @@ export class OpenAIService {
     }
   }
 
+  async generateMotivationForPeriod(params: {
+    tonnage: number;
+    sets: number;
+    reps: number;
+    deltaPct: number;
+    period: string;
+    periodType: 'week' | 'month';
+    locale: string;
+  }): Promise<string> {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase.functions.invoke('openai-motivation', {
+        body: params,
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
+
+      return data?.text || 'Keep pushing forward!';
+    } catch (err) {
+      console.error('generateMotivationForPeriod error:', err);
+      return 'Stay strong and keep moving!';
+    }
+  }
+
   private getFallbackResponse(workoutData: SafeWorkoutData): OpenAIResponse {
     return {
       suggestions: [
