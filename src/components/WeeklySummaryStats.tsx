@@ -218,7 +218,7 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
   if (days < 2) return null;
   
   return (
-    <div className="bg-orange-500/20 rounded-lg px-3 py-1.5 border border-orange-500/30 mb-4">
+    <div className="bg-orange-500/20 rounded-lg px-3 py-1.5 border border-orange-500/30">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-orange-400">
           🔥 {days} day streak
@@ -231,11 +231,7 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
   );
 };
 
-interface WeeklySummaryStatsProps {
-  position?: 'under-start' | 'after-week';
-}
-
-export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: WeeklySummaryStatsProps) => {
+export const WeeklySummaryStats = React.memo(() => {
   const { dateRange } = useDateRange();
   const { data: stats, isLoading } = useBasicWorkoutStats(dateRange);
   const { user } = useAuth();
@@ -352,7 +348,7 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
   const mostActiveDay = getMostActiveDay();
 
   const motivation = (
-    <div ref={motivationRef}>
+    <div ref={motivationRef} className="mt-3 sm:mt-4">
       <MotivationCard
         tonnage={weekStats.volume.current || 0}
         deltaPct={stats?.volumeDeltaPct || 0}
@@ -366,10 +362,8 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
   );
 
   return (
-    <div>
-      {position === 'under-start' && motivation}
-      <div className={`${position === 'under-start' ? 'mt-4 ' : ''}space-y-4`}>
-        {/* Section Header */}
+    <div className="mt-4">
+      {/* Section Header */}
         <div className="flex items-center justify-between pt-4">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             📊 Your Week
@@ -387,15 +381,21 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
         </div>
 
         {/* Streak Badge */}
-        {stats?.streakDays && <StreakBadge days={stats.streakDays} />}
+        {stats?.streakDays && (
+          <div className="mt-4">
+            <StreakBadge days={stats.streakDays} />
+          </div>
+        )}
+
+        {motivation}
 
         {/* Week Progress Bar */}
-        <WeekProgressBar currentDay={currentDayOfWeek} />
-
-        {position !== 'under-start' && motivation}
+        <div className="mt-3">
+          <WeekProgressBar currentDay={currentDayOfWeek} />
+        </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3">
           <StatCard
             icon={<Calendar className="w-4 h-4 text-purple-400" />}
             title="Workouts"
@@ -456,23 +456,25 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
         </div>
 
         {/* Total Time - Full Width */}
-        <StatCard
-          icon={<Clock className="w-4 h-4 text-zinc-400" />}
-          title="Total Time"
-          value={formatDuration(weekStats.time.current)}
-          comparison={getSmartComparison(
-            'time',
-            weekStats.time.current,
-            currentDayOfWeek,
-            weekStats.time.lastWeekTotal,
-            weekStats.time.lastWeekByDay
-          )}
-          encouragement={getEncouragement('time', {})}
-          isLoading={isLoading}
-        />
+        <div className="mt-4">
+          <StatCard
+            icon={<Clock className="w-4 h-4 text-zinc-400" />}
+            title="Total Time"
+            value={formatDuration(weekStats.time.current)}
+            comparison={getSmartComparison(
+              'time',
+              weekStats.time.current,
+              currentDayOfWeek,
+              weekStats.time.lastWeekTotal,
+              weekStats.time.lastWeekByDay
+            )}
+            encouragement={getEncouragement('time', {})}
+            isLoading={isLoading}
+          />
+        </div>
 
         {/* Most Active Day */}
-        <div className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+        <div className="mt-4 bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
           <div className="flex items-center mb-2">
             <span className="text-lg mr-2">🔥</span>
             <span className="text-sm text-muted-foreground">Most Active Day</span>
@@ -483,7 +485,7 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
 
         {/* Motivational message for Tuesday */}
         {currentDayOfWeek === 2 && weekStats.workouts.current > 0 && (
-          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-purple-500/20">
+          <div className="mt-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-3 border border-purple-500/20">
             <p className="text-xs text-purple-300 text-center">
               Tuesday momentum achieved! Keep this energy going 🚀
             </p>
@@ -514,7 +516,6 @@ export const WeeklySummaryStats = React.memo(({ position = 'under-start' }: Week
               {mostActiveDay.split(' ')[0] || "None"}
             </p>
             <p className="text-xs text-zinc-600">historically</p>
-          </div>
         </div>
       </div>
     </div>
