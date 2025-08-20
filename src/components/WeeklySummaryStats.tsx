@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
-import { format, differenceInCalendarDays, subDays, getDay } from "date-fns";
+import { format, differenceInCalendarDays, subDays, getDay, startOfWeek } from "date-fns";
 import { Calendar, Dumbbell, Repeat, Layers, Clock } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { OpenAIService } from '@/services/openAIService';
 
 // Smart comparison utility
 function getSmartComparison(
@@ -230,6 +233,44 @@ const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
 export const WeeklySummaryStats = React.memo(() => {
   const { dateRange } = useDateRange();
   const { data: stats, isLoading } = useBasicWorkoutStats(dateRange);
+  const { user } = useAuth();
+
+  const periodType = 'week';
+  const periodStart = dateRange?.from || startOfWeek(new Date(), { weekStartsOn: 1 });
+  const period = format(periodStart, "yyyy-'W'II");
+  const locale = (user?.user_metadata as any)?.locale || navigator.language || 'en-US';
+
+  const motivationRef = useRef<HTMLDivElement | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    if (motivationRef.current) {
+      observer.observe(motivationRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  const openAI = OpenAIService.getInstance();
+  const { data: motivationText, refetch: refetchMotivation, isFetching: loadingMotivation } = useQuery({
+    queryKey: ['motivation', user?.id, period, locale],
+    queryFn: () => openAI.generateMotivationForPeriod({
+      tonnage: stats?.weeklyVolume || 0,
+      sets: stats?.weeklySets || 0,
+      reps: stats?.weeklyReps || 0,
+      deltaPct: stats?.volumeDeltaPct || 0,
+      period,
+      periodType,
+      locale,
+    }),
+    enabled: isVisible && !!stats,
+    staleTime: Infinity,
+  });
 
   // Get current day of week (1 = Monday, 7 = Sunday)
   const currentDate = new Date();
@@ -327,11 +368,30 @@ export const WeeklySummaryStats = React.memo(() => {
       {/* Streak Badge */}
       {stats?.streakDays && <StreakBadge days={stats.streakDays} />}
 
-      {/* Week Progress Bar */}
-      <WeekProgressBar currentDay={currentDayOfWeek} />
+  {/* Week Progress Bar */}
+  <WeekProgressBar currentDay={currentDayOfWeek} />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3">
+  <div ref={motivationRef} className="bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+    <div className="flex items-center justify-between mb-1">
+      <span className="text-sm text-muted-foreground">Weekly Tonnage</span>
+      <button
+        onClick={() => refetchMotivation()}
+        disabled={loadingMotivation}
+        className="text-xs text-zinc-400 hover:text-white"
+      >
+        ↻
+      </button>
+    </div>
+    <div className="text-xl font-semibold">
+      {(weekStats.volume.current || 0).toLocaleString()} kg lifted
+    </div>
+    <div className="text-xs text-muted-foreground mt-1">
+      {loadingMotivation ? 'Loading...' : motivationText || 'Keep it up!'}
+    </div>
+  </div>
+
+  {/* Stats Grid */}
+  <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={<Calendar className="w-4 h-4 text-purple-400" />}
           title="Workouts"
