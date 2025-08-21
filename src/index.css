@@ -79,3 +79,10 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-animate {
+    animation: none !important;
+    transition: none !important;
+  }
+}

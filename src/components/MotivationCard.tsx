@@ -78,33 +78,37 @@ export const MotivationCard: React.FC<MotivationCardProps> = ({
               <Skeleton className="h-5 w-16 rounded-full" />
             </div>
           ) : (
-            <div className="flex items-center gap-2" aria-live="polite">
-              <span className="text-2xl font-semibold tabular-nums text-white">
-                {tonnage.toLocaleString(locale)}
-              </span>
-              <span className="text-sm font-normal text-white/80 ml-1">kg</span>
-              {tonnage > 0 && equivalence && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
-                  ≈ {equivalence.n.toLocaleString(locale)} {equivalence.label}
-                  {equivalence.n > 1 ? 's' : ''} {equivalence.emoji}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center" aria-live="polite">
+              <div className="flex items-baseline gap-1">
+                <span className="text-[clamp(22px,7vw,28px)] leading-tight tabular-nums font-semibold text-white">
+                  {tonnage.toLocaleString(locale)}
                 </span>
-              )}
-              {tonnage > 0 && (
-                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", trendClasses)}>
-                  {trendSymbol === '—' ? '—' : `${trendSymbol} ${Math.abs(trend)}%`}
-                </span>
-              )}
+                <span className="text-sm text-white/80">kg</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {tonnage > 0 && equivalence && (
+                  <span className="max-w-[60%] truncate whitespace-nowrap text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/90">
+                    ≈ {equivalence.n.toLocaleString(locale)} {equivalence.label}
+                    {equivalence.n > 1 ? 's' : ''} {equivalence.emoji}
+                  </span>
+                )}
+                {tonnage > 0 && (
+                  <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border", trendClasses)}>
+                    {trendSymbol === '—' ? '—' : `${trendSymbol} ${Math.abs(trend)}%`}
+                  </span>
+                )}
+              </div>
             </div>
           )}
           {loadingCoach ? (
             <Skeleton className="h-4 w-3/5 mt-1" />
           ) : (
-            <p className="text-sm text-[#9AA3B2] mt-1 line-clamp-2">
+            <p className="mt-1 text-[13px] leading-snug text-white/80 line-clamp-2">
               {tonnage === 0 ? 'Keep lifting—every rep counts.' : coachCopy}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2 self-center">
+        <div className="ml-auto sm:ml-0 shrink-0 flex items-center gap-1">
           {tonnage > 0 && equivalence && (
             <TooltipProvider>
               <Tooltip>

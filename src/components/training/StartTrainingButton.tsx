@@ -78,7 +78,6 @@ export const StartTrainingButton = ({
   
   return (
     <div className="py-8 px-6"> {/* Premium spacing container */}
-      <style>{`@media (prefers-reduced-motion: reduce) { .ring-animate { animation: none !important; transition: none !important; } }`}</style>
       <div
         onClick={handleStartClick}
         onTouchStart={handleTouchStart}
