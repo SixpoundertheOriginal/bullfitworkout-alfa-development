@@ -140,28 +140,24 @@ const Index = () => {
           <QuickStatsSection />
         </DateRangeProvider> */}
 
-        <section ref={sectionRef} className="text-center relative z-10">
-          <div style={{ height: "12rem" }} className="relative">
-            <div className={cn(
-              "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
-              isSectionVisible ? "scale-100 opacity-100" : "scale-95 opacity-90"
-            )}>
+        <section ref={sectionRef} className="text-center relative isolate pt-4 pb-12">
+          <div className="relative mx-auto h-48 sm:h-56 max-w-md">
+            <div
+              className={cn(
+                "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
+                isSectionVisible ? "scale-100 opacity-100" : "scale-95 opacity-90"
+              )}
+            >
               {isActive ? (
-                <div className="flex flex-col items-center space-y-4">
-                  <StartTrainingButton
-                    onClick={handleContinueWorkout}
-                    trainingType="Continue"
-                    label="Resume"
-                  />
-                  <button 
-                    onClick={() => setWizardOpen(true)}
-                    className="text-sm text-white/70 hover:text-white/90 underline"
-                  >
-                    Start a new workout
-                  </button>
-                </div>
+                <StartTrainingButton
+                  className="relative z-10"
+                  onClick={handleContinueWorkout}
+                  trainingType="Continue"
+                  label="Resume"
+                />
               ) : (
                 <StartTrainingButton
+                  className="relative z-10"
                   onClick={() => setWizardOpen(true)}
                   trainingType={recommendedWorkoutType}
                   label="Start"
@@ -170,6 +166,17 @@ const Index = () => {
             </div>
           </div>
         </section>
+
+        {isActive && (
+          <div className="text-center mt-3">
+            <button
+              onClick={() => setWizardOpen(true)}
+              className="text-sm text-white/70 hover:text-white/90 underline"
+            >
+              Start a new workout
+            </button>
+          </div>
+        )}
 
         <div className="mt-3">
           <DateRangeProvider>
