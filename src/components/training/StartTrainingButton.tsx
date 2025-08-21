@@ -88,37 +88,9 @@ export const StartTrainingButton = ({
           className
         )}
       >
-        {/* Background glow effect */}
         <div
           aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-0 rounded-full z-0 opacity-50 transition-all duration-700 group-active:duration-75 ring-animate",
-            "group-hover:opacity-90 group-active:opacity-100",
-            // Mobile touch states
-            isTouched && "opacity-90"
-          )}
-          style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(236,72,153,0.3) 40%, transparent 70%)',
-            filter: 'blur(25px)',
-            transform: 'scale(1.2)',
-            animation: 'pulse 4s ease-in-out infinite'
-          }}
-        />
-
-        {/* Intense press glow burst */}
-        <div
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-0 rounded-full z-0 opacity-0 transition-all duration-75",
-            "group-active:opacity-100",
-            // Mobile touch burst effect
-            isTouched && "opacity-100"
-          )}
-          style={{
-            background: 'radial-gradient(circle, rgba(139,92,246,0.8) 0%, rgba(236,72,153,0.6) 30%, rgba(249,115,22,0.4) 60%, transparent 80%)',
-            filter: 'blur(35px)',
-            transform: 'scale(1.5)'
-          }}
+          className="pointer-events-none absolute inset-0 z-0 translate-y-8 sm:translate-y-10 blur-2xl opacity-70 bg-gradient-to-b from-fuchsia-500/25 via-violet-500/15 to-transparent"
         />
         
         {/* Outer progress ring with sophisticated gradient */}
@@ -133,9 +105,8 @@ export const StartTrainingButton = ({
             background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #F97316 100%)',
             backgroundSize: '300% 300%',
             animation: 'gradient-shift 6s ease infinite',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 0 30px rgba(139, 92, 246, 0.3)',
-            filter: 'drop-shadow(0 25px 50px rgba(139, 92, 246, 0.2)) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15))',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s ease-out, transform 0.1s ease-out'
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 0 30px rgba(139, 92, 246, 0.3), 0 25px 50px rgba(139, 92, 246, 0.2), 0 10px 20px rgba(0, 0, 0, 0.15)',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s ease-out'
           }}
         >
           {/* Inner glassmorphism container */}
@@ -205,12 +176,7 @@ export const StartTrainingButton = ({
         {/* Additional outer glow for premium feel */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-full z-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500"
-          style={{
-            background: 'conic-gradient(from 0deg, #8B5CF6, #EC4899, #F97316, #8B5CF6)',
-            filter: 'blur(30px)',
-            transform: 'scale(1.4)'
-          }}
+          className="pointer-events-none absolute inset-0 rounded-full z-0 opacity-40 group-hover:opacity-60 transition-opacity duration-500 blur-3xl scale-[1.4] bg-[conic-gradient(from_0deg,#8B5CF6,#EC4899,#F97316,#8B5CF6)]"
         />
       </div>
 
