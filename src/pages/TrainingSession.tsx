@@ -20,6 +20,7 @@ import { useEnhancedRestAnalytics } from "@/hooks/useEnhancedRestAnalytics";
 import { useWeightUnit } from "@/context/WeightUnitContext";
 import { WorkoutSessionLayout } from '@/components/training/WorkoutSessionLayout';
 import { useWorkoutSave } from "@/hooks/useWorkoutSave";
+import { TimingDebugPanel } from '@/components/TimingDebugPanel';
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -690,6 +691,9 @@ const TrainingSessionPage = () => {
         isSaving={isSaving}
       />
       </div>
+      
+      {/* Timing Debug Panel - only visible in development */}
+      <TimingDebugPanel />
     </WorkoutSessionLayout>
   );
 };

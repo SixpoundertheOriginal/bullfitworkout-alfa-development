@@ -62,16 +62,47 @@ export const saveWorkout = async ({
       errors: []
     });
 
-    // Format exercise sets for the function call with actual rest times
+    // Get actual rest times from localStorage analytics
+    let actualRestTimes: Map<string, Map<number, number>> = new Map();
+    try {
+      const restAnalyticsData = localStorage.getItem('rest-analytics-sessions');
+      if (restAnalyticsData) {
+        const sessions = JSON.parse(restAnalyticsData);
+        sessions.forEach((session: any) => {
+          if (session.actualRestTime) {
+            if (!actualRestTimes.has(session.exerciseName)) {
+              actualRestTimes.set(session.exerciseName, new Map());
+            }
+            actualRestTimes.get(session.exerciseName)!.set(session.setNumber, session.actualRestTime);
+          }
+        });
+        console.log('📊 Loaded actual rest times for save:', actualRestTimes);
+      }
+    } catch (error) {
+      console.warn('Failed to load rest analytics data:', error);
+    }
+
+    // Format exercise sets for the function call with actual rest times injected
     const formattedSets = Object.entries(exercises).flatMap(([exerciseName, sets], exerciseIndex) => {
-      return sets.map((set, setIndex) => ({
-        exercise_name: exerciseName,
-        weight: set.weight || 0,
-        reps: set.reps || 0,
-        set_number: setIndex + 1,
-        completed: set.completed || false,
-        rest_time: set.restTime || 60 // This should now contain actual measured rest time
-      }));
+      return sets.map((set, setIndex) => {
+        const setNumber = setIndex + 1;
+        // Try to get actual rest time from analytics, fallback to planned time
+        const actualRestTime = actualRestTimes.get(exerciseName)?.get(setNumber);
+        const restTime = actualRestTime || set.restTime || 60;
+        
+        if (actualRestTime) {
+          console.log(`🔄 Using actual rest time for ${exerciseName} set ${setNumber}: ${actualRestTime}s`);
+        }
+        
+        return {
+          exercise_name: exerciseName,
+          weight: set.weight || 0,
+          reps: set.reps || 0,
+          set_number: setNumber,
+          completed: set.completed || false,
+          rest_time: restTime
+        };
+      });
     });
 
     console.log(`Saving workout with ${formattedSets.length} exercise sets`);

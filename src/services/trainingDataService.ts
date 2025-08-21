@@ -109,6 +109,11 @@ export class TrainingDataService {
       },
       muscleGroupBalance,
       averageMetrics,
+      earliestSessionUTC: workouts.length > 0 ? workouts[workouts.length - 1].start_time : null,
+      totalFetched: workouts.length,
+      pages: 1,
+      minUTC: workouts.length > 0 ? workouts[workouts.length - 1].start_time : null,
+      maxUTC: workouts.length > 0 ? workouts[0].start_time : null,
     };
   }
 

@@ -174,6 +174,8 @@ export const SetRow = ({
 
   const handleRestTimeTracked = (actualRestTime: number) => {
     if (restTime && actualRestTime > 0) {
+      console.log(`⏱️ Rest time tracked for ${exerciseName} set ${setNumber}: ${actualRestTime}s (planned: ${restTime}s)`);
+      
       logRestTime({
         exerciseName,
         plannedRestTime: restTime,
@@ -181,11 +183,18 @@ export const SetRow = ({
         // Note: workoutId would need to be passed down as a prop for full analytics
       });
       
-      // Also update the current set's rest time with the actual time
+      // IMPORTANT: Update the actual set's rest time with measured time
+      // This ensures the saved workout has accurate rest time data
       if (onRestTimeChange) {
         onRestTimeChange({
           target: { value: actualRestTime.toString() }
         } as React.ChangeEvent<HTMLInputElement>);
+      }
+      
+      // Log timing validation
+      const discrepancy = Math.abs(actualRestTime - restTime);
+      if (discrepancy > 15) {
+        console.warn(`⚠️ Significant rest time discrepancy: ${discrepancy}s difference from planned`);
       }
     }
   };

@@ -24,3 +24,30 @@ export function formatRestForDisplay(label: RestDisplay): string {
   if (label.type === 'start') return 'Start';
   return formatTime(label.seconds || 0);
 }
+
+/**
+ * Debug helper to validate rest time displays
+ */
+export function validateRestTimeDisplay(restTime: number | undefined, setIndex: number): {
+  isValid: boolean;
+  issues: string[];
+} {
+  const issues: string[] = [];
+  
+  if (setIndex === 0 && restTime && restTime > 0) {
+    issues.push('First set should not have rest time');
+  }
+  
+  if (setIndex > 0 && (!restTime || restTime <= 0)) {
+    issues.push('Non-first sets should have rest time');
+  }
+  
+  if (restTime && restTime > 900) { // 15 minutes
+    issues.push('Rest time unusually high (>15min)');
+  }
+  
+  return {
+    isValid: issues.length === 0,
+    issues
+  };
+}
