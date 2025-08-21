@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { QuickStatsSection } from "@/components/metrics/QuickStatsSection";
 import { WeeklySummaryStats } from "@/components/WeeklySummaryStats";
 import { EnhancedWorkoutSetupWizard } from "@/components/training/enhanced/EnhancedWorkoutSetupWizard";
 import { SmartTemplateService } from "@/services/SmartTemplateService";
@@ -130,7 +129,6 @@ const Index = () => {
   };
 
   const recommendedWorkoutType = stats?.recommendedType || "Strength";
-  const recommendedDuration = stats?.recommendedDuration || 45;
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
@@ -141,30 +139,45 @@ const Index = () => {
         </DateRangeProvider> */}
 
         {/* HERO */}
-        <section ref={sectionRef} className="relative isolate z-0 pt-4 pb-20 sm:pb-16">
-          <div className="relative mx-auto max-w-md h-[48vw] max-h-[18rem]">
+        <section
+          ref={sectionRef}
+          className="
+            relative isolate z-0
+            pt-[calc(env(safe-area-inset-top)+8px)]
+            pb-0
+          "
+          style={{
+            "--ring-d": "clamp(200px,58vw,288px)",
+            "--glow-pad": "clamp(56px,12vw,88px)"
+          } as React.CSSProperties}
+        >
+          <div className="relative mx-auto max-w-md">
+            {/* Start ring anchored to the top-center */}
             <div
               className={cn(
-                "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
+                "absolute left-1/2 top-0 -translate-x-1/2 w-[var(--ring-d)] h-[var(--ring-d)] transition-all duration-300",
                 isSectionVisible ? "scale-100 opacity-100" : "scale-95 opacity-90"
               )}
             >
               {isActive ? (
                 <StartTrainingButton
-                  className="relative"
+                  className="relative z-10 h-full w-full"
                   onClick={handleContinueWorkout}
                   trainingType="Continue"
                   label="Resume"
                 />
               ) : (
                 <StartTrainingButton
-                  className="relative"
+                  className="relative z-10 h-full w-full"
                   onClick={() => setWizardOpen(true)}
                   trainingType={recommendedWorkoutType}
                   label="Start"
                 />
               )}
             </div>
+
+            {/* Spacer reserves height: ring + glow padding */}
+            <div className="h-[calc(var(--ring-d)+var(--glow-pad))]" />
           </div>
         </section>
 
