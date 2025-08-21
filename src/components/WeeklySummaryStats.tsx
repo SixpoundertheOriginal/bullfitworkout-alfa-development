@@ -104,49 +104,41 @@ const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <div 
-      className="p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+    <div
+      className="p-3 sm:p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
       style={cardStyle}
     >
-      {/* Progress indicator for early week */}
-      {comparison.message?.includes('vs last') && comparison.percentage > 0 && (
-        <div className="absolute top-0 right-0 px-2 py-1 bg-green-500/10 rounded-bl-lg">
-          <span className="text-xs text-green-400">On track! 🎯</span>
-        </div>
-      )}
-      
-      <div 
+      <div
         className="absolute inset-0 rounded-xl opacity-50"
         style={innerHighlightStyle}
       />
-      
+
       <div className="relative z-10">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center">
-            <div className="p-2 bg-zinc-800/50 rounded-lg mr-2">
-              {icon}
-            </div>
-            <span className="text-sm text-muted-foreground">{title}</span>
+        <div className="flex items-center gap-2 min-w-0 mb-2">
+          <div className="p-2 bg-zinc-800/50 rounded-lg">
+            {icon}
           </div>
-          {!isLoading && (
-            <div className={`text-sm font-medium ${comparison.color}`}>
-              {comparison.label}
-            </div>
+          <span className="text-sm truncate text-muted-foreground">{title}</span>
+          {comparison.message?.includes('vs last') && comparison.percentage > 0 && (
+            <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+              On track!
+            </span>
           )}
         </div>
-        
+
         <div className="space-y-1">
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xl sm:text-2xl font-semibold tabular-nums text-white">
             {isLoading ? "..." : value}
-            {unit && <span className="text-sm text-zinc-400 ml-1">{unit}</span>}
+            {unit && <span className="text-sm text-white/80 ml-1">{unit}</span>}
           </p>
-          
-          {/* Contextual message */}
-          {comparison.message && !isLoading && (
-            <p className="text-xs text-zinc-500">{comparison.message}</p>
+
+          {!isLoading && (
+            <p className="text-xs text-white/70 leading-snug">
+              {comparison.label}
+              {comparison.message ? ` ${comparison.message}` : ''}
+            </p>
           )}
-          
-          {/* Encouragement for specific situations */}
+
           {encouragement && !isLoading && (
             <p className="text-xs text-purple-400 mt-2">{encouragement}</p>
           )}
@@ -171,9 +163,9 @@ const WeekProgressBar: React.FC<{ currentDay: number }> = ({ currentDay }) => {
 
   return (
     <div className="p-4 rounded-xl mb-4" style={cardStyle}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-zinc-400">Week Progress</h3>
-        <span className="text-xs text-purple-400">
+      <div className="flex items-center gap-2 min-w-0 mb-3">
+        <h3 className="text-sm text-white/90 truncate">Week Progress</h3>
+        <span className="text-xs text-white/70 ml-auto shrink-0">
           Day {currentDay} of 7
         </span>
       </div>
@@ -395,7 +387,7 @@ export const WeeklySummaryStats = React.memo(() => {
         </div>
 
         {/* Stats Grid */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <StatCard
             icon={<Calendar className="w-4 h-4 text-purple-400" />}
             title="Workouts"
