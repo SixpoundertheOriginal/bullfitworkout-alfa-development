@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Info, RefreshCw } from "lucide-react";
@@ -110,23 +109,27 @@ export const MotivationCard: React.FC<MotivationCardProps> = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="opacity-70 hover:opacity-100">
-                    <Info className="h-4 w-4 text-white" />
+                  <button
+                    className="h-11 w-11 grid place-items-center rounded-full hover:bg-white/5"
+                    aria-label="Info"
+                  >
+                    <Info className="h-5 w-5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>{equivalence.fact}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={handleRefresh}
-            className={cn("h-8 w-8 transition-transform", rotated && "motion-safe:rotate-180")}
-            iconOnly
+            className={cn(
+              "h-11 w-11 grid place-items-center rounded-full hover:bg-white/5 transition-transform",
+              rotated && "motion-safe:rotate-180"
+            )}
+            aria-label="Refresh"
           >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+            <RefreshCw className="h-5 w-5" />
+          </button>
         </div>
       </CardContent>
     </Card>
