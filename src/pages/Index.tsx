@@ -140,8 +140,9 @@ const Index = () => {
           <QuickStatsSection />
         </DateRangeProvider> */}
 
-        <section ref={sectionRef} className="text-center relative isolate pt-4 pb-12">
-          <div className="relative mx-auto h-48 sm:h-56 max-w-md">
+        {/* HERO */}
+        <section ref={sectionRef} className="relative isolate z-0 pt-4 pb-20 sm:pb-16">
+          <div className="relative mx-auto max-w-md h-[48vw] max-h-[18rem]">
             <div
               className={cn(
                 "absolute left-1/2 transform -translate-x-1/2 transition-all duration-300",
@@ -150,14 +151,14 @@ const Index = () => {
             >
               {isActive ? (
                 <StartTrainingButton
-                  className="relative z-10"
+                  className="relative"
                   onClick={handleContinueWorkout}
                   trainingType="Continue"
                   label="Resume"
                 />
               ) : (
                 <StartTrainingButton
-                  className="relative z-10"
+                  className="relative"
                   onClick={() => setWizardOpen(true)}
                   trainingType={recommendedWorkoutType}
                   label="Start"
@@ -167,22 +168,23 @@ const Index = () => {
           </div>
         </section>
 
-        {isActive && (
-          <div className="text-center mt-3">
-            <button
-              onClick={() => setWizardOpen(true)}
-              className="text-sm text-white/70 hover:text-white/90 underline"
-            >
-              Start a new workout
-            </button>
-          </div>
-        )}
+        {/* CONTENT AFTER HERO */}
+        <section className="relative z-0">
+          {isActive && (
+            <div className="text-center mt-3">
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="text-sm text-white/70 hover:text-white/90 underline"
+              >
+                Start a new workout
+              </button>
+            </div>
+          )}
 
-        <div className="mt-3">
           <DateRangeProvider>
             <WeeklySummaryStats />
           </DateRangeProvider>
-        </div>
+        </section>
 
         <div className="mt-6">
           <ExploreSection />
