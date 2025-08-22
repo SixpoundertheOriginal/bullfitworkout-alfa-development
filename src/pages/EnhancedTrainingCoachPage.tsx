@@ -15,6 +15,7 @@ import { useEnhancedThreadManager } from '@/hooks/useEnhancedThreadManager';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { uploadImages } from '@/lib/uploadImage';
+import { AppBackground } from '@/components/ui/AppBackground';
 export default function EnhancedTrainingCoachPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -139,7 +140,7 @@ export default function EnhancedTrainingCoachPage() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-gradient-to-br from-background to-muted/20">
+    <AppBackground variant="primary" className="h-screen w-full flex flex-col overflow-hidden">
       {/* Mobile Navigation Header */}
       <div className="lg:hidden flex-shrink-0 sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between p-4">
@@ -349,6 +350,6 @@ export default function EnhancedTrainingCoachPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppBackground>
   );
 }

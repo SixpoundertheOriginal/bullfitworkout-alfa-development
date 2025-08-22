@@ -13,6 +13,7 @@ import { typography } from "@/lib/typography";
 import { cn } from "@/lib/utils";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { DateRangeProvider } from "@/context/DateRangeContext";
+import { AppBackground } from "@/components/ui/AppBackground";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -131,7 +132,7 @@ const Index = () => {
   const recommendedWorkoutType = stats?.recommendedType || "Strength";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
+    <AppBackground variant="primary" className="flex flex-col">
       <main className="flex-1 overflow-auto px-4 py-6 mt-12 pb-20">
 
         {/* <DateRangeProvider>
@@ -211,7 +212,7 @@ const Index = () => {
       />
       
       <AnimatedLevelUp show={showLevelUp} />
-    </div>
+    </AppBackground>
   );
 };
 

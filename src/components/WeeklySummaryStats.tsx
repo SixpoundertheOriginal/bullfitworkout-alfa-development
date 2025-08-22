@@ -153,7 +153,7 @@ const WeekProgressBar: React.FC<{ currentDay: number }> = ({ currentDay }) => {
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const progressPercentage = (currentDay / 7) * 100;
   
-  const cardStyle = {
+  const progressCardStyle = {
     background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
     backdropFilter: 'blur(12px)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -162,7 +162,7 @@ const WeekProgressBar: React.FC<{ currentDay: number }> = ({ currentDay }) => {
   };
 
   return (
-    <div className="p-4 rounded-xl mb-4" style={cardStyle}>
+    <div className="p-4 rounded-xl mb-4" style={progressCardStyle}>
       <div className="flex items-center gap-2 min-w-0 mb-3">
         <h3 className="text-sm text-white/90 truncate">Week Progress</h3>
         <span className="text-xs text-white/70 ml-auto shrink-0">
@@ -471,8 +471,8 @@ export const WeeklySummaryStats = React.memo(() => {
             <span className="text-lg mr-2">🔥</span>
             <span className="text-sm text-muted-foreground">Most Active Day</span>
           </div>
-          <div className="text-xl font-semibold">{mostActiveDay}</div>
-          <div className="text-xs text-muted-foreground opacity-80">Peak training day</div>
+          <div className="text-xl font-semibold text-white">{mostActiveDay}</div>
+          <div className="text-xs text-white/60">Peak training day</div>
         </div>
 
         {/* Motivational message for Tuesday */}
@@ -508,9 +508,9 @@ export const WeeklySummaryStats = React.memo(() => {
               {mostActiveDay.split(' ')[0] || "None"}
             </p>
             <p className="text-xs text-zinc-600">historically</p>
+          </div>
         </div>
       </div>
-    </div>
   );
 });
 

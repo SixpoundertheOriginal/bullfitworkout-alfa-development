@@ -300,7 +300,8 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   };
 
   return (
-    <div className={`${standalone ? 'pt-16 pb-24' : ''} h-full overflow-hidden flex flex-col`}>
+    <AppBackground variant="primary">
+      <div className={`${standalone ? 'pt-16 pb-24' : ''} h-full overflow-hidden flex flex-col`}>
       {standalone && <PageHeader title="Exercise Library" />}
       
       {/* Main content container */}
@@ -465,6 +466,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
           {renderExerciseList(filteredExercises)}
         </div>
       </div>
-    </div>
+      </div>
+    </AppBackground>
   );
 }

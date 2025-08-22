@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { User, Bot, Image as ImageIcon, Maximize2, RotateCcw } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { formatTime } from '@/utils/formatTime';
 import type { UploadedImage } from './ImageUpload';
+import { UniversalCard, UniversalCardContent } from '@/components/ui/UniversalCard';
 
 interface Message {
   id: string;
@@ -79,12 +79,12 @@ export function EnhancedMessageBubble({ message, onRetry }: EnhancedMessageBubbl
 
       {/* Message Content */}
       <div className={`max-w-[80%] space-y-2 ${isUser ? 'order-1' : ''}`}>
-        <Card className={`${
-          isUser 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-muted'
-        }`}>
-          <CardContent className="p-3">
+        <UniversalCard 
+          variant="glass" 
+          intensity={isUser ? "premium" : "medium"}
+          className={isUser ? 'text-white' : 'text-white/90'}
+        >
+          <UniversalCardContent className="p-3">
             {/* Message Text */}
             <div className="prose prose-sm max-w-none">
               <p className={`mb-0 ${isUser ? 'text-primary-foreground' : 'text-foreground'} whitespace-pre-wrap`}>
@@ -159,8 +159,8 @@ export function EnhancedMessageBubble({ message, onRetry }: EnhancedMessageBubbl
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </UniversalCardContent>
+        </UniversalCard>
 
         {/* Message metadata */}
         <div className={`flex items-center gap-2 text-xs ${
