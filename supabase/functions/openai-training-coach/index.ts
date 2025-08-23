@@ -3,63 +3,26 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { fetchTrainingData } from "../_shared/training-data.ts";
 import { formatLocalDate } from "../_shared/time.ts";
-// === ENVIRONMENT DEBUGGING AND API KEY SETUP ===
-console.log('🔍 Starting Environment Analysis');
+// Environment and API setup
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
-// Phase 1: Environment Variable Discovery (Live Access)
-console.log('Phase 1: Environment Variable Discovery (Live Access)');
-
-const apiKeyCandidates = [
-  'OPENAI_API_KEY',
-  'OPENAI_APIKEY',
-  'OPENAI_KEY',
-  'OPENAIAPI_KEY',
-  'OPEN_AI_API_KEY',
-  'OPNEAI_API_KEY',
-  'OPENAI_API_KYE'
-];
-
-const discoveredKeys = apiKeyCandidates.map((key) => ({
-  key,
-  value: Deno.env.get(key)
-})).filter(({ value }) => value);
-console.log('Discovered OpenAI key candidates:', discoveredKeys);
-
-// Phase 2: API Key Selection and Validation
-const openAIApiKey = discoveredKeys.length > 0 ? discoveredKeys[0].value! : null;
+// Core functionality diagnostic
+console.log('🏋️ AI Training Coach - Function Start:', {
+  hasOpenAIKey: !!openAIApiKey,
+  keyFormat: openAIApiKey ? (openAIApiKey.startsWith('sk-') ? 'valid' : 'invalid') : 'missing',
+  hasSupabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+  hasSupabaseKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+});
 
 if (!openAIApiKey) {
-  console.error('❌ NO API KEY FOUND - DEBUGGING INFO:', {
-    checkedVariables: apiKeyCandidates,
-    individualChecks: apiKeyCandidates.map(key => ({
-      variable: key,
-      hasValue: !!Deno.env.get(key)
-    })),
-    supabaseSecrets: {
-      hasSupabaseUrl: !!Deno.env.get('SUPABASE_URL'),
-      hasSupabaseKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
-      troubleshooting: 'Add OPENAI_API_KEY to Edge Function Secrets in Supabase Dashboard'
-    }
-  });
-  throw new Error('OpenAI API key configuration missing');
+  console.error('❌ OpenAI API key not configured in Supabase Edge Function secrets');
+  throw new Error('OpenAI API key missing - add OPENAI_API_KEY to Supabase secrets');
 }
 
 if (!openAIApiKey.startsWith('sk-')) {
-  console.error('❌ INVALID API KEY FORMAT:', {
-    prefix: openAIApiKey.substring(0, 7) + '...',
-    length: openAIApiKey.length,
-    expected: 'sk-...'
-  });
+  console.error('❌ Invalid OpenAI API key format');
   throw new Error('OpenAI API key format invalid');
 }
-
-console.log('✅ API Key Ready:', {
-  source: discoveredKeys[0].key,
-  type: openAIApiKey.startsWith('sk-proj') ? 'project' : 'organization',
-  length: openAIApiKey.length
-});
-
-// Remove all debugging logs after this point - API key is ready
 
 const OPENAI_CONFIG = {
   model: {
