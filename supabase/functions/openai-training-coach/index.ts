@@ -144,7 +144,9 @@ Keep responses conversational but data-driven. Always reference their actual tra
         messages,
         max_completion_tokens: OPENAI_CONFIG.limits.maxTokens,
         temperature: OPENAI_CONFIG.limits.temperature,
-        response_format: { type: 'text' }
+        text: {
+          format: 'text'
+        }
       }),
     });
 
