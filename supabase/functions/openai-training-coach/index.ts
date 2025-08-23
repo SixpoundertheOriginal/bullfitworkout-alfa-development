@@ -5,6 +5,34 @@ import { fetchTrainingData } from "../_shared/training-data.ts";
 import { formatLocalDate } from "../_shared/time.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
+if (!openAIApiKey) {
+  console.error('OPENAI_API_KEY environment variable not set');
+  throw new Error('OpenAI API configuration missing');
+}
+
+if (!openAIApiKey.startsWith('sk-')) {
+  console.error('Invalid OpenAI API key format');
+  throw new Error('OpenAI API key format invalid');
+}
+
+const OPENAI_CONFIG = {
+  model: {
+    text: 'gpt-4o',
+    vision: 'gpt-4o',
+    fallback: 'gpt-4-turbo'
+  },
+  limits: {
+    maxTokens: 1000,
+    temperature: 0.7,
+    timeout: 30000
+  },
+  retries: {
+    maxRetries: 2,
+    backoffMs: 1000
+  }
+};
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -105,25 +133,44 @@ Keep responses conversational but data-driven. Always reference their actual tra
 
     console.log('Sending to OpenAI with', messages.length, 'messages');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: images.length > 0 ? 'gpt-4.1-2025-04-14' : 'gpt-4.1-2025-04-14',
+        model: images.length > 0 ? OPENAI_CONFIG.model.vision : OPENAI_CONFIG.model.text,
         messages,
-        max_completion_tokens: 1000,
+        max_completion_tokens: OPENAI_CONFIG.limits.maxTokens,
+        temperature: OPENAI_CONFIG.limits.temperature,
+        response_format: { type: 'text' }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      let errorDetails;
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        errorDetails = { message: errorText };
+      }
+
+      console.error('OpenAI API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorDetails,
+        requestModel: images.length > 0 ? OPENAI_CONFIG.model.vision : OPENAI_CONFIG.model.text,
+        hasApiKey: !!openAIApiKey,
+        apiKeyPrefix: openAIApiKey?.substring(0, 7) + '...'
+      });
+
+      throw new Error(`OpenAI API error: ${response.status} - ${errorDetails.error?.message || errorText}`);
     }
 
     const data = await response.json();
-    const reply = data.choices[0].message.content;
+    const reply = data.choices[0]?.message?.content || 'No response generated';
 
     console.log('OpenAI response generated successfully');
 
