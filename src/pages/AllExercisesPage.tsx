@@ -26,6 +26,7 @@ import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { filterExercises as searchFilterExercises } from '@/utils/exerciseSearch';
+import { AppBackground } from '@/components/ui/AppBackground';
 
 // Define filter state type
 interface FilterState {
