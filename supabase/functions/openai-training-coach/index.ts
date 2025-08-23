@@ -3,74 +3,78 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { fetchTrainingData } from "../_shared/training-data.ts";
 import { formatLocalDate } from "../_shared/time.ts";
+// === ENVIRONMENT DEBUGGING AND API KEY SETUP ===
+console.log('🔍 Starting Environment Analysis');
 
-// Phase 1: Environment Variable Discovery
-console.log('Phase 1: Environment Variable Discovery');
-const envVars = Deno.env.toObject();
-console.log('All environment variables:', envVars);
+// Phase 1: Environment Variable Discovery with live access
+let envSnapshot: Record<string, string> = {};
+let snapshotCount = 0;
+try {
+  envSnapshot = Deno.env.toObject();
+  snapshotCount = Object.keys(envSnapshot).length;
+} catch (err) {
+  console.warn('Environment snapshot unavailable:', err.message);
+}
+
 const apiKeyCandidates = [
   'OPENAI_API_KEY',
   'OPENAI_APIKEY',
   'OPENAI_KEY',
   'OPENAIAPI_KEY',
-  'OPEN_AI_API_KEY',
-  'OPNEAI_API_KEY',
-  'OPENAI_API_KYE'
+  'OPEN_AI_API_KEY'
 ];
-const discoveredKeys = apiKeyCandidates
-  .map((key) => ({ key, value: envVars[key] }))
-  .filter(({ value }) => value);
-console.log('Discovered OpenAI key candidates:', discoveredKeys);
 
-// Phase 2: Function Execution Context
-console.log('Phase 2: Function Execution Context');
-console.log('Deno version:', Deno.version);
-console.log('Platform:', Deno.build);
-try {
-  console.log('Current working directory:', Deno.cwd());
-} catch (err) {
-  console.error('Failed to get working directory:', err);
-}
-try {
-  console.log('Env permission:', Deno.permissions.querySync({ name: 'env' }));
-  console.log('Net permission:', Deno.permissions.querySync({ name: 'net' }));
-  console.log('Read permission:', Deno.permissions.querySync({ name: 'read' }));
-} catch (permErr) {
-  console.error('Permission check failed:', permErr);
-}
+// Live environment access (works with Supabase Edge Function secrets)
+const discoveredKeys = apiKeyCandidates.map(key => ({
+  key,
+  value: Deno.env.get(key)
+})).filter(({ value }) => value);
 
-// Phase 3: Enhanced Error Context
-console.log('Phase 3: Enhanced Error Context - Validating OpenAI API key');
-const openAIApiKey = (() => {
-  for (const key of apiKeyCandidates) {
-    const value = Deno.env.get(key);
-    if (value) {
-      if (key !== 'OPENAI_API_KEY') {
-        console.warn(`Using ${key} instead of OPENAI_API_KEY`);
-      }
-      console.log('Selected OpenAI API key candidate:', {
-        key,
-        prefix: value.substring(0, 7) + '...',
-        length: value.length
-      });
-      return value;
-    }
-  }
-  return null;
-})();
+console.log('Environment Analysis Results:', {
+  snapshotVars: snapshotCount,
+  liveKeysFound: discoveredKeys.length,
+  foundKeys: discoveredKeys.map(k => ({
+    name: k.key,
+    prefix: k.value!.substring(0, 7) + '...',
+    length: k.value!.length
+  }))
+});
+
+// Phase 2: API Key Selection and Validation
+const openAIApiKey = discoveredKeys.length > 0 ? discoveredKeys[0].value! : null;
 
 if (!openAIApiKey) {
-  console.error('OpenAI API key not found. Checked variables:', apiKeyCandidates);
+  console.error('❌ NO API KEY FOUND - DEBUGGING INFO:', {
+    checkedVariables: apiKeyCandidates,
+    individualChecks: apiKeyCandidates.map(key => ({
+      variable: key,
+      hasValue: !!Deno.env.get(key)
+    })),
+    supabaseSecrets: {
+      hasSupabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+      hasSupabaseKey: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      troubleshooting: 'Add OPENAI_API_KEY to Edge Function Secrets in Supabase Dashboard'
+    }
+  });
   throw new Error('OpenAI API key configuration missing');
 }
 
 if (!openAIApiKey.startsWith('sk-')) {
-  console.error('Invalid OpenAI API key format', {
+  console.error('❌ INVALID API KEY FORMAT:', {
     prefix: openAIApiKey.substring(0, 7) + '...',
-    length: openAIApiKey.length
+    length: openAIApiKey.length,
+    expected: 'sk-...'
   });
   throw new Error('OpenAI API key format invalid');
 }
+
+console.log('✅ API Key Ready:', {
+  source: discoveredKeys[0].key,
+  type: openAIApiKey.startsWith('sk-proj') ? 'project' : 'organization',
+  length: openAIApiKey.length
+});
+
+// Remove all debugging logs after this point - API key is ready
 
 const OPENAI_CONFIG = {
   model: {
