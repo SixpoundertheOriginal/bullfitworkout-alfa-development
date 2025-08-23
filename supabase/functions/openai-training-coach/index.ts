@@ -4,15 +4,71 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { fetchTrainingData } from "../_shared/training-data.ts";
 import { formatLocalDate } from "../_shared/time.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Phase 1: Environment Variable Discovery
+console.log('Phase 1: Environment Variable Discovery');
+const envVars = Deno.env.toObject();
+console.log('All environment variables:', envVars);
+const apiKeyCandidates = [
+  'OPENAI_API_KEY',
+  'OPENAI_APIKEY',
+  'OPENAI_KEY',
+  'OPENAIAPI_KEY',
+  'OPEN_AI_API_KEY',
+  'OPNEAI_API_KEY',
+  'OPENAI_API_KYE'
+];
+const discoveredKeys = apiKeyCandidates
+  .map((key) => ({ key, value: envVars[key] }))
+  .filter(({ value }) => value);
+console.log('Discovered OpenAI key candidates:', discoveredKeys);
+
+// Phase 2: Function Execution Context
+console.log('Phase 2: Function Execution Context');
+console.log('Deno version:', Deno.version);
+console.log('Platform:', Deno.build);
+try {
+  console.log('Current working directory:', Deno.cwd());
+} catch (err) {
+  console.error('Failed to get working directory:', err);
+}
+try {
+  console.log('Env permission:', Deno.permissions.querySync({ name: 'env' }));
+  console.log('Net permission:', Deno.permissions.querySync({ name: 'net' }));
+  console.log('Read permission:', Deno.permissions.querySync({ name: 'read' }));
+} catch (permErr) {
+  console.error('Permission check failed:', permErr);
+}
+
+// Phase 3: Enhanced Error Context
+console.log('Phase 3: Enhanced Error Context - Validating OpenAI API key');
+const openAIApiKey = (() => {
+  for (const key of apiKeyCandidates) {
+    const value = Deno.env.get(key);
+    if (value) {
+      if (key !== 'OPENAI_API_KEY') {
+        console.warn(`Using ${key} instead of OPENAI_API_KEY`);
+      }
+      console.log('Selected OpenAI API key candidate:', {
+        key,
+        prefix: value.substring(0, 7) + '...',
+        length: value.length
+      });
+      return value;
+    }
+  }
+  return null;
+})();
 
 if (!openAIApiKey) {
-  console.error('OPENAI_API_KEY environment variable not set');
-  throw new Error('OpenAI API configuration missing');
+  console.error('OpenAI API key not found. Checked variables:', apiKeyCandidates);
+  throw new Error('OpenAI API key configuration missing');
 }
 
 if (!openAIApiKey.startsWith('sk-')) {
-  console.error('Invalid OpenAI API key format');
+  console.error('Invalid OpenAI API key format', {
+    prefix: openAIApiKey.substring(0, 7) + '...',
+    length: openAIApiKey.length
+  });
   throw new Error('OpenAI API key format invalid');
 }
 
