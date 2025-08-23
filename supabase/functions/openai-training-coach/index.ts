@@ -133,7 +133,7 @@ Keep responses conversational but data-driven. Always reference their actual tra
 
     console.log('Sending to OpenAI with', messages.length, 'messages');
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -142,11 +142,8 @@ Keep responses conversational but data-driven. Always reference their actual tra
       body: JSON.stringify({
         model: images.length > 0 ? OPENAI_CONFIG.model.vision : OPENAI_CONFIG.model.text,
         messages,
-        max_completion_tokens: OPENAI_CONFIG.limits.maxTokens,
-        temperature: OPENAI_CONFIG.limits.temperature,
-        text: {
-          format: 'text'
-        }
+        max_tokens: OPENAI_CONFIG.limits.maxTokens,
+        temperature: OPENAI_CONFIG.limits.temperature
       }),
     });
 
