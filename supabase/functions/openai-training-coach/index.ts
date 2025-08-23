@@ -6,39 +6,24 @@ import { formatLocalDate } from "../_shared/time.ts";
 // === ENVIRONMENT DEBUGGING AND API KEY SETUP ===
 console.log('🔍 Starting Environment Analysis');
 
-// Phase 1: Environment Variable Discovery with live access
-let envSnapshot: Record<string, string> = {};
-let snapshotCount = 0;
-try {
-  envSnapshot = Deno.env.toObject();
-  snapshotCount = Object.keys(envSnapshot).length;
-} catch (err) {
-  console.warn('Environment snapshot unavailable:', err.message);
-}
+// Phase 1: Environment Variable Discovery (Live Access)
+console.log('Phase 1: Environment Variable Discovery (Live Access)');
 
 const apiKeyCandidates = [
   'OPENAI_API_KEY',
   'OPENAI_APIKEY',
   'OPENAI_KEY',
   'OPENAIAPI_KEY',
-  'OPEN_AI_API_KEY'
+  'OPEN_AI_API_KEY',
+  'OPNEAI_API_KEY',
+  'OPENAI_API_KYE'
 ];
 
-// Live environment access (works with Supabase Edge Function secrets)
-const discoveredKeys = apiKeyCandidates.map(key => ({
+const discoveredKeys = apiKeyCandidates.map((key) => ({
   key,
   value: Deno.env.get(key)
 })).filter(({ value }) => value);
-
-console.log('Environment Analysis Results:', {
-  snapshotVars: snapshotCount,
-  liveKeysFound: discoveredKeys.length,
-  foundKeys: discoveredKeys.map(k => ({
-    name: k.key,
-    prefix: k.value!.substring(0, 7) + '...',
-    length: k.value!.length
-  }))
-});
+console.log('Discovered OpenAI key candidates:', discoveredKeys);
 
 // Phase 2: API Key Selection and Validation
 const openAIApiKey = discoveredKeys.length > 0 ? discoveredKeys[0].value! : null;
