@@ -497,209 +497,72 @@ const TrainingSessionPage = () => {
                 return prev;
               });
             }}
-            onWeightChange={(name, i, v) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, weight: +v || 0 } : s) };
-                } else if (exerciseData) {
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, weight: +v || 0 } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onRepsChange={(name, i, v) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, reps: parseInt(v) || 0 } : s) };
-                } else if (exerciseData) {
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, reps: parseInt(v) || 0 } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onRestTimeChange={(name, i, v) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, restTime: parseInt(v) || 60 } : s) };
-                } else if (exerciseData) {
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, restTime: parseInt(v) || 60 } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onWeightIncrement={(name, i, inc) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  const set = exerciseData[i];
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, weight: Math.max(0, (set.weight || 0) + inc) } : s) };
-                } else if (exerciseData) {
-                  const set = exerciseData.sets[i];
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, weight: Math.max(0, (set.weight || 0) + inc) } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onRepsIncrement={(name, i, inc) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  const set = exerciseData[i];
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, reps: Math.max(0, (set.reps || 0) + inc) } : s) };
-                } else if (exerciseData) {
-                  const set = exerciseData.sets[i];
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, reps: Math.max(0, (set.reps || 0) + inc) } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onRestTimeIncrement={(name, i, inc) => {
-              setStoreExercises(prev => {
-                const exerciseData = prev[name];
-                if (Array.isArray(exerciseData)) {
-                  const set = exerciseData[i];
-                  return { ...prev, [name]: exerciseData.map((s, idx) => idx === i ? { ...s, restTime: Math.max(0, (set.restTime || 60) + inc) } : s) };
-                } else if (exerciseData) {
-                  const set = exerciseData.sets[i];
-                  return {
-                    ...prev,
-                    [name]: {
-                      ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => idx === i ? { ...s, restTime: Math.max(0, (set.restTime || 60) + inc) } : s)
-                    }
-                  };
-                }
-                return prev;
-              });
-            }}
-            onShowRestTimer={handleShowRestTimer}
-            onResetRestTimer={triggerRestTimerReset}
+            onWeightChange={() => {}}
+            onRepsChange={() => {}}
+            onRestTimeChange={() => {}}
+            onWeightIncrement={() => {}}
+            onRepsIncrement={() => {}}
+            onRestTimeIncrement={() => {}}
+            onShowRestTimer={() => {}}
+            onResetRestTimer={() => {}}
             onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
             setExercises={setStoreExercises}
           />
 
-          {/* Enhanced rest analytics display */}
-          {Object.keys(storeExercises).length > 0 && (
-            <div className="mt-6 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
-              <h3 className="text-sm font-medium mb-3">Session Analytics</h3>
-              <div className="grid grid-cols-2 gap-4 text-xs">
-                <div>
-                  <div className="text-gray-400">Current Rest</div>
-                  <div className="font-mono text-white">{getCurrentRestTime()}s</div>
-                </div>
-                <div>
-                  <div className="text-gray-400">Rest Efficiency</div>
-                  <div className="font-mono text-white">
-                    {getRestAnalytics().restEfficiencyScore.toFixed(0)}%
-                  </div>
-                </div>
-              </div>
+          {!loadingExercises && hasExercises && (
+            <div className="mt-8 text-center">
+              <Button 
+                onClick={handleFinishWorkout} 
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Finishing Workout...
+                  </>
+                ) : (
+                  "Finish Workout"
+                )}
+              </Button>
             </div>
           )}
 
-          <div className="mt-8 mb-16 px-4">
-            <Button
+          {/* Add Exercise FAB */}
+          <div className="fixed bottom-24 right-6 z-40">
+            <Button 
               onClick={() => setIsAddExerciseSheetOpen(true)}
-              className="
-                w-full h-14 text-lg font-semibold rounded-xl
-                text-white shadow-lg hover:shadow-xl
-                transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
-                flex items-center justify-center gap-3
-                relative overflow-hidden group
-              "
-              style={{
-                background: `
-                  linear-gradient(135deg, rgba(139,92,246,0.9) 0%, rgba(236,72,153,0.9) 50%, rgba(249,115,22,0.9) 100%),
-                  linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)
-                `,
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.3)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))'
-              }}
+              className="w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200"
             >
-              <div 
-                className="absolute inset-0 rounded-xl"
-                style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%)'
-                }}
-              />
-              
-              <div 
-                className="absolute inset-0 rounded-xl transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(139,92,246,0.8) 0%, rgba(236,72,153,0.8) 50%, rgba(249,115,22,0.8) 100%)',
-                  filter: 'blur(2px)'
-                }}
-              />
-              
-              <div className="relative z-10 flex items-center justify-center gap-3">
-                <Plus size={24} strokeWidth={2.5} />
-                Add Exercise
-              </div>
+              <Plus className="h-6 w-6" />
             </Button>
           </div>
+
+          <AddExerciseSheet
+            open={isAddExerciseSheetOpen}
+            onOpenChange={setIsAddExerciseSheetOpen}
+            onSelectExercise={handleAddExercise}
+            trainingType={trainingConfig?.trainingType}
+          />
+
+          <FinishWorkoutDialog
+            open={showFinishDialog}
+            onOpenChange={setShowFinishDialog}
+            onConfirm={handleConfirmFinish}
+            workoutStats={{
+              exerciseCount,
+              completedSets,
+              totalSets,
+              elapsedTime
+            }}
+            isSaving={isSaving}
+          />
+
+        {/* Timing Debug Panel - only visible in development */}
+        <TimingDebugPanel />
+            </div>
+          </main>
         </div>
-      </main>
-
-      <AddExerciseSheet
-        open={isAddExerciseSheetOpen}
-        onOpenChange={setIsAddExerciseSheetOpen}
-        onSelectExercise={handleAddExercise}
-        trainingType={trainingConfig?.trainingType}
-      />
-
-      <FinishWorkoutDialog
-        open={showFinishDialog}
-        onOpenChange={setShowFinishDialog}
-        onConfirm={handleConfirmFinish}
-        workoutStats={{
-          exerciseCount,
-          completedSets,
-          totalSets,
-          elapsedTime,
-          estimatedTonnage: Object.values(storeExercises).reduce((total, exerciseData) => {
-            const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
-            return total + sets.reduce((sum, set) => sum + (set.weight * set.reps), 0);
-          }, 0)
-        }}
-        isSaving={isSaving}
-      />
-      
-      {/* Timing Debug Panel - only visible in development */}
-      <TimingDebugPanel />
       </WorkoutSessionLayout>
     </AppBackground>
   );
