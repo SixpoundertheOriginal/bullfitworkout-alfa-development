@@ -21,6 +21,8 @@ import { useWeightUnit } from "@/context/WeightUnitContext";
 import { WorkoutSessionLayout } from '@/components/training/WorkoutSessionLayout';
 import { useWorkoutSave } from "@/hooks/useWorkoutSave";
 import { TimingDebugPanel } from '@/components/TimingDebugPanel';
+import { AppBackground } from '@/components/ui/AppBackground';
+import { UniversalCard } from '@/components/ui/UniversalCard';
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -376,10 +378,11 @@ const TrainingSessionPage = () => {
   }
 
   return (
-    <WorkoutSessionLayout>
-      <div className="flex flex-col min-h-screen bg-black text-white">
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-3xl px-4 py-6">
+    <AppBackground variant="primary">
+      <WorkoutSessionLayout>
+        <div className="flex flex-col min-h-screen text-white">
+          <main className="flex-1 overflow-auto">
+            <div className="mx-auto max-w-3xl px-4 py-6">
           <div className="mb-6 relative">
             <WorkoutSessionHeader
               elapsedTime={elapsedTime}
@@ -408,17 +411,21 @@ const TrainingSessionPage = () => {
             
             {/* Enhanced monitoring section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <RealTimeEfficiencyMonitor
-                exercises={storeExercises}
-                elapsedTime={elapsedTime}
-                weightUnit={weightUnit}
-              />
+              <UniversalCard variant="glass" intensity="medium" className="p-4">
+                <RealTimeEfficiencyMonitor
+                  exercises={storeExercises}
+                  elapsedTime={elapsedTime}
+                  weightUnit={weightUnit}
+                />
+              </UniversalCard>
               
-              <WorkoutPredictionEngine
-                exercises={storeExercises}
-                elapsedTime={elapsedTime}
-                targetDuration={trainingConfig?.duration || 60}
-              />
+              <UniversalCard variant="glass" intensity="medium" className="p-4">
+                <WorkoutPredictionEngine
+                  exercises={storeExercises}
+                  elapsedTime={elapsedTime}
+                  targetDuration={trainingConfig?.duration || 60}
+                />
+              </UniversalCard>
             </div>
             
             {showRestTimerModal && (
@@ -690,11 +697,11 @@ const TrainingSessionPage = () => {
         }}
         isSaving={isSaving}
       />
-      </div>
       
       {/* Timing Debug Panel - only visible in development */}
       <TimingDebugPanel />
-    </WorkoutSessionLayout>
+      </WorkoutSessionLayout>
+    </AppBackground>
   );
 };
 

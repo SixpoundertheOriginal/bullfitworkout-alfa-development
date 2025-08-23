@@ -7,6 +7,7 @@ import { WorkoutSaveStatus } from "@/components/WorkoutSaveStatus";
 import { WorkoutMetricsGrid } from "@/components/metrics/core/WorkoutMetricsGrid";
 import { WorkoutStatus } from "@/types/workout";
 import { WorkoutMetricsData } from "@/components/metrics/calculators/MetricCalculator";
+import { UniversalCard } from '@/components/ui/UniversalCard';
 
 interface WorkoutSessionHeaderProps {
   elapsedTime: number;
@@ -91,7 +92,7 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
   return (
     <>
       {/* iOS-Native Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-lg border-b border-gray-800/50">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-lg border-b border-white/10">
         <div className="flex items-center justify-between h-16 px-4 max-w-3xl mx-auto">
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold text-white">Workout</h1>
@@ -110,7 +111,7 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
               className="
                 h-11 w-11 p-0 rounded-full
                 text-white hover:text-gray-300 hover:bg-white/10
-                transition-all duration-200
+                transition-all duration-200 transform hover:scale-105 active:scale-95
               "
             >
               {isPaused ? <Play size={20} /> : <Pause size={20} />}
@@ -123,7 +124,7 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
                 disabled={isSaving}
                 className="
                   h-11 px-6 text-sm font-medium rounded-full
-                  bg-green-600 hover:bg-green-700 active:bg-green-800
+                  bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 
                   text-white shadow-md hover:shadow-lg
                   transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]
                 "
@@ -138,8 +139,8 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
               variant="ghost"
               className="
                 h-11 w-11 p-0 rounded-full
-                text-blue-500 hover:text-blue-400 hover:bg-blue-500/10
-                transition-all duration-200
+                text-purple-400 hover:text-purple-300 hover:bg-purple-500/10
+                transition-all duration-200 transform hover:scale-105 active:scale-95
               "
             >
               <X size={24} strokeWidth={2} />
@@ -148,9 +149,9 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
         </div>
       </div>
 
-      {/* Metrics Cards with iOS Styling */}
+      {/* Metrics Cards with Premium Styling */}
       <div className="pt-20 pb-4">
-        <div className="bg-gray-900/80 backdrop-blur-lg rounded-xl p-4 mx-4 shadow-lg border border-gray-800/50">
+        <UniversalCard variant="glass" intensity="premium" className="mx-4 p-4 shadow-xl">
           <WorkoutMetricsGrid
             workoutData={workoutData}
             onRestTimerComplete={onRestTimerComplete}
@@ -158,7 +159,7 @@ export const WorkoutSessionHeader: React.FC<WorkoutSessionHeaderProps> = ({
             onRestTimerReset={onRestTimerReset}
             restTimerResetSignal={restTimerResetSignal}
           />
-        </div>
+        </UniversalCard>
       </div>
       
       {workoutStatus !== 'idle' && workoutStatus !== 'active' && (
