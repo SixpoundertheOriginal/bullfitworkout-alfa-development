@@ -652,10 +652,22 @@ const TrainingSessionPage = () => {
             setExercises={setStoreExercises}
           />
 
+          <div className="mt-8 text-center">
+            <Button
+              onClick={() => setIsAddExerciseSheetOpen(true)}
+              variant="gradient"
+              size="lg"
+              shape="pill"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Add Exercise
+            </Button>
+          </div>
+
           {!loadingExercises && hasExercises && (
             <div className="mt-8 text-center">
-              <Button 
-                onClick={handleFinishWorkout} 
+              <Button
+                onClick={handleFinishWorkout}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                 disabled={isSaving}
               >
@@ -670,16 +682,6 @@ const TrainingSessionPage = () => {
               </Button>
             </div>
           )}
-
-          {/* Add Exercise FAB */}
-          <div className="fixed bottom-24 right-6 z-40">
-            <Button 
-              onClick={() => setIsAddExerciseSheetOpen(true)}
-              className="w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200"
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
-          </div>
 
           <AddExerciseSheet
             open={isAddExerciseSheetOpen}

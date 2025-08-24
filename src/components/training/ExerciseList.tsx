@@ -173,7 +173,7 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   };
 
   return (
-    <div className="space-y-6 mb-32">
+    <div className="space-y-6 mb-12">
       {exerciseList.map(exerciseName => {
         const exerciseData = exercises[exerciseName];
         const sets = getExerciseSets(exerciseData);
