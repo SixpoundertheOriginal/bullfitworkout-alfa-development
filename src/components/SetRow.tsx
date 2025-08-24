@@ -111,12 +111,14 @@ export const SetRow = ({
   };
 
   const handleRestTimeIncrement = (increment: number) => {
+    handleFirstInteraction();
     if (onRestTimeIncrement) {
       onRestTimeIncrement(increment);
     }
   };
 
   const handleManualRestTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFirstInteraction();
     if (onRestTimeChange) {
       onRestTimeChange(e);
     }
@@ -223,20 +225,26 @@ export const SetRow = ({
       {isEditing ? (
         <div className="grid grid-cols-12 gap-2 items-center">
           <button
-            onClick={onWarmupToggle}
+            onClick={() => {
+              handleFirstInteraction();
+              onWarmupToggle?.();
+            }}
             className={cn(
               "col-span-1 text-center font-medium transition-all duration-200 hover:scale-110 cursor-pointer select-none",
-              isWarmup 
-                ? "text-orange-400 bg-orange-400/20 rounded-full px-2 py-1" 
+              isWarmup
+                ? "text-orange-400 bg-orange-400/20 rounded-full px-2 py-1"
                 : "text-gray-400 hover:text-orange-400"
             )}
           >
             {isWarmup ? "W" : `#${setNumber}`}
           </button>
           <div className="col-span-4 flex items-center gap-1 min-w-0">
-            <button 
+            <button
               type="button"
-              onClick={() => onWeightIncrement(-1)} 
+              onClick={() => {
+                handleFirstInteraction();
+                onWeightIncrement(-1);
+              }}
               className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
             >
               <MinusCircle size={isMobile ? 20 : 18} />
@@ -267,9 +275,12 @@ export const SetRow = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <button 
+            <button
               type="button"
-              onClick={() => onWeightIncrement(1)} 
+              onClick={() => {
+                handleFirstInteraction();
+                onWeightIncrement(1);
+              }}
               className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
             >
               <PlusCircle size={isMobile ? 20 : 18} />
@@ -278,9 +289,12 @@ export const SetRow = ({
           <div className="col-span-4 flex items-center gap-1 min-w-0">
             {isIsometric ? (
               <>
-                <button 
+                <button
                   type="button"
-                  onClick={() => onDurationIncrement?.(-5)} 
+                  onClick={() => {
+                    handleFirstInteraction();
+                    onDurationIncrement?.(-5);
+                  }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
                 >
                   <MinusCircle size={isMobile ? 20 : 18} />
@@ -294,9 +308,12 @@ export const SetRow = ({
                   className="workout-number-input text-center value-text px-1 py-2 w-full min-w-0"
                   placeholder="Duration (seconds)"
                 />
-                <button 
+                <button
                   type="button"
-                  onClick={() => onDurationIncrement?.(5)} 
+                  onClick={() => {
+                    handleFirstInteraction();
+                    onDurationIncrement?.(5);
+                  }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
                 >
                   <PlusCircle size={isMobile ? 20 : 18} />
@@ -304,9 +321,12 @@ export const SetRow = ({
               </>
             ) : (
               <>
-                <button 
+                <button
                   type="button"
-                  onClick={() => onRepsIncrement(-1)} 
+                  onClick={() => {
+                    handleFirstInteraction();
+                    onRepsIncrement(-1);
+                  }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
                 >
                   <MinusCircle size={isMobile ? 20 : 18} />
@@ -324,9 +344,12 @@ export const SetRow = ({
                   className="workout-number-input text-center value-text px-1 py-2 w-full min-w-0"
                   placeholder="Reps"
                 />
-                <button 
+                <button
                   type="button"
-                  onClick={() => onRepsIncrement(1)} 
+                  onClick={() => {
+                    handleFirstInteraction();
+                    onRepsIncrement(1);
+                  }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
                 >
                   <PlusCircle size={isMobile ? 20 : 18} />
@@ -392,11 +415,14 @@ export const SetRow = ({
       ) : (
         <div className="grid grid-cols-12 gap-1 items-center px-1">
           <button
-            onClick={onWarmupToggle}
+            onClick={() => {
+              handleFirstInteraction();
+              onWarmupToggle?.();
+            }}
             className={cn(
               "col-span-1 text-center font-medium transition-all duration-200 hover:scale-110 cursor-pointer select-none",
-              isWarmup 
-                ? "text-orange-400 bg-orange-400/20 rounded-full px-1 py-1 text-xs" 
+              isWarmup
+                ? "text-orange-400 bg-orange-400/20 rounded-full px-1 py-1 text-xs"
                 : "text-gray-400 hover:text-orange-400"
             )}
           >
@@ -412,7 +438,10 @@ export const SetRow = ({
                       isAutoWeight && "italic text-gray-400",
                       "value-text"
                     )}
-                    onClick={onEdit}
+                    onClick={() => {
+                      handleFirstInteraction();
+                      onEdit();
+                    }}
                   >
                     <span className="font-mono font-semibold text-white text-sm">
                       {displayWeight}
@@ -429,7 +458,10 @@ export const SetRow = ({
           <div className="col-span-2">
             <div 
               className="flex flex-col items-center px-1 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200"
-              onClick={onEdit}
+              onClick={() => {
+                handleFirstInteraction();
+                onEdit();
+              }}
             >
               {isIsometric ? (
                 <span className="text-xs text-white/90 value-text text-center">
@@ -465,7 +497,10 @@ export const SetRow = ({
             {completed ? (
               <Button
                 size="icon"
-                onClick={onEdit}
+                onClick={() => {
+                  handleFirstInteraction();
+                  onEdit();
+                }}
                 className="h-11 w-11 bg-gray-700 text-gray-300 hover:bg-gray-600"
               >
                 <Edit size={20} />
