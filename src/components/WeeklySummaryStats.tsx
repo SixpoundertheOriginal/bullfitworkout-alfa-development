@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useBasicWorkoutStats } from "@/hooks/useBasicWorkoutStats";
 import { useDateRange } from '@/context/DateRangeContext';
 import { format, differenceInCalendarDays, subDays, getDay, startOfWeek } from "date-fns";
-import { Calendar, Dumbbell, Repeat, Layers, Clock } from "lucide-react";
+import { Calendar, Repeat, Layers, Clock } from "lucide-react";
 import MotivationCard from "./MotivationCard";
 import { useAuth } from '@/context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -400,21 +400,6 @@ export const WeeklySummaryStats = React.memo(() => {
               weekStats.workouts.lastWeekByDay
             )}
             encouragement={getEncouragement('workouts', {})}
-            isLoading={isLoading}
-          />
-
-          <StatCard
-            icon={<Dumbbell className="w-4 h-4 text-blue-400" />}
-            title="Total Volume"
-            value={`${(weekStats.volume.current / 1000).toFixed(1)}`}
-            unit="kg"
-            comparison={getSmartComparison(
-              'volume',
-              weekStats.volume.current,
-              currentDayOfWeek,
-              weekStats.volume.lastWeekTotal,
-              weekStats.volume.lastWeekByDay
-            )}
             isLoading={isLoading}
           />
 
