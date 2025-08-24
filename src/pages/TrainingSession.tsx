@@ -497,12 +497,150 @@ const TrainingSessionPage = () => {
                 return prev;
               });
             }}
-            onWeightChange={() => {}}
-            onRepsChange={() => {}}
-            onRestTimeChange={() => {}}
-            onWeightIncrement={() => {}}
-            onRepsIncrement={() => {}}
-            onRestTimeIncrement={() => {}}
+            onWeightChange={(name, setIndex, value) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, weight: parseFloat(value) || 0 } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, weight: parseFloat(value) || 0 } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onRepsChange={(name, setIndex, value) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, reps: parseInt(value) || 0 } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, reps: parseInt(value) || 0 } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onRestTimeChange={(name, setIndex, value) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, restTime: parseInt(value) || 60 } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, restTime: parseInt(value) || 60 } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onWeightIncrement={(name, setIndex, increment) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, weight: Math.max(0, (s.weight || 0) + increment) } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, weight: Math.max(0, (s.weight || 0) + increment) } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onRepsIncrement={(name, setIndex, increment) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, reps: Math.max(0, (s.reps || 0) + increment) } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, reps: Math.max(0, (s.reps || 0) + increment) } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onRestTimeIncrement={(name, setIndex, increment) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return { 
+                    ...prev, 
+                    [name]: exerciseData.map((s, idx) => 
+                      idx === setIndex ? { ...s, restTime: Math.max(0, (s.restTime || 60) + increment) } : s
+                    ) 
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) => 
+                        idx === setIndex ? { ...s, restTime: Math.max(0, (s.restTime || 60) + increment) } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
             onShowRestTimer={() => {}}
             onResetRestTimer={() => {}}
             onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
