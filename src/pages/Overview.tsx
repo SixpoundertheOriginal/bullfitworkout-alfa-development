@@ -7,8 +7,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
 import { Users2, Flame, Activity, Dumbbell, Target, TrendingUp } from "lucide-react";
 import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
-import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
-import { RestAnalyticsCard } from '@/components/metrics/RestAnalyticsCard';
+import { RestPatternAnalytics } from '@/components/metrics/RestPatternAnalytics';
+import { StrengthProgressionCard } from '@/components/metrics/StrengthProgressionCard';
+import { TransparentEfficiencyCard } from '@/components/metrics/TransparentEfficiencyCard';
 import { LastWorkoutSummary } from '@/components/metrics/LastWorkoutSummary';
 import { MuscleGroupBalance } from '@/components/metrics/MuscleGroupBalance';
 import { InsightsPanel } from "@/components/ai/InsightsPanel";
@@ -54,7 +55,13 @@ const Overview: React.FC = () => {
     generateInsightsCallback();
   }, [generateInsightsCallback]);
 
-  // Note: Date range changes are handled inside useParallelOverviewData automatically
+  // Get user bodyweight for strength analytics
+  const userBodyweight = useMemo(() => {
+    if (userWeight && userWeightUnit) {
+      return userWeightUnit === 'lb' ? userWeight * 0.453592 : userWeight;
+    }
+    return 70; // Default to 70kg
+  }, [userWeight, userWeightUnit]);
 
   // Load user weight prefs
   useEffect(() => {
@@ -150,7 +157,7 @@ const Overview: React.FC = () => {
           />
         </div>
 
-        {/* Recent Session & Rest Analytics Grid */}
+        {/* Recent Session & Strength Progression Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Last Workout Summary */}
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
@@ -160,16 +167,16 @@ const Overview: React.FC = () => {
             </div>
           </div>
 
-          {/* Rest Analytics Card */}
+          {/* Strength Progression Analytics */}
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-cyan-500/5 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-orange-500/5 pointer-events-none" />
             <div className="relative z-10">
-              <RestAnalyticsCard />
+              <StrengthProgressionCard workouts={workouts} userBodyweight={userBodyweight} />
             </div>
           </div>
         </div>
 
-        {/* Personal Records & Efficiency Grid */}
+        {/* Personal Records & Rest Pattern Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Personal Records Card */}
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
@@ -179,16 +186,24 @@ const Overview: React.FC = () => {
             </div>
           </div>
 
-          {/* Efficiency Metrics Card */}
-          {processedMetrics?.processedMetrics && (
-            <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-emerald-500/5 pointer-events-none" />
-              <div className="relative z-10">
-                <EfficiencyMetricsCard metrics={processedMetrics.processedMetrics} />
-              </div>
+          {/* Rest Pattern Analytics */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-cyan-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <RestPatternAnalytics workouts={workouts} />
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Transparent Efficiency Metrics - Full Width */}
+        {processedMetrics?.processedMetrics && (
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-emerald-500/5 pointer-events-none" />
+            <div className="relative z-10">
+              <TransparentEfficiencyCard metrics={processedMetrics.processedMetrics} />
+            </div>
+          </div>
+        )}
 
         {/* Volume over time - Premium styled */}
         <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
