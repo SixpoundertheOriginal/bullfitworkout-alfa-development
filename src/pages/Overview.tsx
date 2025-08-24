@@ -38,7 +38,6 @@ const Overview: React.FC = () => {
   const {
     volumeOverTimeData,
     densityOverTimeData,
-    volumeStats,
     densityStats,
     processedMetrics
   } = useProcessWorkoutMetrics(workouts, weightUnit);
@@ -193,11 +192,10 @@ const Overview: React.FC = () => {
           </CardContent>
         </div>
 
-        {/* KPI cards - Premium styled (removed redundant volume rate) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* KPI cards - Premium styled */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           {[
             { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
-            { title: "Total Volume", value: `${Math.round(volumeStats.total).toLocaleString()} ${weightUnit}`, icon: Dumbbell, color: "from-purple-500 to-pink-600" },
             { title: "Efficiency Score", value: processedMetrics ? `${processedMetrics.efficiencyMetrics.efficiencyScore.toFixed(0)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
