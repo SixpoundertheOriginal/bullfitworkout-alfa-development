@@ -25,9 +25,13 @@ interface Equivalence {
 const EQUIVALENTS: Equivalence[] = [
   { weight: 70, label: "person", emoji: "🧍", fact: "An average person weighs about 70 kg." },
   { weight: 400, label: "grand piano", emoji: "🎹", fact: "A grand piano weighs roughly 400 kg." },
+  { weight: 500, label: "minotaur", emoji: "🐂", fact: "In Greek myth, the labyrinth's Minotaur might tip the scales at around 500 kg." },
   { weight: 1000, label: "small car", emoji: "🚗", fact: "A small car weighs around 1,000 kg." },
+  { weight: 2500, label: "pyramid stone", emoji: "🪨", fact: "A stone block from the Great Pyramid weighs about 2,500 kg." },
   { weight: 3000, label: "hippopotamus", emoji: "🦛", fact: "A hippo can weigh about 3,000 kg." },
   { weight: 6000, label: "elephant", emoji: "🐘", fact: "An African elephant weighs around 6,000 kg." },
+  { weight: 150000, label: "blue whale", emoji: "🐋", fact: "The blue whale, Earth's largest animal, can weigh up to 150,000 kg." },
+  { weight: 300000, label: "Ishtar Gate", emoji: "🏛️", fact: "Babylon's legendary Ishtar Gate is estimated to have weighed around 300,000 kg." },
 ];
 
 function getEquivalence(tonnage: number) {
