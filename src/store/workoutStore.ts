@@ -57,6 +57,7 @@ export interface WorkoutState {
   setTimings: Map<string, { startTime?: number; endTime?: number; estimatedDuration?: number }>;
   // Rest timer preference settings
   restTimerPreferences: RestTimerPreferences;
+  currentRest?: { startedAt: number; targetSetKey: string } | null;
   
   // Session tracking
   isActive: boolean;
@@ -93,6 +94,7 @@ export interface WorkoutState {
   getRestTimerBaseline: (timerId: string) => number;
   clearAllRestTimers: () => void;
   setRestTimerMaxSeconds: (maxSeconds: number) => void;
+  setCurrentRest: (rest: { startedAt: number; targetSetKey: string } | null) => void;
   setSetStartTime: (exerciseId: string, setNumber: number) => void;
   setSetEndTime: (exerciseId: string, setNumber: number) => void;
   updateRestTimerPreferences: (prefs: Partial<RestTimerPreferences>) => void;
@@ -193,6 +195,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       restTimerMaxSeconds: 15 * 60, // 15 minutes default
       setTimings: new Map<string, { startTime?: number; endTime?: number; estimatedDuration?: number }>(),
       restTimerPreferences: { precisionMode: false, showAdjustedRest: true },
+      currentRest: null,
       
       // Session tracking
       isActive: false,
@@ -304,6 +307,8 @@ setRestTimerMaxSeconds: (maxSeconds) => set({
   lastTabActivity: Date.now(),
 }),
 
+setCurrentRest: (currentRest) => set({ currentRest, lastTabActivity: Date.now() }),
+
 setSetStartTime: (exerciseId, setNumber) => set((state) => {
   const key = `${exerciseId}_${setNumber}`;
   const timings = new Map(state.setTimings);
@@ -311,6 +316,35 @@ setSetStartTime: (exerciseId, setNumber) => set((state) => {
   // Only record the first interaction time
   if (!current.startTime) {
     timings.set(key, { ...current, startTime: Date.now() });
+  }
+  if (state.currentRest && state.currentRest.targetSetKey === key) {
+    const restBefore = Date.now() - state.currentRest.startedAt;
+    const exercisesCopy = { ...state.exercises } as WorkoutExercises;
+    const exerciseData = exercisesCopy[exerciseId];
+    if (exerciseData) {
+      if (Array.isArray(exerciseData)) {
+        exercisesCopy[exerciseId] = exerciseData.map((set, i) =>
+          i + 1 === setNumber
+            ? { ...set, metadata: { ...set.metadata, restBefore } }
+            : set
+        );
+      } else {
+        exercisesCopy[exerciseId] = {
+          ...exerciseData,
+          sets: exerciseData.sets.map((set, i) =>
+            i + 1 === setNumber
+              ? { ...set, metadata: { ...set.metadata, restBefore } }
+              : set
+          ),
+        };
+      }
+    }
+    return {
+      setTimings: timings,
+      exercises: exercisesCopy,
+      currentRest: null,
+      lastTabActivity: Date.now(),
+    };
   }
   return { setTimings: timings, lastTabActivity: Date.now() };
 }),

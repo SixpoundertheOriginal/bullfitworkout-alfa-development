@@ -43,6 +43,7 @@ const TrainingSessionPage = () => {
     resumeWorkout,
     resetSession,
     clearAllRestTimers,
+    setCurrentRest,
     handleCompleteSet,
     toggleWarmupSet,
     workoutStatus,
@@ -272,6 +273,10 @@ const TrainingSessionPage = () => {
       if (setIndex < sets.length - 1) {
         const nextSetRestTime = sets[setIndex + 1]?.restTime || 60;
         startEnhancedRestTimer(exerciseName, setIndex + 2, nextSetRestTime);
+        setCurrentRest({
+          startedAt: Date.now(),
+          targetSetKey: `${exerciseName}_${setIndex + 2}`,
+        });
       }
     }
 
