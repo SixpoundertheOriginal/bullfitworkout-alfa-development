@@ -1,61 +1,60 @@
 // src/pages/Overview.tsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
-import { useWorkoutStats } from "@/hooks/useWorkoutStats";
+import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
 import { Users2, Flame, Activity, Dumbbell, Target, TrendingUp } from "lucide-react";
-import { WorkoutTypeChart } from "@/components/metrics/WorkoutTypeChart";
-import { MuscleGroupChart } from "@/components/metrics/MuscleGroupChart";
-import { TimeOfDayChart } from "@/components/metrics/TimeOfDayChart";
-import { WorkoutDaysChart } from "@/components/metrics/WorkoutDaysChart";
-import { TopExercisesTable } from "@/components/workouts/WorkoutsTopExercisesTable";
-import { WorkoutVolumeOverTimeChart } from '@/components/metrics/WorkoutVolumeOverTimeChart';
-import { WorkoutDensityOverTimeChart } from '@/components/metrics/WorkoutDensityOverTimeChart';
 import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
 import { EfficiencyMetricsCard } from '@/components/metrics/EfficiencyMetricsCard';
 import { RestAnalyticsCard } from '@/components/metrics/RestAnalyticsCard';
 import { LastWorkoutSummary } from '@/components/metrics/LastWorkoutSummary';
 import { MuscleGroupBalance } from '@/components/metrics/MuscleGroupBalance';
-import { useWeightUnit } from "@/context/WeightUnitContext";
-import { useDateRange } from '@/context/DateRangeContext';
-import { useProcessWorkoutMetrics } from '@/hooks/useProcessWorkoutMetrics';
 import { InsightsPanel } from "@/components/ai/InsightsPanel";
-import { useAIWorkoutRecommendations } from "@/hooks/useAIWorkoutRecommendations";
+
+// Lazy load heavy chart components for better performance
+const WorkoutTypeChart = lazy(() => import("@/components/metrics/WorkoutTypeChart").then(m => ({ default: m.WorkoutTypeChart })));
+const MuscleGroupChart = lazy(() => import("@/components/metrics/MuscleGroupChart").then(m => ({ default: m.MuscleGroupChart })));
+const TimeOfDayChart = lazy(() => import("@/components/metrics/TimeOfDayChart").then(m => ({ default: m.TimeOfDayChart })));
+const WorkoutDaysChart = lazy(() => import("@/components/metrics/WorkoutDaysChart").then(m => ({ default: m.WorkoutDaysChart })));
+const TopExercisesTable = lazy(() => import("@/components/workouts/WorkoutsTopExercisesTable").then(m => ({ default: m.TopExercisesTable })));
+const WorkoutVolumeOverTimeChart = lazy(() => import('@/components/metrics/WorkoutVolumeOverTimeChart').then(m => ({ default: m.WorkoutVolumeOverTimeChart })));
+const WorkoutDensityOverTimeChart = lazy(() => import('@/components/metrics/WorkoutDensityOverTimeChart').then(m => ({ default: m.WorkoutDensityOverTimeChart })));
 
 const Overview: React.FC = () => {
   const { user } = useAuth();
-  const { weightUnit } = useWeightUnit();
-  const { dateRange } = useDateRange();
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userWeightUnit, setUserWeightUnit] = useState<string | null>(null);
 
-  // Fetch historical stats
-  const { stats, loading, refetch, workouts } = useWorkoutStats();
-  
-  // Process raw metrics
+  // Use optimized parallel data loading
   const {
+    stats,
+    workouts,
+    insights,
+    processedMetrics,
     volumeOverTimeData,
     densityOverTimeData,
     densityStats,
-    processedMetrics
-  } = useProcessWorkoutMetrics(workouts, weightUnit);
+    loading,
+    insightsLoading,
+    refetch,
+    generateWorkoutInsights,
+    chartData
+  } = useParallelOverviewData();
 
-  // AI-enhanced insights
-  const { insights, generateWorkoutInsights, loading: insightsLoading } = useAIWorkoutRecommendations();
-
-  // Generate insights when component mounts or workouts change
-  useEffect(() => {
+  // Optimized insight generation with dependency array
+  const generateInsightsCallback = useCallback(() => {
     if (workouts.length > 0) {
       generateWorkoutInsights();
     }
   }, [workouts.length, generateWorkoutInsights]);
 
-  // Refetch on date range change
   useEffect(() => {
-    if (dateRange) refetch();
-  }, [dateRange, refetch]);
+    generateInsightsCallback();
+  }, [generateInsightsCallback]);
+
+  // Note: Date range changes are handled inside useParallelOverviewData automatically
 
   // Load user weight prefs
   useEffect(() => {
@@ -65,45 +64,65 @@ const Overview: React.FC = () => {
     if (su) setUserWeightUnit(su);
   }, []);
 
-  // Simple data‐exists guard
-  const hasData = (v: any) => v != null && ((Array.isArray(v) && v.length > 0) || (typeof v === 'object' && Object.keys(v).length > 0));
+  // Memoized data validation for performance
+  const hasData = useCallback((v: any) => 
+    v != null && ((Array.isArray(v) && v.length > 0) || (typeof v === 'object' && Object.keys(v).length > 0)), 
+    []
+  );
 
-  // Chart configurations (excluding density gauge)
+  // Memoized chart configurations for performance  
   const chartConfigs = useMemo(() => ([
     {
       title: "Workout Types",
       icon: Target,
-      renderComponent: (data: any) => <WorkoutTypeChart workoutTypes={data} height={250} />,
-      data: stats.workoutTypes || []
+      renderComponent: (data: any) => (
+        <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+          <WorkoutTypeChart workoutTypes={data} height={250} />
+        </Suspense>
+      ),
+      data: chartData.workoutTypes
     },
     {
-      title: "Muscle Focus",
+      title: "Muscle Focus", 
       icon: Dumbbell,
-      renderComponent: (data: any) => <MuscleGroupChart muscleFocus={data} height={250} />,
-      data: stats.muscleFocus || {}
+      renderComponent: (data: any) => (
+        <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+          <MuscleGroupChart muscleFocus={data} height={250} />
+        </Suspense>
+      ),
+      data: chartData.muscleFocus
     },
     {
       title: "Workout Days",
       icon: Activity,
-      renderComponent: (data: any) => <WorkoutDaysChart daysFrequency={data} height={250} />,
-      data: stats.timePatterns?.daysFrequency || {}
+      renderComponent: (data: any) => (
+        <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+          <WorkoutDaysChart daysFrequency={data} height={250} />
+        </Suspense>
+      ),
+      data: chartData.timePatterns.daysFrequency
     },
     {
       title: "Time of Day",
       icon: TrendingUp,
-      renderComponent: (data: any) => <TimeOfDayChart durationByTimeOfDay={data} height={250} />,
-      data: stats.timePatterns?.durationByTimeOfDay || {}
+      renderComponent: (data: any) => (
+        <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+          <TimeOfDayChart durationByTimeOfDay={data} height={250} />
+        </Suspense>
+      ),
+      data: chartData.timePatterns.durationByTimeOfDay
     },
     {
       title: "Top Exercises",
       icon: Flame,
-      renderComponent: (data: any) => {
-        console.log('Top Exercises Data:', data); // Debug logging
-        return <TopExercisesTable exercises={data} />;
-      },
-      data: stats.exerciseVolumeHistory || []
+      renderComponent: (data: any) => (
+        <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+          <TopExercisesTable exercises={data} />
+        </Suspense>
+      ),
+      data: chartData.exerciseVolumeHistory
     }
-  ]), [stats, weightUnit]);
+  ]), [chartData]);
 
   // Premium card base styles
   const premiumCardStyles = "relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-purple-500/20";
@@ -161,11 +180,11 @@ const Overview: React.FC = () => {
           </div>
 
           {/* Efficiency Metrics Card */}
-          {processedMetrics && (
+          {processedMetrics?.processedMetrics && (
             <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-emerald-500/5 pointer-events-none" />
               <div className="relative z-10">
-                <EfficiencyMetricsCard metrics={processedMetrics} />
+                <EfficiencyMetricsCard metrics={processedMetrics.processedMetrics} />
               </div>
             </div>
           )}
@@ -183,12 +202,15 @@ const Overview: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[300px] relative z-10">
-            {loading
-              ? <Skeleton className="w-full h-full bg-white/10" />
-              : hasData(volumeOverTimeData)
-                ? <WorkoutVolumeOverTimeChart data={volumeOverTimeData} height={300} />
-                : <div className="flex items-center justify-center h-full text-gray-400">No volume data available</div>
-            }
+            {loading ? (
+              <Skeleton className="w-full h-full bg-white/10" />
+            ) : hasData(volumeOverTimeData) ? (
+              <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+                <WorkoutVolumeOverTimeChart data={volumeOverTimeData} height={300} />
+              </Suspense>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">No volume data available</div>
+            )}
           </CardContent>
         </div>
 
@@ -196,7 +218,7 @@ const Overview: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           {[
             { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
-            { title: "Efficiency Score", value: processedMetrics ? `${processedMetrics.efficiencyMetrics.efficiencyScore.toFixed(0)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
+            { title: "Efficiency Score", value: processedMetrics?.processedMetrics ? `${Math.round(processedMetrics.processedMetrics.efficiencyMetrics.efficiencyScore)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
               {/* Subtle inner highlight */}
@@ -223,7 +245,7 @@ const Overview: React.FC = () => {
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-green-500/5 pointer-events-none" />
             <div className="relative z-10">
-              <MuscleGroupBalance muscleFocus={stats.muscleFocus || {}} />
+              <MuscleGroupBalance muscleFocus={chartData.muscleFocus} />
             </div>
           </div>
 
@@ -263,12 +285,15 @@ const Overview: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="h-[250px] relative z-10">
-            {loading
-              ? <Skeleton className="w-full h-full bg-white/10" />
-              : hasData(densityOverTimeData)
-                ? <WorkoutDensityOverTimeChart data={densityOverTimeData} height={250} />
-                : <div className="flex items-center justify-center h-full text-gray-400">No density data available</div>
-            }
+            {loading ? (
+              <Skeleton className="w-full h-full bg-white/10" />
+            ) : hasData(densityOverTimeData) ? (
+              <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+                <WorkoutDensityOverTimeChart data={densityOverTimeData} height={250} />
+              </Suspense>
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">No density data available</div>
+            )}
           </CardContent>
         </div>
       </div>
