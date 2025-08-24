@@ -6,13 +6,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
 import { Users2, Flame, Activity, Dumbbell, Target, TrendingUp } from "lucide-react";
-import { PersonalRecordsCard } from '@/components/personalRecords/PersonalRecordsCard';
-import { RestPatternAnalytics } from '@/components/metrics/RestPatternAnalytics';
-import { StrengthProgressionCard } from '@/components/metrics/StrengthProgressionCard';
-import { TransparentEfficiencyCard } from '@/components/metrics/TransparentEfficiencyCard';
-import { LastWorkoutSummary } from '@/components/metrics/LastWorkoutSummary';
 import { MuscleGroupBalance } from '@/components/metrics/MuscleGroupBalance';
 import { InsightsPanel } from "@/components/ai/InsightsPanel";
+import { PerformanceSummary } from '@/components/dashboard/PerformanceSummary';
+import { AnalyticsGrid } from '@/components/dashboard/AnalyticsGrid';
+import { DetailModal } from '@/components/dashboard/DetailModal';
 
 // Lazy load heavy chart components for better performance
 const WorkoutTypeChart = lazy(() => import("@/components/metrics/WorkoutTypeChart").then(m => ({ default: m.WorkoutTypeChart })));
@@ -27,6 +25,7 @@ const Overview: React.FC = () => {
   const { user } = useAuth();
   const [userWeight, setUserWeight] = useState<number | null>(null);
   const [userWeightUnit, setUserWeightUnit] = useState<string | null>(null);
+  const [selectedMetric, setSelectedMetric] = useState<{type: string; data: any} | null>(null);
 
   // Use optimized parallel data loading
   const {
@@ -131,6 +130,16 @@ const Overview: React.FC = () => {
     }
   ]), [chartData]);
 
+  // Handle metric drill-down
+  const handleMetricClick = useCallback((metricType: string, data: any) => {
+    setSelectedMetric({ type: metricType, data });
+  }, []);
+
+  // Handle panel analytics tracking
+  const handlePanelToggle = useCallback((panelId: string, isOpen: boolean) => {
+    console.log(`📊 Panel ${panelId} ${isOpen ? 'expanded' : 'collapsed'}`);
+  }, []);
+
   // Premium card base styles
   const premiumCardStyles = "relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-purple-500/20";
   const gradientBackground = "bg-gradient-to-br from-gray-900/90 via-gray-900/95 to-gray-900/90";
@@ -157,53 +166,21 @@ const Overview: React.FC = () => {
           />
         </div>
 
-        {/* Recent Session & Strength Progression Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Last Workout Summary */}
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-blue-500/5 pointer-events-none" />
-            <div className="relative z-10">
-              <LastWorkoutSummary workouts={workouts} />
-            </div>
-          </div>
+        {/* TOP SECTION: Critical Performance Metrics (Always Visible) */}
+        <PerformanceSummary
+          stats={stats}
+          processedMetrics={processedMetrics}
+          workouts={workouts}
+          onMetricClick={handleMetricClick}
+        />
 
-          {/* Strength Progression Analytics */}
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-orange-500/5 pointer-events-none" />
-            <div className="relative z-10">
-              <StrengthProgressionCard workouts={workouts} userBodyweight={userBodyweight} />
-            </div>
-          </div>
-        </div>
-
-        {/* Personal Records & Rest Pattern Analytics Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Personal Records Card */}
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-yellow-500/5 pointer-events-none" />
-            <div className="relative z-10">
-              <PersonalRecordsCard />
-            </div>
-          </div>
-
-          {/* Rest Pattern Analytics */}
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-cyan-500/5 pointer-events-none" />
-            <div className="relative z-10">
-              <RestPatternAnalytics workouts={workouts} />
-            </div>
-          </div>
-        </div>
-
-        {/* Transparent Efficiency Metrics - Full Width */}
-        {processedMetrics?.processedMetrics && (
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-emerald-500/5 pointer-events-none" />
-            <div className="relative z-10">
-              <TransparentEfficiencyCard metrics={processedMetrics.processedMetrics} />
-            </div>
-          </div>
-        )}
+        {/* MIDDLE SECTIONS: Detailed Analytics (Expandable) */}
+        <AnalyticsGrid
+          workouts={workouts}
+          processedMetrics={processedMetrics}
+          userBodyweight={userBodyweight}
+          onPanelToggle={handlePanelToggle}
+        />
 
         {/* Volume over time - Premium styled */}
         <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
@@ -288,29 +265,95 @@ const Overview: React.FC = () => {
           ))}
         </div>
 
-        {/* Volume vs Rest Time Correlation - Enhanced chart */}
-        <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-          {/* Subtle inner highlight overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
-          
-          <CardHeader className="relative z-10">
-            <CardTitle className="flex items-center gap-2 text-white/90">
-              <Activity className="h-5 w-5 text-purple-400" />
-              Workout Density Trends
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-[250px] relative z-10">
-            {loading ? (
-              <Skeleton className="w-full h-full bg-white/10" />
-            ) : hasData(densityOverTimeData) ? (
-              <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
-                <WorkoutDensityOverTimeChart data={densityOverTimeData} height={250} />
-              </Suspense>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No density data available</div>
-            )}
-          </CardContent>
+        {/* BOTTOM SECTIONS: Historical & Advanced Analytics */}
+        <div className="space-y-6">
+          {/* Volume over time - Premium styled */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
+            
+            <CardHeader className="relative z-10">
+              <CardTitle className="flex items-center gap-2 text-white/90">
+                <TrendingUp className="h-5 w-5 text-purple-400" />
+                Volume Over Time
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[300px] relative z-10">
+              {loading ? (
+                <Skeleton className="w-full h-full bg-white/10" />
+              ) : hasData(volumeOverTimeData) ? (
+                <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+                  <WorkoutVolumeOverTimeChart data={volumeOverTimeData} height={300} />
+                </Suspense>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">No volume data available</div>
+              )}
+            </CardContent>
+          </div>
+
+          {/* Enhanced analysis grid with muscle balance */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Muscle Group Balance */}
+            <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-green-500/5 pointer-events-none" />
+              <div className="relative z-10">
+                <MuscleGroupBalance muscleFocus={chartData.muscleFocus} />
+              </div>
+            </div>
+
+            {/* Existing charts */}
+            {chartConfigs.map(({ title, icon: Icon, renderComponent, data }, idx) => (
+              <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
+                
+                <CardHeader className="relative z-10">
+                  <CardTitle className="flex items-center gap-2 text-white/90">
+                    <Icon className="h-5 w-5 text-purple-400" />
+                    {title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="h-[250px] flex items-center justify-center relative z-10">
+                  {loading
+                    ? <Skeleton className="w-3/4 h-3/4 rounded-lg bg-white/10" />
+                    : hasData(data)
+                      ? renderComponent(data)
+                      : <div className="text-gray-400">No data available</div>
+                  }
+                </CardContent>
+              </div>
+            ))}
+          </div>
+
+          {/* Workout Density Trends */}
+          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
+            
+            <CardHeader className="relative z-10">
+              <CardTitle className="flex items-center gap-2 text-white/90">
+                <Activity className="h-5 w-5 text-purple-400" />
+                Workout Density Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-[250px] relative z-10">
+              {loading ? (
+                <Skeleton className="w-full h-full bg-white/10" />
+              ) : hasData(densityOverTimeData) ? (
+                <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
+                  <WorkoutDensityOverTimeChart data={densityOverTimeData} height={250} />
+                </Suspense>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">No density data available</div>
+              )}
+            </CardContent>
+          </div>
         </div>
+
+        {/* Detail Modal for Metric Drill-down */}
+        <DetailModal
+          isOpen={!!selectedMetric}
+          onClose={() => setSelectedMetric(null)}
+          metricType={selectedMetric?.type || ''}
+          data={selectedMetric?.data || {}}
+        />
       </div>
     </div>
   );
