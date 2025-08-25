@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { EnhancedExerciseCard } from '@/components/exercises/EnhancedExerciseCard';
 import { ExerciseDialog } from '@/components/ExerciseDialog';
@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { 
-  Search, 
-  Plus, 
+import {
+  Search,
+  Plus,
   ChevronLeft,
   X,
   Grid3X3,
@@ -25,6 +26,9 @@ import { useExercises } from '@/hooks/useExercises';
 import { useFavoriteExercises } from '@/hooks/useFavoriteExercises';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useExerciseSuggestions } from '@/hooks/useExerciseSuggestions';
+import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
+import { useDebounce } from '@/hooks/useDebounce';
 import { filterExercises as searchFilterExercises } from '@/utils/exerciseSearch';
 import { AppBackground } from '@/components/ui/AppBackground';
 
@@ -38,18 +42,22 @@ interface FilterState {
 }
 
 interface AllExercisesPageProps {
-  onSelectExercise?: (exercise: string | Exercise) => void;
+  onAddExercise?: (exercise: Exercise, sourceTab: string) => void;
   standalone?: boolean;
   onBack?: () => void;
+  trainingType?: string;
 }
 
-export default function AllExercisesPage({ onSelectExercise, standalone = true, onBack }: AllExercisesPageProps) {
+export default function AllExercisesPage({ onAddExercise, standalone = true, onBack, trainingType = "" }: AllExercisesPageProps) {
   const { exercises, isLoading, isError, createExercise, isPending } = useExercises();
-  const { favorites, toggleFavorite, isFavorite } = useFavoriteExercises();
+  const { toggleFavorite, isFavorite } = useFavoriteExercises();
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const { suggestedExercises } = useExerciseSuggestions(trainingType);
+  const { workouts } = useWorkoutHistory();
+  const [activeTab, setActiveTab] = useState<'suggested' | 'recent' | 'all'>('suggested');
   const isMobile = useIsMobile();
   
   // For delete confirmation
@@ -64,7 +72,9 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     movementPatterns: [],
     searchQuery: ''
   });
-  
+
+  const debouncedSearch = useDebounce(filters.searchQuery, 300);
+
   // View mode state
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showFilters, setShowFilters] = useState(false);
@@ -72,14 +82,48 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
   // For add/edit
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [exerciseToEdit, setExerciseToEdit] = useState<any | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+
+  const recentExercises = useMemo(() => {
+    if (!workouts?.length) return [];
+
+    const exerciseMap = new Map<string, Exercise>();
+
+    workouts.slice(0, 8).forEach(workout => {
+      const exerciseNames = new Set<string>();
+      workout.exerciseSets?.forEach(set => {
+        exerciseNames.add(set.exercise_name);
+      });
+      exerciseNames.forEach(name => {
+        const exercise = exercises.find(e => e.name === name);
+        if (exercise && !exerciseMap.has(exercise.id)) {
+          exerciseMap.set(exercise.id, exercise);
+        }
+      });
+    });
+
+    return Array.from(exerciseMap.values());
+  }, [workouts, exercises]);
+
+  const currentList = useMemo(() => {
+    switch (activeTab) {
+      case 'suggested':
+        return suggestedExercises;
+      case 'recent':
+        return recentExercises;
+      default:
+        return exercises;
+    }
+  }, [activeTab, suggestedExercises, recentExercises, exercises]);
 
   // Apply comprehensive filtering to exercises
   const filteredExercises = useMemo(() => {
-    let filtered = exercises;
+    let filtered = currentList;
 
     // Apply search filter first
-    if (filters.searchQuery.trim()) {
-      filtered = searchFilterExercises(filtered, filters.searchQuery, {
+    if (debouncedSearch.trim()) {
+      filtered = searchFilterExercises(filtered, debouncedSearch, {
         includeEquipment: true,
         includeMuscleGroups: true,
         includeMovementPattern: true,
@@ -117,7 +161,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     }
 
     return filtered;
-  }, [exercises, filters]);
+  }, [currentList, filters, debouncedSearch]);
 
   const handleAdd = () => {
     setExerciseToEdit(null);
@@ -156,9 +200,10 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
     });
   };
 
-  const handleSelectExercise = (exercise: Exercise) => {
-    if (onSelectExercise) {
-      onSelectExercise(exercise);
+  const handleExerciseAdd = (exercise: Exercise) => {
+    if (onAddExercise) {
+      const source = debouncedSearch.trim() ? 'search' : activeTab;
+      onAddExercise(exercise, source);
     }
   };
 
@@ -245,11 +290,11 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
       <div key={exercise.id} className="mb-4">
         <EnhancedExerciseCard
           exercise={exercise}
-          onAddToWorkout={onSelectExercise ? () => handleSelectExercise(exercise) : undefined}
+          onAddToWorkout={() => handleExerciseAdd(exercise)}
           onToggleFavorite={toggleFavorite}
           onViewDetails={handleViewDetails}
           isFavorite={isFavorite(exercise.id)}
-          showAddToWorkout={!!onSelectExercise}
+          showAddToWorkout={!!onAddExercise}
         />
       </div>
     );
@@ -290,12 +335,40 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
       );
     }
 
+    const listHeight = typeof window !== 'undefined' ? window.innerHeight - 260 : 400;
+    const itemHeight = 150;
+
+    if (viewMode === 'grid') {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto h-full" ref={listRef}>
+          {exercisesList.map(renderExerciseCard)}
+        </div>
+      );
+    }
+
+    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
+    const endIndex = Math.min(
+      exercisesList.length,
+      startIndex + Math.ceil(listHeight / itemHeight) + 5
+    );
+    const items = exercisesList.slice(startIndex, endIndex);
+
     return (
-      <div className={viewMode === 'grid' 
-        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
-        : "space-y-2"
-      }>
-        {exercisesList.map(renderExerciseCard)}
+      <div
+        ref={listRef}
+        onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+        style={{ height: listHeight, overflowY: 'auto', position: 'relative' }}
+      >
+        <div style={{ height: exercisesList.length * itemHeight, position: 'relative' }}>
+          {items.map((exercise, i) => {
+            const top = (startIndex + i) * itemHeight;
+            return (
+              <div key={exercise.id} style={{ position: 'absolute', top, left: 0, right: 0 }}>
+                {renderExerciseCard(exercise)}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -320,7 +393,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
           exercise={selectedExercise}
           open={showDetailsModal}
           onOpenChange={setShowDetailsModal}
-          onAddToWorkout={onSelectExercise ? handleSelectExercise : undefined}
+          onAddToWorkout={onAddExercise ? () => selectedExercise && handleExerciseAdd(selectedExercise) : undefined}
           onToggleFavorite={toggleFavorite}
           isFavorite={selectedExercise ? isFavorite(selectedExercise.id) : false}
           showActions={true}
@@ -379,6 +452,13 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
 
         {/* Search and filter controls */}
         <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-40 pb-4 mb-4 border-b border-border">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-4">
+            <TabsList className="grid grid-cols-3">
+              <TabsTrigger value="suggested">Suggested</TabsTrigger>
+              <TabsTrigger value="recent">Recent</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
           {/* Search bar */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -463,7 +543,7 @@ export default function AllExercisesPage({ onSelectExercise, standalone = true, 
         </div>
         
         {/* Exercise list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1">
           {renderExerciseList(filteredExercises)}
         </div>
       </div>
