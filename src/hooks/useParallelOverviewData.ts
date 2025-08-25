@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useOptimizedWorkoutStats } from './useOptimizedWorkoutStats';
+import { useOverviewKpis } from './useOverviewKpis';
 import { useProcessWorkoutMetrics } from './useProcessWorkoutMetrics';
 import { useAIWorkoutRecommendations } from './useAIWorkoutRecommendations';
 import { useWeightUnit } from '@/context/WeightUnitContext';
@@ -9,7 +9,7 @@ export function useParallelOverviewData() {
   const { weightUnit } = useWeightUnit();
   
   // All hooks run in parallel automatically due to React's concurrent execution
-  const { stats, workouts, loading: statsLoading, refetch } = useOptimizedWorkoutStats();
+  const { stats, workouts, loading: statsLoading, refetch } = useOverviewKpis();
   const processedMetrics = useProcessWorkoutMetrics(workouts, weightUnit);
   const { insights, generateWorkoutInsights, loading: insightsLoading } = useAIWorkoutRecommendations();
 
