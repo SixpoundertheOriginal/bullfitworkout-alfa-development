@@ -4,7 +4,6 @@ import { BottomNav } from "@/components/navigation/BottomNav";
 import { PageHeader } from "@/components/navigation/PageHeader";
 import { WorkoutBanner } from "@/components/training/WorkoutBanner";
 import { useLocation } from "react-router-dom";
-import { useLayout } from "@/context/LayoutContext";
 
 import { MainMenu } from "@/components/navigation/MainMenu";
 import { useWorkoutPageVisibility } from "@/store/workoutStore";
@@ -85,7 +84,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
       )}
       
-      <main className={`flex-grow overflow-y-auto ${shouldShowGlobalHeader ? 'pt-16' : 'pt-0'} pb-16 will-change-transform`}>
+      <main
+        className={`flex-grow overflow-y-auto ${
+          shouldShowGlobalHeader
+            ? 'pt-[var(--header-offset)]'
+            : 'pt-[env(safe-area-inset-top)]'
+        } pb-16 will-change-transform`}
+      >
         <div className="content-container w-full">
           {children}
         </div>

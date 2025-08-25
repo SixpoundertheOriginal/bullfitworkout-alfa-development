@@ -60,6 +60,8 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
     --radius: 0.75rem;
+    --header-h: 4rem;
+    --header-offset: calc(var(--header-h) + env(safe-area-inset-top));
   }
   .glass,
   .card-gradient {

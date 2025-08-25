@@ -27,7 +27,10 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 pt-[env(safe-area-inset-top)] flex items-center px-4 bg-gray-900/95 backdrop-blur-sm z-10 border-b border-gray-800/50">
+    <header
+      className="fixed left-0 right-0 h-[var(--header-h)] flex items-center px-4 bg-gray-900/95 backdrop-blur-sm z-10 border-b border-gray-800/50"
+      style={{ top: "env(safe-area-inset-top)" }}
+    >
       <div className="flex-1 flex items-center min-w-0">
         {showBackButton && (
           <button onClick={handleBack} className="mr-2 p-2 -ml-2">

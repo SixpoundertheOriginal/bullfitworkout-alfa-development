@@ -137,7 +137,7 @@ const Index = () => {
 
   return (
     <AppBackground variant="primary" className="flex flex-col">
-      <main className="flex-1 overflow-auto px-4 py-6 mt-12 pb-20">
+      <div className="flex-1 overflow-auto px-4 pb-20">
 
         {/* <DateRangeProvider>
           <QuickStatsSection />
@@ -146,11 +146,7 @@ const Index = () => {
         {/* HERO */}
         <section
           ref={sectionRef}
-          className="
-            relative isolate z-0
-            pt-[calc(env(safe-area-inset-top)+8px)]
-            pb-0
-          "
+          className="relative isolate z-0 mt-6"
           style={{
             "--ring-d": "clamp(200px,58vw,288px)",
             "--glow-pad": "clamp(56px,12vw,88px)"
@@ -207,7 +203,7 @@ const Index = () => {
         <div className="mt-6">
           <ExploreSection />
         </div>
-      </main>
+      </div>
 
       <EnhancedWorkoutSetupWizard
         open={wizardOpen}
