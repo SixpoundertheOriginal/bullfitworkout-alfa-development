@@ -1,0 +1,75 @@
+{
+  "exercises": [
+    {
+      "name": "Pull-ups",
+      "aliases": ["Pull-up", "Pullup", "Pullups"],
+      "type": "reps",
+      "is_bodyweight": true,
+      "bw_multiplier": 0.95,
+      "primary_muscle_groups": ["back", "lats"],
+      "secondary_muscle_groups": ["biceps"],
+      "equipment_type": ["bodyweight", "pull up bar"],
+      "movement_pattern": "pull",
+      "difficulty": "intermediate",
+      "is_compound": true,
+      "description": "A fundamental upper body pulling exercise targeting the lats and biceps."
+    },
+    {
+      "name": "Push-ups",
+      "aliases": ["Push-up", "Pushup", "Pushups"],
+      "type": "reps",
+      "is_bodyweight": true,
+      "bw_multiplier": 0.65,
+      "primary_muscle_groups": ["chest"],
+      "secondary_muscle_groups": ["shoulders", "triceps"],
+      "equipment_type": ["bodyweight"],
+      "movement_pattern": "push",
+      "difficulty": "beginner",
+      "is_compound": true,
+      "description": "A classic pushing exercise targeting the chest, shoulders, and triceps."
+    },
+    {
+      "name": "Plank",
+      "aliases": ["Front Plank", "Static Plank"],
+      "type": "hold",
+      "is_bodyweight": true,
+      "bw_multiplier": 0.25,
+      "static_posture_factor": 1.0,
+      "primary_muscle_groups": ["core", "abs"],
+      "secondary_muscle_groups": ["shoulders"],
+      "equipment_type": ["bodyweight"],
+      "movement_pattern": "isometric",
+      "difficulty": "beginner",
+      "is_compound": true,
+      "description": "An isometric core strengthening exercise in a push-up position."
+    },
+    {
+      "name": "Hanging Leg Raise",
+      "aliases": ["Hanging Leg Raises", "HLR"],
+      "type": "reps",
+      "is_bodyweight": true,
+      "bw_multiplier": 0.60,
+      "primary_muscle_groups": ["core", "abs"],
+      "secondary_muscle_groups": ["forearms"],
+      "equipment_type": ["bodyweight", "pull up bar"],
+      "movement_pattern": "core",
+      "difficulty": "intermediate",
+      "is_compound": false,
+      "description": "An advanced core exercise performed hanging from a pull-up bar."
+    },
+    {
+      "name": "Hanging Knee Raise",
+      "aliases": ["Hanging Knee Raises", "HKR"],
+      "type": "reps",
+      "is_bodyweight": true,
+      "bw_multiplier": 0.45,
+      "primary_muscle_groups": ["core", "abs"],
+      "secondary_muscle_groups": ["forearms"],
+      "equipment_type": ["bodyweight", "pull up bar"],
+      "movement_pattern": "core",
+      "difficulty": "beginner",
+      "is_compound": false,
+      "description": "A beginner-friendly hanging core exercise with knees bent to reduce difficulty."
+    }
+  ]
+}

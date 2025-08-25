@@ -10,6 +10,7 @@ import { RouterProvider } from "./context/RouterProvider";
 import { DateRangeProvider } from "@/context/DateRangeContext";
 import { WorkoutNavigationContextProvider } from "./context/WorkoutNavigationContext";
 import { LayoutProvider } from "./context/LayoutContext";
+import { ProfileProvider } from "@/providers/ProfileProvider";
 import { WorkoutStateRecoverySystem } from "@/components/recovery/WorkoutStateRecoverySystem";
 
 // Create the query client outside of the component
@@ -20,19 +21,21 @@ const queryClient = new QueryClient();
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <WeightUnitContextProvider>
-              <DateRangeProvider>
-                <WorkoutNavigationContextProvider>
-                  <LayoutProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <RouterProvider />
-                      <WorkoutStateRecoverySystem />
-                    </TooltipProvider>
-                  </LayoutProvider>
-                </WorkoutNavigationContextProvider>
-              </DateRangeProvider>
-            </WeightUnitContextProvider>
+            <ProfileProvider>
+              <WeightUnitContextProvider>
+                <DateRangeProvider>
+                  <WorkoutNavigationContextProvider>
+                    <LayoutProvider>
+                      <TooltipProvider>
+                        <Toaster />
+                        <RouterProvider />
+                        <WorkoutStateRecoverySystem />
+                      </TooltipProvider>
+                    </LayoutProvider>
+                  </WorkoutNavigationContextProvider>
+                </DateRangeProvider>
+              </WeightUnitContextProvider>
+            </ProfileProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

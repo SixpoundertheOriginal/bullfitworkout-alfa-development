@@ -2,8 +2,11 @@
 
 import { ExerciseSet } from '@/types/exercise';
 import { calculateEffectiveWeight, getExerciseLoadFactor, isBodyweightExercise } from '@/types/exercise';
+import { useFeatureFlag } from '@/config/flags';
+import { effectiveLoadPerRepKg, isometricWorkKgSec, isBodyweight } from '@/utils/load';
+import { emitBwLoadApplied, emitIsometricWorkLogged } from '@/config/flags';
 
-// Enhanced ProcessedWorkoutMetrics with advanced efficiency metrics
+// Enhanced ProcessedWorkoutMetrics with bodyweight and isometric work separation
 export interface ProcessedWorkoutMetrics {
   duration: number;
   exerciseCount: number;
@@ -12,8 +15,9 @@ export interface ProcessedWorkoutMetrics {
     completed: number;
     failed: number;
   };
-  totalVolume: number;
+  totalVolume: number; // Traditional tonnage (kg × reps)
   adjustedVolume: number;
+  isometricWork: number; // Separate metric for kg·s (isometric work)
   intensity: number;
   density: number;
   efficiency: number;
@@ -100,6 +104,7 @@ export const processWorkoutMetrics = (
     },
     totalVolume: 0,
     adjustedVolume: 0,
+    isometricWork: 0, // Initialize isometric work metric
     intensity: 0,
     density: 0,
     efficiency: 0,
@@ -219,18 +224,69 @@ export const processWorkoutMetrics = (
       if (set.completed) {
         metrics.setCount.completed += 1;
         
-        // Calculate volume (weight x reps)
+        // Enhanced volume calculation with bodyweight support
         const standardVolume = set.weight * set.reps;
-        metrics.totalVolume += standardVolume;
+        
+        // Check if this is a bodyweight exercise and calculate effective load
+        // We need the exercise config here - for now, use heuristics
+        const isBodyweightExercise = exerciseName.toLowerCase().includes('push-up') || 
+                                   exerciseName.toLowerCase().includes('pull-up') ||
+                                   exerciseName.toLowerCase().includes('bodyweight');
+        
+        if (isBodyweightExercise && set.weight === 0) {
+          // For bodyweight exercises with no external weight, estimate effective load
+          // This is a simplified version - in practice, you'd get exercise config
+          const estimatedMultiplier = exerciseName.toLowerCase().includes('push-up') ? 0.65 :
+                                     exerciseName.toLowerCase().includes('pull-up') ? 0.95 : 0.65;
+          const effectiveLoad = userWeightKg * estimatedMultiplier;
+          const bodyweightVolume = effectiveLoad * set.reps;
+          
+          metrics.totalVolume += bodyweightVolume;
+          metrics.adjustedVolume += bodyweightVolume;
+          
+          // Emit telemetry for bodyweight load application
+          emitBwLoadApplied({
+            exerciseId: exerciseName,
+            userBw: userWeightKg,
+            loadPerRep: effectiveLoad
+          });
+        } else {
+          metrics.totalVolume += standardVolume;
+          metrics.adjustedVolume += standardVolume;
+        }
+        
         setVolumes.push(standardVolume);
 
-        // Handle adjusted volume for bodyweight exercises
+        // Handle adjusted volume for bodyweight exercises (legacy support)
         if (set.weightCalculation?.isAuto && userBodyInfo) {
           const effectiveWeight = set.weightCalculation.value;
           const adjustedVolume = effectiveWeight * set.reps;
-          metrics.adjustedVolume += adjustedVolume;
-        } else {
-          metrics.adjustedVolume += standardVolume;
+          // Only update if different from standard calculation
+          if (Math.abs(adjustedVolume - standardVolume) > 0.1) {
+            metrics.adjustedVolume = metrics.adjustedVolume - standardVolume + adjustedVolume;
+          }
+        }
+        
+        // Handle isometric work for hold/time exercises
+        if (set.duration && set.duration > 0) {
+          const isIsometricExercise = exerciseName.toLowerCase().includes('plank') ||
+                                    exerciseName.toLowerCase().includes('hold');
+          
+          if (isIsometricExercise) {
+            // Estimate isometric load (simplified)
+            const isometricLoad = userWeightKg * 0.25; // Default plank factor
+            const work = isometricLoad * (set.duration / 1000); // Convert ms to seconds
+            
+            metrics.isometricWork += work;
+            
+            // Emit telemetry for isometric work
+            emitIsometricWorkLogged({
+              exerciseId: exerciseName,
+              loadKg: isometricLoad,
+              durationSec: set.duration / 1000,
+              workKgSec: work
+            });
+          }
         }
         
         // Track RPE if available

@@ -27,6 +27,15 @@ import { AIRecommendationBadge } from './AIRecommendationBadge';
 import { useExerciseVariants } from '@/hooks/useExerciseVariants';
 import { VariantSelectionData } from '@/types/exercise-variants';
 import { formatDistanceToNow } from 'date-fns';
+import { useFeatureFlag } from '@/config/flags';
+import { useBodyweightKg } from '@/providers/ProfileProvider';
+import { 
+  isBodyweight, 
+  effectiveLoadPerRepKg, 
+  isometricLoadKg, 
+  formatLoadKg,
+  isUsingDefaultBodyweight 
+} from '@/utils/load';
 
 interface EnhancedExerciseCardProps {
   exercise: Exercise;
@@ -52,6 +61,16 @@ export function EnhancedExerciseCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedVariantData, setSelectedVariantData] = useState<VariantSelectionData | null>(null);
   const { variants, recommendations, getProgressionTrend, getLastPerformed, getPersonalBest } = useExerciseVariants(exercise.id);
+  
+  // Feature flags and bodyweight calculations
+  const bwLoadsEnabled = useFeatureFlag('BW_LOADS_ENABLED');
+  const bodyweightKg = useBodyweightKg();
+  const isDefaultBw = isUsingDefaultBodyweight(bodyweightKg);
+  
+  // Calculate load estimates for bodyweight exercises
+  const effectiveLoad = effectiveLoadPerRepKg(exercise, bodyweightKg);
+  const isometricLoad = isometricLoadKg(exercise, bodyweightKg);
+  const showLoadBadge = bwLoadsEnabled && isBodyweight(exercise) && (effectiveLoad !== null || isometricLoad !== null);
 
   const progressionTrend = getProgressionTrend(exercise.id);
   const lastPerformed = getLastPerformed(exercise.id);
@@ -249,6 +268,30 @@ export function EnhancedExerciseCard({
           {exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.length > 0 && (
             <Badge variant="outline">
               +{exercise.secondary_muscle_groups.length} Secondary
+            </Badge>
+          )}
+          
+          {/* Bodyweight Load Estimation Badge (Feature Flagged) */}
+          {showLoadBadge && effectiveLoad !== null && exercise.type === 'reps' && (
+            <Badge 
+              variant="outline" 
+              className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-200 border-emerald-500/30 shadow-lg"
+              aria-label={`Estimated load per rep: ${formatLoadKg(effectiveLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
+            >
+              <Activity className="w-3 h-3 mr-1" />
+              Est. Load @ {formatLoadKg(bodyweightKg)} kg{isDefaultBw ? ' (default)' : ''}: ≈{formatLoadKg(effectiveLoad)} kg
+            </Badge>
+          )}
+          
+          {/* Isometric Load Badge */}
+          {showLoadBadge && isometricLoad !== null && ['hold', 'time'].includes(exercise.type) && (
+            <Badge 
+              variant="outline" 
+              className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-200 border-amber-500/30 shadow-lg"
+              aria-label={`Isometric load: ${formatLoadKg(isometricLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
+            >
+              <Target className="w-3 h-3 mr-1" />
+              Isometric load: {formatLoadKg(isometricLoad)} kg{isDefaultBw ? ' (default)' : ''}
             </Badge>
           )}
         </div>
