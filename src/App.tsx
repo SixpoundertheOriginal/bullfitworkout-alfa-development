@@ -15,9 +15,8 @@ import { WorkoutStateRecoverySystem } from "@/components/recovery/WorkoutStateRe
 // Create the query client outside of the component
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <React.StrictMode>
+  function App() {
+    return (
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
@@ -37,8 +36,7 @@ function App() {
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>
-    </React.StrictMode>
-  );
-}
+    );
+  }
 
 export default App;

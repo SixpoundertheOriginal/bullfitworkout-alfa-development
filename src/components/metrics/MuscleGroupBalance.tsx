@@ -7,7 +7,7 @@ interface MuscleGroupBalanceProps {
   muscleFocus: Record<string, number>;
 }
 
-export const MuscleGroupBalance: React.FC<MuscleGroupBalanceProps> = ({ muscleFocus }) => {
+const MuscleGroupBalanceComponent: React.FC<MuscleGroupBalanceProps> = ({ muscleFocus }) => {
   // Transform muscle focus data for radar chart
   const chartData = React.useMemo(() => {
     const totalVolume = Object.values(muscleFocus).reduce((sum, volume) => sum + volume, 0);
@@ -55,11 +55,11 @@ export const MuscleGroupBalance: React.FC<MuscleGroupBalanceProps> = ({ muscleFo
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={chartData}>
               <PolarGrid stroke="rgba(255,255,255,0.1)" />
-              <PolarAngleAxis 
-                dataKey="muscle" 
+              <PolarAngleAxis
+                dataKey="muscle"
                 tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
               />
-              <PolarRadiusAxis 
+              <PolarRadiusAxis
                 tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
                 domain={[0, Math.max(...chartData.map(d => d.percentage))]}
               />
@@ -74,7 +74,7 @@ export const MuscleGroupBalance: React.FC<MuscleGroupBalanceProps> = ({ muscleFo
             </RadarChart>
           </ResponsiveContainer>
         </div>
-        
+
         <div className="mt-4 space-y-2">
           <div className="text-sm font-medium text-gray-300">Top Muscle Groups</div>
           <div className="grid grid-cols-2 gap-2">
@@ -90,3 +90,6 @@ export const MuscleGroupBalance: React.FC<MuscleGroupBalanceProps> = ({ muscleFo
     </Card>
   );
 };
+
+export const MuscleGroupBalance = React.memo(MuscleGroupBalanceComponent);
+MuscleGroupBalance.displayName = 'MuscleGroupBalance';
