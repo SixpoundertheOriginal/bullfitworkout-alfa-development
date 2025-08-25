@@ -45,8 +45,9 @@ export async function applyBodyweightMetadataPatch(): Promise<void> {
       
       if (existingExercise) {
         // Update existing exercise with normalized metadata
+        const existingMeta = existingExercise.metadata && typeof existingExercise.metadata === 'object' ? existingExercise.metadata : {};
         const updatedMetadata = {
-          ...(existingExercise.metadata || {}),
+          ...existingMeta,
           ...exerciseData,
           normalized: true,
           updated_at: new Date().toISOString()
