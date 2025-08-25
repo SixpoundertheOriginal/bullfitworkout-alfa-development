@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useWorkoutHistory, WorkoutHistoryFilters } from '@/hooks/useWorkoutHistory';
-import { supabase } from '@/integrations/supabase/client';
+import { getExerciseSetsForWorkouts } from '@/services/workout/workoutDataService';
 import { useQuery } from '@tanstack/react-query';
 import { 
   EnhancedWorkoutData, 
@@ -36,12 +36,7 @@ export function useEnhancedWorkoutHistory(filters: WorkoutManagementFilters) {
       const workoutIds = workouts.map(w => w.id);
       
       // Fetch all exercise sets for these workouts
-      const { data: exerciseSets, error } = await supabase
-        .from('exercise_sets')
-        .select('*')
-        .in('workout_id', workoutIds);
-      
-      if (error) throw error;
+      const exerciseSets = await getExerciseSetsForWorkouts(workoutIds);
 
       // Process each workout into enhanced format
       const enhanced: EnhancedWorkoutData[] = workouts.map(workout => {
