@@ -5,12 +5,18 @@ interface AppBackgroundProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'minimal';
   className?: string;
+  /**
+   * When true, prevents enforcing a full screen height.
+   * Useful when rendering inside constrained containers like sheets.
+   */
+  noMinHeight?: boolean;
 }
 
-export function AppBackground({ 
-  children, 
-  variant = 'primary', 
-  className 
+export function AppBackground({
+  children,
+  variant = 'primary',
+  className,
+  noMinHeight = false
 }: AppBackgroundProps) {
   const getBackgroundStyles = () => {
     switch (variant) {
@@ -26,9 +32,10 @@ export function AppBackground({
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        'min-h-screen w-full',
+        !noMinHeight && 'min-h-screen',
+        'w-full',
         getBackgroundStyles(),
         className
       )}
