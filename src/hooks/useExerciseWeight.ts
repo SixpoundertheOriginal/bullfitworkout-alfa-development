@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Exercise, ExerciseSet, WeightCalculation, EXERCISE_LOAD_FACTORS } from '@/types/exercise';
+import { Exercise, ExerciseSet, WeightCalculation } from '@/types/exercise';
 
 interface UseExerciseWeightProps {
   exercise: Exercise;
@@ -16,8 +16,9 @@ export const useExerciseWeight = ({
   const getInitialWeight = (): WeightCalculation => {
     if (!exercise) return { value: defaultWeight, isAuto: false, source: 'default' };
 
-    const isBodyweight = exercise.is_bodyweight || exercise.equipment_type.includes('bodyweight');
-    const loadFactor = exercise.load_factor || EXERCISE_LOAD_FACTORS[exercise.name]?.factor || 1.0;
+    const isBodyweight =
+      exercise.is_bodyweight || exercise.equipment_type.includes('bodyweight');
+    const loadFactor = exercise.bw_multiplier ?? 1.0;
 
     if (isBodyweight && userWeight) {
       return {

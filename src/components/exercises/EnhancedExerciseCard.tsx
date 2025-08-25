@@ -378,19 +378,34 @@ export function EnhancedExerciseCard({
               </div>
             )}
 
-            {/* Metadata */}
-            {exercise.metadata && Object.keys(exercise.metadata).length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-2">Additional Info</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                  {typeof exercise.metadata === 'object' && Object.entries(exercise.metadata).map(([key, value]) => (
-                    <div key={key}>
-                      <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}
-                    </div>
-                  ))}
+            {/* Normalized fields */}
+            <div>
+              <h4 className="text-sm font-medium mb-2">Additional Info</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                <div>
+                  <span className="font-medium">Type:</span> {exercise.type}
                 </div>
+                <div>
+                  <span className="font-medium">Bodyweight:</span>{' '}
+                  {exercise.is_bodyweight ? 'Yes' : 'No'}
+                </div>
+                {exercise.bw_multiplier != null && (
+                  <div>
+                    <span className="font-medium">BW Multiplier:</span> {exercise.bw_multiplier}
+                  </div>
+                )}
+                {exercise.static_posture_factor != null && (
+                  <div>
+                    <span className="font-medium">Static Posture:</span> {exercise.static_posture_factor}
+                  </div>
+                )}
+                {exercise.energy_cost_factor != null && (
+                  <div>
+                    <span className="font-medium">Energy Cost:</span> {exercise.energy_cost_factor}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 

@@ -1,7 +1,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Exercise, MuscleGroup, EquipmentType, MovementPattern, Difficulty } from '@/types/exercise';
+import {
+  Exercise,
+  MuscleGroup,
+  EquipmentType,
+  MovementPattern,
+  Difficulty,
+  ExerciseType,
+  EXERCISE_LOAD_FACTORS,
+} from '@/types/exercise';
 
 export type ExerciseMetadata = {
   default_weight?: number;
@@ -9,6 +17,12 @@ export type ExerciseMetadata = {
   weight_unit?: string;
   normalized_weight?: number;
   display_unit?: string;
+  type?: ExerciseType;
+  is_bodyweight?: boolean;
+  bw_multiplier?: number | null;
+  load_factor?: number | null;
+  static_posture_factor?: number | null;
+  energy_cost_factor?: number | null;
 };
 
 type ExerciseInput = {
@@ -31,6 +45,8 @@ type ExerciseInput = {
 export type ExerciseSortBy = 'name' | 'created_at' | 'difficulty';
 export type SortOrder = 'asc' | 'desc';
 
+const BW_LOADS_FALLBACK = true;
+
 export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSortOrder: SortOrder = 'asc') => {
   const queryClient = useQueryClient();
   
@@ -43,23 +59,53 @@ export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSort
 
       if (error) throw error;
 
-      return data.map((exercise): Exercise => ({
-        id: exercise.id,
-        name: exercise.name,
-        created_at: exercise.created_at || '',
-        user_id: exercise.created_by || '', // Map created_by to user_id
-        description: exercise.description || '',
-        primary_muscle_groups: (exercise.primary_muscle_groups || []) as MuscleGroup[],
-        secondary_muscle_groups: (exercise.secondary_muscle_groups || []) as MuscleGroup[],
-        equipment_type: (exercise.equipment_type || []) as EquipmentType[],
-        movement_pattern: (exercise.movement_pattern || 'push') as MovementPattern,
-        difficulty: (exercise.difficulty || 'beginner') as Difficulty,
-        instructions: (exercise.instructions || {}) as Record<string, any>,
-        is_compound: exercise.is_compound || false,
-        tips: exercise.tips || [],
-        variations: exercise.variations || [],
-        metadata: exercise.metadata as ExerciseMetadata || {}
-      }));
+      return data.map((exercise): Exercise => {
+        const metadata = (exercise.metadata as ExerciseMetadata) || {};
+        const type = (metadata.type ?? 'reps') as ExerciseType;
+        const is_bodyweight = Boolean(metadata.is_bodyweight);
+        let bw_multiplier = metadata.bw_multiplier ?? metadata.load_factor ?? null;
+        const static_posture_factor = metadata.static_posture_factor ?? null;
+        const energy_cost_factor = metadata.energy_cost_factor ?? null;
+
+        if (BW_LOADS_FALLBACK && bw_multiplier == null && is_bodyweight) {
+          const legacy = EXERCISE_LOAD_FACTORS.find(m =>
+            exercise.name.toLowerCase().includes(m.name.toLowerCase())
+          );
+          if (legacy) {
+            console.warn(
+              `BW_LOADS_FALLBACK: using legacy load factor for ${exercise.name}`
+            );
+            bw_multiplier = legacy.factor;
+          } else {
+            console.warn(
+              `BW_LOADS_FALLBACK: missing bw_multiplier for ${exercise.name}`
+            );
+          }
+        }
+
+        return {
+          id: exercise.id,
+          name: exercise.name,
+          created_at: exercise.created_at || '',
+          user_id: exercise.created_by || '', // Map created_by to user_id
+          description: exercise.description || '',
+          primary_muscle_groups: (exercise.primary_muscle_groups || []) as MuscleGroup[],
+          secondary_muscle_groups: (exercise.secondary_muscle_groups || []) as MuscleGroup[],
+          equipment_type: (exercise.equipment_type || []) as EquipmentType[],
+          movement_pattern: (exercise.movement_pattern || 'push') as MovementPattern,
+          difficulty: (exercise.difficulty || 'beginner') as Difficulty,
+          instructions: (exercise.instructions || {}) as Record<string, any>,
+          is_compound: exercise.is_compound || false,
+          tips: exercise.tips || [],
+          variations: exercise.variations || [],
+          metadata: metadata,
+          type,
+          is_bodyweight,
+          bw_multiplier,
+          static_posture_factor,
+          energy_cost_factor,
+        };
+      });
     }
   });
 
