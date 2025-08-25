@@ -11,6 +11,7 @@ import { InsightsPanel } from "@/components/ai/InsightsPanel";
 import { PerformanceSummary } from '@/components/dashboard/PerformanceSummary';
 import { AnalyticsGrid } from '@/components/dashboard/AnalyticsGrid';
 import { DetailModal } from '@/components/dashboard/DetailModal';
+import { DateRangeFilter } from '@/components/date-filters/DateRangeFilter';
 
   const WorkoutTypeChart = lazy(() => import("@/components/metrics/WorkoutTypeChart").then(m => ({ default: m.WorkoutTypeChart })));
 const MuscleGroupChart = lazy(() => import("@/components/metrics/MuscleGroupChart").then(m => ({ default: m.MuscleGroupChart })));
@@ -138,10 +139,13 @@ const Overview: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
       <div className="container mx-auto py-6 px-4 space-y-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-4 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
             Workout Overview
           </h1>
+          <div className="flex justify-start">
+            <DateRangeFilter />
+          </div>
         </div>
 
         {/* AI Insights Panel - Featured prominently at the top */}

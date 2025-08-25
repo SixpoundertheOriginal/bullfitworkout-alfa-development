@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/navigation/PageHeader";
 import { WorkoutBanner } from "@/components/training/WorkoutBanner";
 import { useLocation } from "react-router-dom";
 import { useLayout } from "@/context/LayoutContext";
-import { DateRangeFilter } from "@/components/date-filters/DateRangeFilter";
+
 import { MainMenu } from "@/components/navigation/MainMenu";
 import { useWorkoutPageVisibility } from "@/store/workoutStore";
 
@@ -48,7 +48,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   noFooter = false 
 }) => {
   const location = useLocation();
-  const { isFilterVisible } = useLayout();
+  
   const title = getPageTitle(location.pathname);
   useWorkoutPageVisibility();
   
@@ -80,11 +80,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <div className="fixed top-0 left-0 right-0 z-50">
           <PageHeader title={title} showBackButton={location.pathname !== '/' && location.pathname !== '/overview'}>
             <MainMenu />
-            {isFilterVisible && (
-              <div className="h-[36px] overflow-hidden">
-                <DateRangeFilter />
-              </div>
-            )}
           </PageHeader>
           <WorkoutBanner />
         </div>
