@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { ExerciseCardHeader } from './ExerciseCardHeader';
 import { SetsList } from './SetsList';
 import { ExerciseVolumeMetrics } from './ExerciseVolumeMetrics';
 import { ExerciseActions } from './ExerciseActions';
@@ -62,7 +61,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
     currentVolume,
     previousVolume,
     volumeMetrics,
-    progressData
+    loadingPreviousSession
   } = useExerciseCard(exercise, sets);
 
   // Extract variant information for enhanced display
@@ -130,13 +129,17 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = (props) =
                 </div>
               )}
               
-              {previousSession && (
+              {loadingPreviousSession ? (
+                <p className="text-sm text-gray-400">Loading last session…</p>
+              ) : previousSession ? (
                 <p className="text-sm text-gray-400">
                   Last session:{' '}
                   <span className="text-gray-300 font-mono">
                     {previousSession.weight} kg × {previousSession.reps} × {previousSession.sets}
                   </span>
                 </p>
+              ) : (
+                <p className="text-sm text-gray-400">No previous session</p>
               )}
             </div>
             
