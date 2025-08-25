@@ -101,6 +101,7 @@ export interface WorkoutState {
   
   // Workout lifecycle actions
   startWorkout: () => void;
+  startSessionIfNeeded: () => boolean;
   endWorkout: () => void;
   resetSession: () => void;
   
@@ -483,7 +484,7 @@ clearAllRestTimers: () => set({
       
       startWorkout: () => {
         const now = new Date();
-        set({ 
+        set({
           isActive: true,
           explicitlyEnded: false,
           workoutStatus: 'active',
@@ -495,12 +496,32 @@ clearAllRestTimers: () => set({
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
         });
-        
+
         toast.success("Workout started", {
           description: "Your workout session has begun"
         });
-        
+
         console.log("Workout started at:", now);
+      },
+
+      startSessionIfNeeded: () => {
+        const state = get();
+        if (state.workoutStatus !== 'idle') return false;
+        const now = new Date();
+        set({
+          isActive: true,
+          explicitlyEnded: false,
+          workoutStatus: 'active',
+          startTime: now.toISOString(),
+          elapsedTime: 0,
+          isPaused: false,
+          pausedAt: null,
+          totalPausedMs: 0,
+          sessionId: generateSessionId(),
+          lastTabActivity: Date.now(),
+        });
+        console.log('Workout session started');
+        return true;
       },
       
       endWorkout: () => {

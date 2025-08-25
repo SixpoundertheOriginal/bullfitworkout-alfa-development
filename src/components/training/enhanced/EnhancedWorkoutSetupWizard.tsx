@@ -4,6 +4,8 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
 import { Sparkles } from 'lucide-react';
+import { ConfirmModeModal } from '@/components/training/ConfirmModeModal';
+import { SETUP_CHOOSE_EXERCISES_ENABLED } from '@/constants/featureFlags';
 import {
   TrainingFocus,
   TrainingGoals,
@@ -14,6 +16,7 @@ interface EnhancedWorkoutSetupWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: (config: EnhancedTrainingConfig) => void;
+  onManualStart?: (focus: TrainingFocus, subFocus?: string) => void;
 }
 
 const DEFAULT_TRAINING_GOALS: TrainingGoals = {
@@ -32,22 +35,23 @@ export function EnhancedWorkoutSetupWizard({
   open,
   onOpenChange,
   onComplete,
+  onManualStart,
 }: EnhancedWorkoutSetupWizardProps) {
   const [selectedFocus, setSelectedFocus] = useState<TrainingFocus | null>(null);
   const [selectedSubFocus, setSelectedSubFocus] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showModeModal, setShowModeModal] = useState(false);
 
   useEffect(() => {
     if (open) {
       setSelectedFocus(null);
       setSelectedSubFocus('');
       setIsGenerating(false);
+      setShowModeModal(false);
     }
   }, [open]);
 
-  const handleFocusSelect = async (focus: TrainingFocus, subFocus?: string) => {
-    setSelectedFocus(focus);
-    setSelectedSubFocus(subFocus || '');
+  const runSmartPlan = async (focus: TrainingFocus, subFocus?: string) => {
     setIsGenerating(true);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -80,12 +84,48 @@ export function EnhancedWorkoutSetupWizard({
     setIsGenerating(false);
   };
 
+  const handleFocusSelect = async (focus: TrainingFocus, subFocus?: string) => {
+    console.log('setup_focus_selected', { focus: focus.category });
+    if (SETUP_CHOOSE_EXERCISES_ENABLED) {
+      setSelectedFocus(focus);
+      setSelectedSubFocus(subFocus || '');
+      setShowModeModal(true);
+    } else {
+      console.log('setup_mode_selected', { focus: focus.category, mode: 'smart' });
+      await runSmartPlan(focus, subFocus);
+    }
+  };
+
+  const handleSmartPlan = async () => {
+    if (!selectedFocus) return;
+    setShowModeModal(false);
+    console.log('setup_mode_selected', { focus: selectedFocus.category, mode: 'smart' });
+    await runSmartPlan(selectedFocus, selectedSubFocus);
+  };
+
+  const handleChooseExercises = () => {
+    if (!selectedFocus) return;
+    setShowModeModal(false);
+    console.log('setup_mode_selected', { focus: selectedFocus.category, mode: 'choose_exercises' });
+    onManualStart?.(selectedFocus, selectedSubFocus);
+    onOpenChange(false);
+  };
+
+  const handleModalOpenChange = (open: boolean) => {
+    setShowModeModal(open);
+    if (!open) {
+      setSelectedFocus(null);
+      setSelectedSubFocus('');
+    }
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="h-[90vh] rounded-t-xl border-0 bg-background/95 backdrop-blur-md"
-      >
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="h-[90vh] rounded-t-xl border-0 bg-background/95 backdrop-blur-md"
+        >
         <div className="flex flex-col h-full max-w-2xl mx-auto">
           <div className="flex-shrink-0 space-y-4 pt-6 pb-4">
             <div>
@@ -124,8 +164,15 @@ export function EnhancedWorkoutSetupWizard({
             </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+      <ConfirmModeModal
+        open={showModeModal}
+        onOpenChange={handleModalOpenChange}
+        onSmartPlan={handleSmartPlan}
+        onChooseExercises={handleChooseExercises}
+      />
+    </>
   );
 }
 

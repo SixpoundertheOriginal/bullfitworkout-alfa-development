@@ -52,6 +52,7 @@ const TrainingSessionPage = () => {
     workoutId,
     deleteExercise,
     startWorkout,
+    startSessionIfNeeded,
     updateLastActiveRoute,
     trainingConfig,
     isActive,
@@ -94,7 +95,8 @@ const TrainingSessionPage = () => {
   useWorkoutTimer();
   const { play: playBell } = useSound('/sounds/bell.mp3');
   const { play: playTick } = useSound('/sounds/tick.mp3');
-  const [isAddExerciseSheetOpen, setIsAddExerciseSheetOpen] = useState(false);
+  const isManual = location.state?.manual;
+  const [isAddExerciseSheetOpen, setIsAddExerciseSheetOpen] = useState(!!isManual);
   const [isSaving, setIsSaving] = useState(false);
   const [showRestTimerModal, setShowRestTimerModal] = useState(false);
   const [restTimerResetSignal, setRestTimerResetSignal] = useState(0);
@@ -134,11 +136,11 @@ const TrainingSessionPage = () => {
     }
     
     // Redirect to setup if accessed without proper config
-    if (pageLoaded && workoutStatus === 'idle' && !hasExercises && !trainingConfig) {
+    if (pageLoaded && workoutStatus === 'idle' && !hasExercises && !trainingConfig && !isManual) {
       console.log('⚠️ Redirecting to setup wizard - empty session');
       navigate('/');
     }
-  }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate]);
+  }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate, isManual]);
 
   useEffect(() => {
     if (location.state?.trainingConfig && !isActive) {
@@ -299,19 +301,26 @@ const TrainingSessionPage = () => {
     
     // Use the enhanced store method
     addEnhancedExercise(exercise);
-    
-    // Start workout if idle
-    if (workoutStatus === 'idle') startWorkout();
-    
+
+    const sessionStarted = startSessionIfNeeded();
+
     // Close the sheet
     setIsAddExerciseSheetOpen(false);
-    
+
     // Show success toast with enhanced display name
     const displayName = typeof exercise === 'string' ? exercise : getExerciseDisplayName(exercise.name);
-    toast({
-      title: "Exercise added",
-      description: `Added ${displayName} to your workout`
-    });
+    if (sessionStarted) {
+      console.log('exercise_added_first', { exercise_name: displayName });
+      toast({
+        title: "Exercise added",
+        description: `Added ${displayName}. You can keep adding or start training.`
+      });
+    } else {
+      toast({
+        title: "Exercise added",
+        description: `Added ${displayName} to your workout`
+      });
+    }
   };
 
   const handleShowRestTimer = () => { setShowRestTimerModal(true); playBell(); };
