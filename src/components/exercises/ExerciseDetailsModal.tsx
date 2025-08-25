@@ -55,7 +55,7 @@ export function ExerciseDetailsModal({
       case 'squat': return '🦵';
       case 'hinge': return '🏃';
       case 'lunge': return '🤸';
-      case 'rotation': return '🔄';
+      case 'core': return '🔄';
       case 'carry': return '🎒';
       case 'isometric': return '⏸️';
       default: return '💪';

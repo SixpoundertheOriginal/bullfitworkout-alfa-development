@@ -25,8 +25,8 @@ export type EquipmentType =
   | 'pull up bar' | 'dip station' | 'suspension trainer' | 'slider discs'
   | 'bosu ball' | 'stability ball' | 'sandbag' | 'weighted vest' | 'other';
 
-export type MovementPattern = 
-  | 'push' | 'pull' | 'squat' | 'hinge' | 'lunge' | 'rotation' | 'carry' | 'isometric';
+export type MovementPattern =
+  | 'push' | 'pull' | 'squat' | 'lunge' | 'hinge' | 'core' | 'carry' | 'isometric';
 
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -57,6 +57,7 @@ export interface Exercise {
   is_compound: boolean;
   tips: string[];
   variations: string[];
+  aliases?: string[];
   metadata: Record<string, any>;
 
   // Enhanced exercise schema properties for better metrics calculation
@@ -90,7 +91,7 @@ export const COMMON_EQUIPMENT: EquipmentType[] = [
 ];
 
 export const MOVEMENT_PATTERNS: MovementPattern[] = [
-  'push', 'pull', 'squat', 'hinge', 'lunge', 'rotation', 'carry', 'isometric'
+  'push', 'pull', 'squat', 'lunge', 'hinge', 'core', 'carry', 'isometric'
 ];
 
 export const DIFFICULTY_LEVELS: Difficulty[] = [
@@ -167,15 +168,6 @@ export const getExerciseLoadFactor = (exercise: Exercise, userWeight: number = 7
     return exercise.estimated_load_percent / 100;
   }
 
-  // Finally check the predefined mappings
-  const loadMapping = EXERCISE_LOAD_FACTORS.find(
-    mapping => exercise.name.toLowerCase().includes(mapping.name.toLowerCase())
-  );
-  
-  if (loadMapping) {
-    return loadMapping.factor;
-  }
-  
   // Default to 0.65 (common for many bodyweight exercises) if no specific factor found
   return 0.65;
 };

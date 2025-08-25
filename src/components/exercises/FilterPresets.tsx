@@ -47,7 +47,7 @@ const QUICK_FILTERS: QuickFilter[] = [
     icon: "⚡",
     filters: {
       muscleGroups: ['core', 'abs', 'obliques'],
-      movementPatterns: ['isometric', 'rotation']
+      movementPatterns: ['isometric', 'core']
     }
   },
   {

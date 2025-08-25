@@ -610,6 +610,7 @@ export type Database = {
           metadata: Json | null
           movement_pattern: string
           name: string
+          aliases: string[] | null
           primary_muscle_groups: string[]
           secondary_muscle_groups: string[]
           tips: string[] | null
@@ -633,6 +634,7 @@ export type Database = {
           metadata?: Json | null
           movement_pattern: string
           name: string
+          aliases?: string[] | null
           primary_muscle_groups: string[]
           secondary_muscle_groups: string[]
           tips?: string[] | null
@@ -656,6 +658,7 @@ export type Database = {
           metadata?: Json | null
           movement_pattern?: string
           name?: string
+          aliases?: string[] | null
           primary_muscle_groups?: string[]
           secondary_muscle_groups?: string[]
           tips?: string[] | null
