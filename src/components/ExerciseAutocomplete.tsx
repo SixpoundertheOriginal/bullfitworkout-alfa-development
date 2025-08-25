@@ -74,7 +74,9 @@ export function ExerciseAutocomplete({ onSelectExercise, className }: ExerciseAu
     is_compound: false,
     tips: [],
     variations: [],
-    metadata: {}
+    metadata: {},
+    type: "reps",
+    is_bodyweight: false
   });
   
   useEffect(() => {
@@ -138,7 +140,9 @@ export function ExerciseAutocomplete({ onSelectExercise, className }: ExerciseAu
           is_compound: false,
           tips: [],
           variations: [],
-          metadata: {}
+          metadata: {},
+          type: "reps",
+          is_bodyweight: false
         });
       },
       onError: (error) => {

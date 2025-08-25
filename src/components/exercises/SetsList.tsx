@@ -47,20 +47,39 @@ export const SetsList: React.FC<SetsListProps> = ({
   }
 
   return (
-    <div className="space-y-1 mb-4">
-      {/* Header */}
-      <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground font-medium mb-2 px-3">
-        <div className="col-span-1 text-center">Set</div>
-        <div className="col-span-2 text-center">Weight</div>
-        <div className="col-span-2 text-center">Reps</div>
-        <div className="col-span-2 text-center">Rest</div>
-        <div className="col-span-5 text-center">Actions</div>
+    <div className="space-y-4">
+      {/* Futuristic Header with holographic effects */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl blur-lg"></div>
+        <div className="relative grid grid-cols-12 gap-2 text-xs font-bold mb-3 px-4 py-3 bg-gradient-to-r from-slate-800/60 to-slate-700/60 rounded-xl border border-slate-600/30 backdrop-blur-sm">
+          <div className="col-span-1 text-center text-slate-300">Set</div>
+          <div className="col-span-2 text-center text-slate-300">Weight</div>
+          <div className="col-span-2 text-center text-slate-300">Reps</div>
+          <div className="col-span-2 text-center text-slate-300">Rest</div>
+          <div className="col-span-5 text-center text-slate-300">Actions</div>
+        </div>
       </div>
 
-      {/* Sets */}
-      <div className="border border-border/30 rounded-lg overflow-hidden bg-muted/20">
+      {/* Enhanced Sets Container with neural network styling */}
+      <div className="relative border border-slate-700/40 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900/60 to-slate-800/60 backdrop-blur-sm shadow-2xl">
+        {/* Neural connection pattern */}
+        <div className="absolute inset-0 opacity-10">
+          {sets.map((_, index) => (
+            <div key={index} className="absolute left-0 right-0" style={{ top: `${(index + 0.5) * (100 / sets.length)}%` }}>
+              <div className="w-full h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"></div>
+            </div>
+          ))}
+        </div>
+        
         {sets.map((set, index) => (
-          <div key={index} className={index > 0 ? "border-t border-border/20" : ""}>
+          <div 
+            key={index} 
+            className={`
+              relative z-10 transition-all duration-300 hover:bg-slate-800/40
+              ${index > 0 ? "border-t border-slate-700/30" : ""} 
+              ${set.completed ? "bg-gradient-to-r from-green-500/5 to-green-400/5" : ""}
+            `}
+          >
             <SetRow
               setNumber={index + 1}
               weight={set.weight}
