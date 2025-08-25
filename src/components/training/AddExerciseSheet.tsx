@@ -27,6 +27,7 @@ export const AddExerciseSheet: React.FC<AddExerciseSheetProps> = ({
       <SheetContent
         side="bottom"
         className="h-[80vh] rounded-t-xl border-t border-gray-700 bg-gray-900 p-0"
+        data-testid="add-exercise-sheet"
       >
         <AllExercisesPage
           standalone={false}

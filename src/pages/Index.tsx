@@ -109,6 +109,10 @@ const Index = () => {
     }
   };
 
+  const handleManualStart = () => {
+    navigate('/training-session', { state: { manual: true } });
+  };
+
   const navigateToTraining = (config: any, smartTemplate: any) => {
     navigate('/training-session', { 
       state: { 
@@ -205,10 +209,11 @@ const Index = () => {
         </div>
       </main>
 
-      <EnhancedWorkoutSetupWizard 
-        open={wizardOpen} 
-        onOpenChange={setWizardOpen} 
-        onComplete={handleEnhancedWorkoutComplete} 
+      <EnhancedWorkoutSetupWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onComplete={handleEnhancedWorkoutComplete}
+        onManualStart={handleManualStart}
       />
       
       <AnimatedLevelUp show={showLevelUp} />
