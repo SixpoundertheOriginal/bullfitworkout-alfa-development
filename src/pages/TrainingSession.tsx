@@ -310,7 +310,7 @@ const TrainingSessionPage = () => {
     // Show success toast with enhanced display name
     const displayName = typeof exercise === 'string' ? exercise : getExerciseDisplayName(exercise.name);
     if (sessionStarted) {
-      console.log('exercise_added_first', { exercise_name: displayName });
+      console.log('exercise_added_first', { exercise_name: displayName, via: 'choose_exercises' });
       toast({
         title: "Exercise added",
         description: `Added ${displayName}. You can keep adding or start training.`

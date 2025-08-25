@@ -65,6 +65,7 @@ export interface WorkoutState {
   sessionId: string;
   explicitlyEnded: boolean;
   lastTabActivity: number;
+  isCreatingSession: boolean;
   
   // Error handling
   savingErrors: WorkoutError[];
@@ -204,6 +205,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       sessionId: generateSessionId(),
       explicitlyEnded: false,
       lastTabActivity: Date.now(),
+      isCreatingSession: false,
       
       // Error handling
       savingErrors: [],
@@ -506,7 +508,11 @@ clearAllRestTimers: () => set({
 
       startSessionIfNeeded: () => {
         const state = get();
-        if (state.workoutStatus !== 'idle') return false;
+        if (state.workoutStatus !== 'idle' || state.isCreatingSession) return false;
+        
+        // Set creating flag to prevent duplicate sessions
+        set({ isCreatingSession: true });
+        
         const now = new Date();
         set({
           isActive: true,
@@ -519,6 +525,7 @@ clearAllRestTimers: () => set({
           totalPausedMs: 0,
           sessionId: generateSessionId(),
           lastTabActivity: Date.now(),
+          isCreatingSession: false,
         });
         console.log('Workout session started');
         return true;

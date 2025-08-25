@@ -213,7 +213,7 @@ const Index = () => {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onComplete={handleEnhancedWorkoutComplete}
-        onManualStart={handleManualStart}
+        onChooseExercises={handleManualStart}
       />
       
       <AnimatedLevelUp show={showLevelUp} />
