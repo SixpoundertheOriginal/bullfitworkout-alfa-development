@@ -486,7 +486,7 @@ const getExerciseMovementPattern = (exerciseName: string): string => {
   } else if (nameLower.includes('lunge') || nameLower.includes('step')) {
     return 'lunge';
   } else if (nameLower.includes('twist') || nameLower.includes('rotation')) {
-    return 'rotation';
+    return 'core';
   } else if (nameLower.includes('carry') || nameLower.includes('farmer')) {
     return 'carry';
   } else if (nameLower.includes('plank') || nameLower.includes('hold') || nameLower.includes('isometric')) {

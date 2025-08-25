@@ -45,7 +45,7 @@ type ExerciseInput = {
 export type ExerciseSortBy = 'name' | 'created_at' | 'difficulty';
 export type SortOrder = 'asc' | 'desc';
 
-const BW_LOADS_FALLBACK = true;
+const BW_LOADS_FALLBACK = false;
 
 export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSortOrder: SortOrder = 'asc') => {
   const queryClient = useQueryClient();
@@ -67,19 +67,23 @@ export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSort
         const static_posture_factor = metadata.static_posture_factor ?? null;
         const energy_cost_factor = metadata.energy_cost_factor ?? null;
 
-        if (BW_LOADS_FALLBACK && bw_multiplier == null && is_bodyweight) {
-          const legacy = EXERCISE_LOAD_FACTORS.find(m =>
-            exercise.name.toLowerCase().includes(m.name.toLowerCase())
-          );
-          if (legacy) {
-            console.warn(
-              `BW_LOADS_FALLBACK: using legacy load factor for ${exercise.name}`
+        if (bw_multiplier == null && is_bodyweight) {
+          if (BW_LOADS_FALLBACK) {
+            const legacy = EXERCISE_LOAD_FACTORS.find(m =>
+              exercise.name.toLowerCase().includes(m.name.toLowerCase())
             );
-            bw_multiplier = legacy.factor;
+            if (legacy) {
+              console.warn(
+                `BW_LOADS_FALLBACK: using legacy load factor for ${exercise.name}`
+              );
+              bw_multiplier = legacy.factor;
+            } else {
+              console.warn(
+                `BW_LOADS_FALLBACK: missing bw_multiplier for ${exercise.name}`
+              );
+            }
           } else {
-            console.warn(
-              `BW_LOADS_FALLBACK: missing bw_multiplier for ${exercise.name}`
-            );
+            console.warn(`Missing bw_multiplier for ${exercise.name}`);
           }
         }
 
@@ -98,6 +102,7 @@ export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSort
           is_compound: exercise.is_compound || false,
           tips: exercise.tips || [],
           variations: exercise.variations || [],
+          aliases: exercise.aliases || [],
           metadata: metadata,
           type,
           is_bodyweight,

@@ -1,0 +1,67 @@
+{
+  "updates": [
+    { "id":"push-ups", "name":"Push-up", "aliases":["Push-ups","Pushups","Push up"], "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.65} },
+    { "id":"chest-dips", "name":"Dip", "aliases":["Chest Dips","Dips"], "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.90} },
+    { "id":"pull-ups", "name":"Pull-up", "aliases":["Pull-ups","Chinups?","Pull ups"], "movement_pattern":"pull", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.95} },
+    { "id":"close-grip-push-ups", "name":"Close-grip Push-up", "aliases":["Close-Grip Push-ups"], "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.65} },
+    { "id":"squats", "name":"Squat", "aliases":["Squats","Air Squat"], "movement_pattern":"squat", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.65} },
+    { "id":"lunges", "name":"Lunge", "aliases":["Lunges"], "movement_pattern":"lunge", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.60} },
+
+    { "id":"plank", "name":"Plank", "movement_pattern":"isometric", "metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.25,"static_posture_factor":1.0} },
+    { "id":"dead-bug", "name":"Dead Bug", "aliases":["Deadbug"], "movement_pattern":"core", "metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.30,"static_posture_factor":1.0} },
+
+    { "id":"mountain-climbers", "name":"Mountain Climber", "aliases":["Mountain Climbers"], "movement_pattern":"core", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.60} },
+    { "id":"burpees", "name":"Burpee", "movement_pattern":"carry", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.00} },
+    { "id":"jumping-jacks", "name":"Jumping Jack", "aliases":["Jumping Jacks"], "movement_pattern":"carry", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.60} },
+    { "id":"high-knees", "name":"High Knee", "aliases":["High Knees"], "movement_pattern":"carry", "metadata":{"type":"time","is_bodyweight":true,"bw_multiplier":0.60} },
+
+    { "id":"ab-wheel-rollout", "name":"Ab Wheel Rollout", "movement_pattern":"core", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.80} },
+    { "id":"hanging-leg-raises", "name":"Hanging Leg Raise", "aliases":["Hanging Leg Raises"], "movement_pattern":"core", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.60} },
+    { "id":"russian-twists", "name":"Russian Twist", "movement_pattern":"core", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.40} },
+
+    { "id":"ring-pull-ups", "name":"Ring Pull-up", "aliases":["Ring Pullups"], "movement_pattern":"pull", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.00} },
+    { "id":"ring-dips", "name":"Ring Dip", "aliases":["Ring Dips"], "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.00} },
+    { "id":"ring-muscle-ups", "name":"Ring Muscle-up", "aliases":["Ring Muscle Ups"], "movement_pattern":"pull", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.30} },
+
+    { "id":"trx-row", "name":"TRX Row", "movement_pattern":"pull", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.45} },
+    { "id":"trx-push-up", "name":"TRX Push-up", "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.55} },
+
+    { "id":"l-sit-on-parallettes", "name":"L-sit (Parallettes)", "aliases":["L Sit"], "movement_pattern":"isometric", "metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.50,"static_posture_factor":1.0} },
+    { "id":"handstand-push-ups", "name":"Handstand Push-up", "aliases":["HSPU"], "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.75} },
+    { "id":"archer-push-ups", "name":"Archer Push-up", "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.75} },
+    { "id":"pistol-squats", "name":"Pistol Squat", "movement_pattern":"squat", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.90} },
+
+    { "id":"weighted-vest-push-ups", "name":"Weighted-vest Push-up", "movement_pattern":"push", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.64} },
+    { "id":"bear-crawl", "name":"Bear Crawl", "movement_pattern":"carry", "metadata":{"type":"distance","is_bodyweight":true,"bw_multiplier":0.60} },
+    { "id":"jump-squats", "name":"Jump Squat", "movement_pattern":"squat", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.70} },
+    { "id":"box-step-ups", "name":"Box Step-up", "movement_pattern":"lunge", "metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.60} },
+
+    { "id":"wall-sit", "name":"Wall-sit", "movement_pattern":"isometric", "metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.35,"static_posture_factor":1.0} },
+    { "id":"ring-support-hold", "name":"Ring Support Hold", "movement_pattern":"isometric", "metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.45,"static_posture_factor":1.0} }
+  ],
+  "inserts": [
+    { "id":"handrail-push-up","name":"Handrail Push-up","aliases":["Incline Push-up","Hand rail Push-up"],"equipment":["bodyweight","bar","bench"],"movement_pattern":"push","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.45} },
+
+    { "id":"one-arm-push-up","name":"One-arm Push-up","equipment":["bodyweight"],"movement_pattern":"push","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.75} },
+    { "id":"clap-push-up","name":"Clap Push-up","aliases":["Explosive Push-up"],"equipment":["bodyweight"],"movement_pattern":"push","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.70} },
+
+    { "id":"commando-pull-up","name":"Commando Pull-up","equipment":["bodyweight","bar"],"movement_pattern":"pull","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.95} },
+    { "id":"towel-pull-up","name":"Towel Pull-up","aliases":["Thick-grip Pull-up"],"equipment":["bodyweight","bar","towel"],"movement_pattern":"pull","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.00} },
+    { "id":"typewriter-pull-up","name":"Typewriter Pull-up","equipment":["bodyweight","bar"],"movement_pattern":"pull","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":1.05} },
+    { "id":"australian-pull-up","name":"Australian Pull-up","aliases":["Inverted Row","Aussie Pull-up"],"equipment":["bodyweight","bar"],"movement_pattern":"pull","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.45} },
+
+    { "id":"bulgarian-split-squat","name":"Bulgarian Split Squat","equipment":["bodyweight","bench"],"movement_pattern":"lunge","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.75} },
+    { "id":"nordic-hamstring-curl","name":"Nordic Hamstring Curl","equipment":["bodyweight","bench"],"movement_pattern":"hinge","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.70} },
+    { "id":"glute-bridge","name":"Glute Bridge","equipment":["bodyweight"],"movement_pattern":"hinge","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.35} },
+
+    { "id":"side-plank","name":"Side Plank","equipment":["bodyweight"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.25,"static_posture_factor":1.0} },
+    { "id":"hollow-hold","name":"Hollow Hold","equipment":["bodyweight"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.25,"static_posture_factor":1.0} },
+    { "id":"v-up","name":"V-up","equipment":["bodyweight"],"movement_pattern":"core","metadata":{"type":"reps","is_bodyweight":true,"bw_multiplier":0.40} },
+    { "id":"dragon-flag","name":"Dragon Flag","equipment":["bodyweight","bench"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.60,"static_posture_factor":1.0} },
+
+    { "id":"front-lever-hold","name":"Front Lever Hold","aliases":["Front Lever"],"equipment":["bodyweight","bar","rings"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":1.00,"static_posture_factor":1.0} },
+    { "id":"back-lever-hold","name":"Back Lever Hold","aliases":["Back Lever"],"equipment":["bodyweight","bar","rings"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":1.00,"static_posture_factor":1.0} },
+    { "id":"planche-lean","name":"Planche Lean","equipment":["bodyweight"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.80,"static_posture_factor":1.0} },
+    { "id":"crow-pose","name":"Crow Pose","aliases":["Bakasana"],"equipment":["bodyweight"],"movement_pattern":"isometric","metadata":{"type":"hold","is_bodyweight":true,"bw_multiplier":0.45,"static_posture_factor":1.0} }
+  ]
+}

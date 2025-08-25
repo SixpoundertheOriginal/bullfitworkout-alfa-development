@@ -148,6 +148,15 @@ export function searchExercises(
       }
     }
 
+    // Search in aliases
+    if (exercise.aliases && exercise.aliases.length > 0) {
+      const aliasScore = scoreArrayFieldMatch(exercise.aliases, searchTerms, fuzzyMatch);
+      if (aliasScore > 0) {
+        score += aliasScore;
+        matchReasons.push("Alias");
+      }
+    }
+
     // Search in description
     if (exercise.description?.toLowerCase().includes(normalizedSearchTerm)) {
       score += 60;
