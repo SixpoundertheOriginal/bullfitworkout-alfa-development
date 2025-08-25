@@ -7,20 +7,20 @@ export interface TrainingFocus {
 }
 
 export interface TrainingGoals {
-  targetTonnage: number;
-  tonnageLevel: 'Light' | 'Moderate' | 'Heavy' | 'Custom';
-  timeBudget: number;
-  structure: 'Straight Sets' | 'Supersets' | 'Circuit';
-  repRange: 'Strength (3-6)' | 'Hypertrophy (8-12)' | 'Endurance (12-20)';
-  restStyle: 'Strict' | 'Adaptive' | 'Minimal';
-  includeIsometrics: boolean;
-  includeUnilateral: boolean;
-  includeCore: boolean;
+  targetTonnage?: number;
+  tonnageLevel?: 'Light' | 'Moderate' | 'Heavy' | 'Custom';
+  timeBudget?: number;
+  structure?: 'Straight Sets' | 'Supersets' | 'Circuit';
+  repRange?: 'Strength (3-6)' | 'Hypertrophy (8-12)' | 'Endurance (12-20)';
+  restStyle?: 'Strict' | 'Adaptive' | 'Minimal';
+  includeIsometrics?: boolean;
+  includeUnilateral?: boolean;
+  includeCore?: boolean;
 }
 
 export interface EnhancedTrainingConfig {
   focus: TrainingFocus;
-  goals: TrainingGoals;
+  goals?: TrainingGoals;
   estimatedCalories: number;
   estimatedXP: number;
   smartSuggestions: string[];

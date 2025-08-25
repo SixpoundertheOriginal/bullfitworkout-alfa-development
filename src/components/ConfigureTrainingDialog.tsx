@@ -302,7 +302,7 @@ export function ConfigureTrainingDialog({
     const legacyConfig = {
       trainingType: config.focus.category,
       tags: config.focus.primaryMuscles,
-      duration: config.goals.timeBudget,
+      duration: config.goals?.timeBudget || 45,
       rankedExercises: config.rankedExercises
     };
     
