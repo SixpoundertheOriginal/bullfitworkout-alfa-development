@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PageHeader } from '@/components/navigation/PageHeader';
 import { EnhancedExerciseCard } from '@/components/exercises/EnhancedExerciseCard';
 import { ExerciseDialog } from '@/components/ExerciseDialog';
@@ -82,8 +82,7 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
   // For add/edit
   const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
   const [exerciseToEdit, setExerciseToEdit] = useState<any | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
+  // AUDIT: removed virtualization scroll tracking
 
   const recentExercises = useMemo(() => {
     if (!workouts?.length) return [];
@@ -285,20 +284,17 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
     }
   };
 
-  const renderExerciseCard = (exercise: Exercise) => {
-    return (
-      <div key={exercise.id} className="mb-4">
-        <EnhancedExerciseCard
-          exercise={exercise}
-          onAddToWorkout={() => handleExerciseAdd(exercise)}
-          onToggleFavorite={toggleFavorite}
-          onViewDetails={handleViewDetails}
-          isFavorite={isFavorite(exercise.id)}
-          showAddToWorkout={!!onAddExercise}
-        />
-      </div>
-    );
-  };
+  const renderExerciseCard = (exercise: Exercise) => (
+    <EnhancedExerciseCard
+      key={exercise.id}
+      exercise={exercise}
+      onAddToWorkout={() => handleExerciseAdd(exercise)}
+      onToggleFavorite={toggleFavorite}
+      onViewDetails={handleViewDetails}
+      isFavorite={isFavorite(exercise.id)}
+      showAddToWorkout={!!onAddExercise}
+    />
+  );
 
   const renderExerciseList = (exercisesList: Exercise[]) => {
     if (isLoading) {
@@ -335,51 +331,29 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
       );
     }
 
-    const listHeight = typeof window !== 'undefined' ? window.innerHeight - 260 : 400;
-    const itemHeight = 150;
-
+    // AUDIT: remove manual virtualization in favor of simple scrollable containers
     if (viewMode === 'grid') {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto h-full" ref={listRef}>
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {exercisesList.map(renderExerciseCard)}
         </div>
       );
     }
 
-    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
-    const endIndex = Math.min(
-      exercisesList.length,
-      startIndex + Math.ceil(listHeight / itemHeight) + 5
-    );
-    const items = exercisesList.slice(startIndex, endIndex);
-
     return (
-      <div
-        ref={listRef}
-        onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
-        style={{ height: listHeight, overflowY: 'auto', position: 'relative' }}
-      >
-        <div style={{ height: exercisesList.length * itemHeight, position: 'relative' }}>
-          {items.map((exercise, i) => {
-            const top = (startIndex + i) * itemHeight;
-            return (
-              <div key={exercise.id} style={{ position: 'absolute', top, left: 0, right: 0 }}>
-                {renderExerciseCard(exercise)}
-              </div>
-            );
-          })}
-        </div>
+      <div className="space-y-4 overflow-y-auto h-full">
+        {exercisesList.map(renderExerciseCard)}
       </div>
     );
   };
 
   return (
-    <AppBackground variant="primary">
-      <div className={`${standalone ? 'pt-16 pb-24' : ''} h-full overflow-hidden flex flex-col`}>
+    <AppBackground variant="primary" className={!standalone ? 'h-full' : undefined} noMinHeight={!standalone}>
+      <div className={`${standalone ? 'pt-16 pb-24' : ''} h-full flex flex-col min-h-0`}>
       {standalone && <PageHeader title="Exercise Library" />}
       
       {/* Main content container */}
-      <div className={`flex-1 overflow-hidden flex flex-col mx-auto w-full max-w-4xl px-4 ${standalone ? 'py-4' : 'pt-0'}`}>
+      <div className={`flex-1 flex flex-col min-h-0 mx-auto w-full max-w-4xl px-4 ${standalone ? 'py-4' : 'pt-0'}`}>
         <ExerciseDialog
           open={showDialog}
           onOpenChange={setShowDialog}
@@ -543,9 +517,7 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
         </div>
         
         {/* Exercise list */}
-        <div className="flex-1">
-          {renderExerciseList(filteredExercises)}
-        </div>
+        {renderExerciseList(filteredExercises)}
       </div>
       </div>
     </AppBackground>
