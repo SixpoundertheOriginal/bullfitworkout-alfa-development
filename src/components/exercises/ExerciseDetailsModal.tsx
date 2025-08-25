@@ -247,20 +247,38 @@ export function ExerciseDetailsModal({
             </div>
           )}
 
-          {/* Metadata */}
-          {exercise.metadata && Object.keys(exercise.metadata).length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold mb-3">Additional Information</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {typeof exercise.metadata === 'object' && Object.entries(exercise.metadata).map(([key, value]) => (
-                  <div key={key} className="flex justify-between p-2 rounded bg-muted/30">
-                    <span className="font-medium capitalize text-sm">{key.replace(/_/g, ' ')}:</span>
-                    <span className="text-sm text-muted-foreground">{String(value)}</span>
-                  </div>
-                ))}
+          {/* Normalized fields */}
+          <div>
+            <h4 className="text-sm font-semibold mb-3">Additional Information</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex justify-between p-2 rounded bg-muted/30">
+                <span className="font-medium text-sm">Type:</span>
+                <span className="text-sm text-muted-foreground">{exercise.type}</span>
               </div>
+              <div className="flex justify-between p-2 rounded bg-muted/30">
+                <span className="font-medium text-sm">Bodyweight:</span>
+                <span className="text-sm text-muted-foreground">{exercise.is_bodyweight ? 'Yes' : 'No'}</span>
+              </div>
+              {exercise.bw_multiplier != null && (
+                <div className="flex justify-between p-2 rounded bg-muted/30">
+                  <span className="font-medium text-sm">BW Multiplier:</span>
+                  <span className="text-sm text-muted-foreground">{exercise.bw_multiplier}</span>
+                </div>
+              )}
+              {exercise.static_posture_factor != null && (
+                <div className="flex justify-between p-2 rounded bg-muted/30">
+                  <span className="font-medium text-sm">Static Posture:</span>
+                  <span className="text-sm text-muted-foreground">{exercise.static_posture_factor}</span>
+                </div>
+              )}
+              {exercise.energy_cost_factor != null && (
+                <div className="flex justify-between p-2 rounded bg-muted/30">
+                  <span className="font-medium text-sm">Energy Cost:</span>
+                  <span className="text-sm text-muted-foreground">{exercise.energy_cost_factor}</span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

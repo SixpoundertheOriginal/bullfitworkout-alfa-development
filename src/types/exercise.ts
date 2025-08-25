@@ -30,6 +30,8 @@ export type MovementPattern =
 
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
+export type ExerciseType = 'reps' | 'time' | 'hold' | 'distance';
+
 // Enhanced loading type for better metrics calculation
 export type LoadingType = 
   | 'bodyweight' | 'barbell' | 'dumbbell' | 'kettlebell' | 'cable'
@@ -56,15 +58,16 @@ export interface Exercise {
   tips: string[];
   variations: string[];
   metadata: Record<string, any>;
-  
+
   // Enhanced exercise schema properties for better metrics calculation
-  loading_type?: LoadingType; 
+  loading_type?: LoadingType;
   estimated_load_percent?: number; // For bodyweight exercises (% of bodyweight)
   variant_category?: VariantCategory;
-  load_factor?: number;  // Added for bodyweight exercises
-  is_isometric?: boolean; // Flag to identify isometric exercises
-  is_bodyweight?: boolean; // Flag for bodyweight exercises
-  energy_cost_factor?: number; // Relative energy expenditure factor
+  type: ExerciseType;
+  is_bodyweight: boolean;
+  bw_multiplier?: number | null;
+  static_posture_factor?: number | null;
+  energy_cost_factor?: number | null;
   
   // Add missing properties for compatibility
   equipment_needed?: string;
@@ -140,10 +143,12 @@ export interface WeightCalculation {
 }
 
 export const isBodyweightExercise = (exercise: Exercise): boolean => {
-  return exercise.equipment_type.includes('bodyweight') || 
-         exercise.is_bodyweight === true ||
-         exercise.loading_type === 'bodyweight' ||
-         exercise.movement_pattern === 'isometric';
+  return (
+    exercise.is_bodyweight === true ||
+    exercise.equipment_type.includes('bodyweight') ||
+    exercise.loading_type === 'bodyweight' ||
+    exercise.movement_pattern === 'isometric'
+  );
 };
 
 // Helper function to get the load factor for a bodyweight exercise
@@ -153,8 +158,8 @@ export const getExerciseLoadFactor = (exercise: Exercise, userWeight: number = 7
   }
 
   // First check if the exercise has a directly specified load factor
-  if (typeof exercise.load_factor === 'number') {
-    return exercise.load_factor;
+  if (typeof exercise.bw_multiplier === 'number') {
+    return exercise.bw_multiplier;
   }
 
   // Then check if it has an estimated load percentage
@@ -176,7 +181,11 @@ export const getExerciseLoadFactor = (exercise: Exercise, userWeight: number = 7
 };
 
 // Helper function to calculate effective weight for an exercise
-export const calculateEffectiveWeight = (exercise: Exercise, inputWeight: number, userBodyWeight: number): number => {
+export const calculateEffectiveWeight = (
+  exercise: Exercise,
+  inputWeight: number,
+  userBodyWeight: number
+): number => {
   // For regular weighted exercises, use the input weight
   if (!isBodyweightExercise(exercise)) {
     return inputWeight;
