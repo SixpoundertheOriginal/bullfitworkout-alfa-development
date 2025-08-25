@@ -12,8 +12,7 @@ import { PerformanceSummary } from '@/components/dashboard/PerformanceSummary';
 import { AnalyticsGrid } from '@/components/dashboard/AnalyticsGrid';
 import { DetailModal } from '@/components/dashboard/DetailModal';
 
-// Lazy load heavy chart components for better performance
-const WorkoutTypeChart = lazy(() => import("@/components/metrics/WorkoutTypeChart").then(m => ({ default: m.WorkoutTypeChart })));
+  const WorkoutTypeChart = lazy(() => import("@/components/metrics/WorkoutTypeChart").then(m => ({ default: m.WorkoutTypeChart })));
 const MuscleGroupChart = lazy(() => import("@/components/metrics/MuscleGroupChart").then(m => ({ default: m.MuscleGroupChart })));
 const TimeOfDayChart = lazy(() => import("@/components/metrics/TimeOfDayChart").then(m => ({ default: m.TimeOfDayChart })));
 const WorkoutDaysChart = lazy(() => import("@/components/metrics/WorkoutDaysChart").then(m => ({ default: m.WorkoutDaysChart })));
@@ -27,11 +26,10 @@ const Overview: React.FC = () => {
   const [userWeightUnit, setUserWeightUnit] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<{type: string; data: any} | null>(null);
 
-  // Use optimized parallel data loading
-  const {
-    stats,
-    workouts,
-    insights,
+    const {
+      stats,
+      workouts,
+      insights,
     processedMetrics,
     volumeOverTimeData,
     densityOverTimeData,
@@ -43,8 +41,7 @@ const Overview: React.FC = () => {
     chartData
   } = useParallelOverviewData();
 
-  // Optimized insight generation with dependency array
-  const generateInsightsCallback = useCallback(() => {
+    const generateInsightsCallback = useCallback(() => {
     if (workouts.length > 0) {
       generateWorkoutInsights();
     }
@@ -54,30 +51,26 @@ const Overview: React.FC = () => {
     generateInsightsCallback();
   }, [generateInsightsCallback]);
 
-  // Get user bodyweight for strength analytics
-  const userBodyweight = useMemo(() => {
+    const userBodyweight = useMemo(() => {
     if (userWeight && userWeightUnit) {
       return userWeightUnit === 'lb' ? userWeight * 0.453592 : userWeight;
     }
     return 70; // Default to 70kg
   }, [userWeight, userWeightUnit]);
 
-  // Load user weight prefs
-  useEffect(() => {
+    useEffect(() => {
     const sw = localStorage.getItem('userWeight');
     const su = localStorage.getItem('userWeightUnit');
     if (sw) setUserWeight(Number(sw));
     if (su) setUserWeightUnit(su);
   }, []);
 
-  // Memoized data validation for performance
-  const hasData = useCallback((v: any) => 
+    const hasData = useCallback((v: any) =>
     v != null && ((Array.isArray(v) && v.length > 0) || (typeof v === 'object' && Object.keys(v).length > 0)), 
     []
   );
 
-  // Memoized chart configurations for performance  
-  const chartConfigs = useMemo(() => ([
+    const chartConfigs = useMemo(() => ([
     {
       title: "Workout Types",
       icon: Target,
@@ -130,17 +123,14 @@ const Overview: React.FC = () => {
     }
   ]), [chartData]);
 
-  // Handle metric drill-down
   const handleMetricClick = useCallback((metricType: string, data: any) => {
     setSelectedMetric({ type: metricType, data });
   }, []);
 
-  // Handle panel analytics tracking
   const handlePanelToggle = useCallback((panelId: string, isOpen: boolean) => {
     console.log(`📊 Panel ${panelId} ${isOpen ? 'expanded' : 'collapsed'}`);
   }, []);
 
-  // Premium card base styles
   const premiumCardStyles = "relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-purple-500/20";
   const gradientBackground = "bg-gradient-to-br from-gray-900/90 via-gray-900/95 to-gray-900/90";
   const glassmorphism = "backdrop-blur-xl";
@@ -267,66 +257,10 @@ const Overview: React.FC = () => {
 
         {/* BOTTOM SECTIONS: Historical & Advanced Analytics */}
         <div className="space-y-6">
-          {/* Volume over time - Premium styled */}
-          <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
-            
-            <CardHeader className="relative z-10">
-              <CardTitle className="flex items-center gap-2 text-white/90">
-                <TrendingUp className="h-5 w-5 text-purple-400" />
-                Volume Over Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px] relative z-10">
-              {loading ? (
-                <Skeleton className="w-full h-full bg-white/10" />
-              ) : hasData(volumeOverTimeData) ? (
-                <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
-                  <WorkoutVolumeOverTimeChart data={volumeOverTimeData} height={300} />
-                </Suspense>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">No volume data available</div>
-              )}
-            </CardContent>
-          </div>
-
-          {/* Enhanced analysis grid with muscle balance */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Muscle Group Balance */}
-            <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-green-500/5 pointer-events-none" />
-              <div className="relative z-10">
-                <MuscleGroupBalance muscleFocus={chartData.muscleFocus} />
-              </div>
-            </div>
-
-            {/* Existing charts */}
-            {chartConfigs.map(({ title, icon: Icon, renderComponent, data }, idx) => (
-              <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
-                
-                <CardHeader className="relative z-10">
-                  <CardTitle className="flex items-center gap-2 text-white/90">
-                    <Icon className="h-5 w-5 text-purple-400" />
-                    {title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="h-[250px] flex items-center justify-center relative z-10">
-                  {loading
-                    ? <Skeleton className="w-3/4 h-3/4 rounded-lg bg-white/10" />
-                    : hasData(data)
-                      ? renderComponent(data)
-                      : <div className="text-gray-400">No data available</div>
-                  }
-                </CardContent>
-              </div>
-            ))}
-          </div>
-
           {/* Workout Density Trends */}
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 pointer-events-none" />
-            
+
             <CardHeader className="relative z-10">
               <CardTitle className="flex items-center gap-2 text-white/90">
                 <Activity className="h-5 w-5 text-purple-400" />
