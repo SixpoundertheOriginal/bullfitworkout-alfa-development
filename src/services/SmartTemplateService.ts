@@ -1,4 +1,4 @@
-import { TrainingFocus, TrainingGoals, EnhancedTrainingConfig } from '@/types/training-setup';
+import { TrainingFocus, TrainingGoals } from '@/types/training-setup';
 import { Exercise } from '@/types/exercise';
 import { supabase } from '@/integrations/supabase/client';
 import { OpenAIService } from '@/services/openAIService';
@@ -33,59 +33,87 @@ export class SmartTemplateService {
    * Generate intelligent workout template based on user history and preferences
    */
   static async generateSmartTemplate(
-    focus: TrainingFocus, 
-    goals: TrainingGoals,
+    focus: TrainingFocus,
+    goals: TrainingGoals | undefined,
     userId: string
   ): Promise<SmartTemplateResult> {
     try {
+      const effectiveGoals: Required<TrainingGoals> = {
+        targetTonnage: goals?.targetTonnage ?? 4000,
+        tonnageLevel: goals?.tonnageLevel ?? 'Moderate',
+        timeBudget: goals?.timeBudget ?? 45,
+        structure: goals?.structure ?? 'Straight Sets',
+        repRange: goals?.repRange ?? 'Hypertrophy (8-12)',
+        restStyle: goals?.restStyle ?? 'Adaptive',
+        includeIsometrics: goals?.includeIsometrics ?? false,
+        includeUnilateral: goals?.includeUnilateral ?? false,
+        includeCore: goals?.includeCore ?? false,
+      };
+
       // Input validation with detailed logging
-      if (!focus) {
+      if (!focus || !focus.category) {
         console.error('❌ SmartTemplate: Missing focus parameter');
-        return this.generateFallbackTemplate(this.getDefaultFocus(), goals);
-      }
-      
-      if (!focus.category) {
-        console.error('❌ SmartTemplate: Missing focus.category:', focus);
-        return this.generateFallbackTemplate(this.getDefaultFocus(), goals);
-      }
-      
-      if (!goals) {
-        console.error('❌ SmartTemplate: Missing goals parameter');
-        return this.generateFallbackTemplate(focus, this.getDefaultGoals());
+        return this.generateFallbackTemplate(this.getDefaultFocus(), effectiveGoals);
       }
 
-      console.log('✅ SmartTemplate: Valid inputs received', { 
-        focusCategory: focus.category, 
-        targetTonnage: goals.targetTonnage 
+      console.log('✅ SmartTemplate: Valid inputs received', {
+        focusCategory: focus.category,
+        targetTonnage: effectiveGoals.targetTonnage,
       });
 
       // 1. Fetch user's historical workout data
-      const historicalData = await this.fetchUserWorkoutHistory(userId, focus.category);
-      
+      const historicalData = await this.fetchUserWorkoutHistory(
+        userId,
+        focus.category,
+      );
+
       // 2. Generate base exercise recommendations
-      const baseExercises = await this.selectOptimalExercises(focus, historicalData);
-      
+      const baseExercises = await this.selectOptimalExercises(
+        focus,
+        historicalData,
+      );
+
       // 3. Calculate smart defaults for sets/reps/weight
-      const templateExercises = this.calculateSmartDefaults(baseExercises, goals, historicalData);
-      
+      const templateExercises = this.calculateSmartDefaults(
+        baseExercises,
+        effectiveGoals,
+        historicalData,
+      );
+
       // 4. Get AI-enhanced recommendations if available
-      const aiRecommendations = await this.getAIEnhancements(focus, goals, templateExercises);
-      
+      const aiRecommendations = await this.getAIEnhancements(
+        focus,
+        effectiveGoals,
+        templateExercises,
+      );
+
       // 5. Calculate estimates
       const estimatedTonnage = this.calculateEstimatedTonnage(templateExercises);
-      const estimatedDuration = this.estimateDuration(templateExercises, goals.timeBudget);
-      
+      const estimatedDuration = this.estimateDuration(
+        templateExercises,
+        effectiveGoals.timeBudget || 45,
+      );
+
       return {
         exercises: templateExercises,
         estimatedDuration,
         estimatedTonnage,
-        aiRecommendations
+        aiRecommendations,
       };
     } catch (error) {
       console.error('❌ SmartTemplate generation failed:', error);
-      // Ensure fallback has valid data
       const safeFocus = focus && focus.category ? focus : this.getDefaultFocus();
-      const safeGoals = goals || this.getDefaultGoals();
+      const safeGoals: Required<TrainingGoals> = {
+        targetTonnage: goals?.targetTonnage ?? 4000,
+        tonnageLevel: goals?.tonnageLevel ?? 'Moderate',
+        timeBudget: goals?.timeBudget ?? 45,
+        structure: goals?.structure ?? 'Straight Sets',
+        repRange: goals?.repRange ?? 'Hypertrophy (8-12)',
+        restStyle: goals?.restStyle ?? 'Adaptive',
+        includeIsometrics: goals?.includeIsometrics ?? false,
+        includeUnilateral: goals?.includeUnilateral ?? false,
+        includeCore: goals?.includeCore ?? false,
+      };
       return this.generateFallbackTemplate(safeFocus, safeGoals);
     }
   }
@@ -142,7 +170,7 @@ export class SmartTemplateService {
    */
   private static calculateSmartDefaults(
     exercises: string[],
-    goals: TrainingGoals,
+    goals: Required<TrainingGoals>,
     historicalData: HistoricalWorkoutData[]
   ): Array<{
     name: string;
@@ -202,7 +230,7 @@ export class SmartTemplateService {
    */
   private static async getAIEnhancements(
     focus: TrainingFocus,
-    goals: TrainingGoals,
+    goals: Required<TrainingGoals>,
     exercises: any[]
   ): Promise<string[]> {
     try {
@@ -295,7 +323,7 @@ Provide exactly 3 bullet points with specific, actionable recommendations for op
   /**
    * Generate fallback template when smart generation fails
    */
-  private static generateFallbackTemplate(focus: TrainingFocus, goals: TrainingGoals): SmartTemplateResult {
+  private static generateFallbackTemplate(focus: TrainingFocus, goals: Required<TrainingGoals>): SmartTemplateResult {
     // Ensure we have valid exercises array
     const exercises = focus.recommendedExercises || this.getDefaultExercises(focus.category);
     
@@ -332,17 +360,17 @@ Provide exactly 3 bullet points with specific, actionable recommendations for op
   /**
    * Get default goals when none provided
    */
-  private static getDefaultGoals(): TrainingGoals {
+  private static getDefaultGoals(): Required<TrainingGoals> {
     return {
-      targetTonnage: 3000,
-      timeBudget: 45,
-      repRange: 'Hypertrophy (8-12)',
-      structure: 'Straight Sets',
-      restStyle: 'Adaptive',
+      targetTonnage: 4000,
       tonnageLevel: 'Moderate',
+      timeBudget: 45,
+      structure: 'Straight Sets',
+      repRange: 'Hypertrophy (8-12)',
+      restStyle: 'Adaptive',
       includeIsometrics: false,
       includeUnilateral: false,
-      includeCore: true
+      includeCore: false,
     };
   }
 

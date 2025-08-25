@@ -65,8 +65,8 @@ const Index = () => {
       }
 
       // Validate required data before attempting smart template generation
-      if (!config?.focus || !config?.goals) {
-        console.error('Missing required config data:', { focus: !!config?.focus, goals: !!config?.goals });
+      if (!config?.focus) {
+        console.error('Missing required config data:', { focus: !!config?.focus });
         toast.error("Incomplete workout configuration. Please try again.");
         return;
       }
@@ -115,7 +115,7 @@ const Index = () => {
         trainingConfig: {
           trainingType: config.focus.category,
           tags: config.focus.subFocus || [],
-          duration: config.goals.timeBudget,
+          duration: config.goals?.timeBudget || 45,
           smartTemplate: smartTemplate,
           enhancedConfig: config
         }
