@@ -1,0 +1,8 @@
+{
+  "typescript.suggest.includeCompletionsForModuleExports": true,
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "tailwindCSS.experimental.classRegex": [
+    ["componentPatterns\\.(\\w+)", "'([^']*)'"],
+    ["typography\\.(\\w+)", "'([^']*)'"]
+  ]
+}

@@ -62,6 +62,15 @@
     --radius: 0.75rem;
     --header-h: 4rem;
     --header-offset: calc(var(--header-h) + env(safe-area-inset-top));
+
+    /* Design token variables */
+    --color-brand-primary: theme('colors.brand.primary');
+    --color-brand-secondary: theme('colors.brand.secondary');
+    --font-size-heading-xl: theme('fontSize.headingXl');
+    --font-size-body: theme('fontSize.body');
+    --spacing-md: theme('spacing.md');
+    --radius-lg: theme('borderRadius.lg');
+    --shadow-md: theme('boxShadow.md');
   }
   .glass,
   .card-gradient {

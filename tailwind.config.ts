@@ -1,19 +1,8 @@
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import { designTokens } from "./src/designTokens";
 
-// CUSTOM COLORS - updated with new blue gradient
-const colors = {
-  primary: "#9b87f5",          // Purple
-  secondary: "#2563eb",        // Updated to start of blue gradient
-  accent: "#4f46e5",           // End of blue gradient
-  neutral: "#1A1F2C",          // Very dark background
-  neutralLight: "#23263A",
-  info: "#90cdf4",             // Light blue
-  positive: "#34d399",         // Green
-  negative: "#f87171",         // Red
-};
-
-const config = {
+const config: Config = {
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
@@ -37,35 +26,20 @@ const config = {
         sans: ["Inter", ...fontFamily.sans],
       },
       colors: {
-        // Core palette override (only dark)
-        primary: {
-          DEFAULT: colors.primary,
-        },
-        secondary: {
-          DEFAULT: colors.secondary,
-        },
-        accent: {
-          DEFAULT: colors.accent,
-        },
-        neutral: {
-          DEFAULT: colors.neutral,
-          light: colors.neutralLight,
-        },
-        info: colors.info,
-        positive: colors.positive,
-        negative: colors.negative,
-        // Map to variable colors for easier migration
+        brand: designTokens.colors.brand,
+        semantic: designTokens.colors.semantic,
+        neutral: designTokens.colors.neutral,
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
+      fontSize: designTokens.typography.scale,
+      fontWeight: designTokens.typography.weight,
+      spacing: designTokens.spacing,
+      borderRadius: designTokens.radius,
+      boxShadow: designTokens.shadows,
       keyframes: {
         "accordion-down": {
           from: { height: 0 },
