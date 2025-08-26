@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
-import { Sparkles, ArrowLeft } from 'lucide-react';
-import { componentPatterns, typography } from '@/utils/tokenUtils';
+import { ArrowLeft } from 'lucide-react';
+import { componentPatterns, typography, effects, gradients } from '@/utils/tokenUtils';
 import WizardProgress from './WizardProgress';
 import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
 import { SETUP_CHOOSE_EXERCISES_ENABLED } from '@/constants/featureFlags';
@@ -153,13 +152,26 @@ export function EnhancedWorkoutSetupWizard({
     actions.setSelectedSubFocus('');
   };
 
+  if (!open) return null;
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="h-[90vh] rounded-t-xl border-0 bg-background/95 backdrop-blur-md"
+    <div
+      className={`${componentPatterns.modal.overlay()} ${effects.blur.overlay()}`}
+      onClick={() => onOpenChange(false)}
+    >
+      <div
+        className={`
+          ${componentPatterns.modal.container()}
+          relative max-w-2xl w-full max-h-[90vh] overflow-hidden
+          bg-gradient-to-br ${gradients.brand.card()}
+          ${effects.elevation.enhanced()} border border-white/15
+          before:absolute before:inset-0 before:rounded-2xl
+          before:bg-gradient-to-br before:from-white/5 before:to-transparent
+          before:mix-blend-overlay before:pointer-events-none
+        `}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-col h-full max-w-2xl mx-auto">
+        <div className="flex flex-col h-full">
           <WizardProgress
             currentStep={step - 1}
             totalSteps={2}
@@ -269,8 +281,8 @@ export function EnhancedWorkoutSetupWizard({
             </>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 }
 
