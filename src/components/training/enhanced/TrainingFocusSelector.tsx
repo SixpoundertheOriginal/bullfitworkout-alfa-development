@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { TRAINING_FOCUSES, TrainingFocus } from '@/types/training-setup';
+import { brandColors, componentPatterns, typography } from '@/utils/tokenUtils';
 import { 
   Dumbbell, 
   ArrowUp, 
@@ -31,24 +32,14 @@ const FOCUS_ICONS = {
   'Deload / Rehab': <Shield className="h-5 w-5" />
 };
 
-const FOCUS_GRADIENTS = {
-  'Push': 'from-red-500/20 to-orange-500/20',
-  'Pull': 'from-blue-500/20 to-cyan-500/20',
-  'Legs': 'from-purple-500/20 to-pink-500/20',
-  'Full Body': 'from-green-500/20 to-emerald-500/20',
-  'Arms': 'from-yellow-500/20 to-amber-500/20',
-  'Core': 'from-indigo-500/20 to-violet-500/20',
-  'Deload / Rehab': 'from-gray-500/20 to-slate-500/20'
-};
-
-const FOCUS_BORDERS = {
-  'Push': 'border-red-500/30',
-  'Pull': 'border-blue-500/30',
-  'Legs': 'border-purple-500/30',
-  'Full Body': 'border-green-500/30',
-  'Arms': 'border-yellow-500/30',
-  'Core': 'border-indigo-500/30',
-  'Deload / Rehab': 'border-gray-500/30'
+const FOCUS_CARD_VARIANTS: Record<string, string> = {
+  'Push': `${componentPatterns.card.primary()} border-l-4 border-l-purple-600`,
+  'Pull': `${componentPatterns.card.primary()} border-l-4 border-l-pink-600`,
+  'Legs': `${componentPatterns.card.primary()} border-l-4 border-l-purple-700`,
+  'Full Body': `${componentPatterns.card.primary()} border-l-4 border-l-pink-700`,
+  'Arms': `${componentPatterns.card.primary()} border-l-4 border-l-purple-500`,
+  'Core': `${componentPatterns.card.primary()} border-l-4 border-l-pink-500`,
+  'Deload / Rehab': `${componentPatterns.card.primary()} border-l-4 border-l-zinc-500`
 };
 
 export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocusSelectorProps) {
@@ -80,35 +71,26 @@ export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocus
               layout
               className="relative"
             >
-              <Card 
+              <Card
                 className={cn(
                   "cursor-pointer transition-all duration-200 hover:scale-[1.02]",
-                  "bg-background/50 backdrop-blur-sm border",
-                  isSelected 
-                    ? FOCUS_BORDERS[focus.category]
-                    : "border-border/50 hover:border-border",
-                  isExpanded && "ring-2 ring-primary/20"
+                  FOCUS_CARD_VARIANTS[focus.category],
+                  isExpanded && "ring-2 ring-purple-500/30"
                 )}
                 onClick={() => handleFocusSelect(focus)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center",
-                        "bg-gradient-to-br",
-                        FOCUS_GRADIENTS[focus.category],
-                        "border",
-                        FOCUS_BORDERS[focus.category]
-                      )}>
+                      <div
+                        className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
+                      >
                         {FOCUS_ICONS[focus.category]}
                       </div>
-                      
+
                       <div>
-                        <h3 className="font-medium text-foreground">
-                          {focus.category}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <h3 className={typography.headingMd()}>{focus.category}</h3>
+                        <p className={`${typography.caption()} text-zinc-400`}>
                           {focus.description}
                         </p>
                       </div>
@@ -138,39 +120,36 @@ export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocus
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="mt-2 ml-4 overflow-hidden"
+                    className="overflow-hidden mt-2"
                   >
-                    <div className="space-y-2">
-                      <div className="text-xs text-muted-foreground font-medium mb-2">
+                    <div className={`${componentPatterns.card.secondary()} mt-1`}>
+                      <h4 className={`${typography.caption()} text-zinc-400 uppercase tracking-wide mb-3`}>
                         Choose sub-focus:
-                      </div>
-                      {focus.subFocus.map((subFocus) => (
-                        <Button
-                          key={subFocus}
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start text-left h-auto py-2 px-3"
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {focus.subFocus.map((subFocus) => (
+                          <button
+                            key={subFocus}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSubFocusSelect(focus, subFocus);
+                            }}
+                            className={`${componentPatterns.button.secondary()} px-3 py-2 rounded-lg text-sm`}
+                          >
+                            {subFocus}
+                          </button>
+                        ))}
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleSubFocusSelect(focus, subFocus);
+                            onSelect(focus);
+                            setExpandedFocus(null);
                           }}
+                          className={`${componentPatterns.button.secondary()} px-3 py-2 rounded-lg text-sm text-zinc-400`}
                         >
-                          <span className="text-sm">{subFocus}</span>
-                        </Button>
-                      ))}
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start text-left h-auto py-2 px-3 text-muted-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelect(focus);
-                          setExpandedFocus(null);
-                        }}
-                      >
-                        <span className="text-sm">General {focus.category}</span>
-                      </Button>
+                          General {focus.category}
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
