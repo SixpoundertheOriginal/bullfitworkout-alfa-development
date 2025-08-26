@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
 import { Sparkles, ArrowLeft } from 'lucide-react';
+import { componentPatterns, typography } from '@/utils/tokenUtils';
+import WizardProgress from './WizardProgress';
+import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
 import { SETUP_CHOOSE_EXERCISES_ENABLED } from '@/constants/featureFlags';
 import {
   TrainingFocus,
@@ -41,18 +43,15 @@ export function EnhancedWorkoutSetupWizard({
   onComplete,
   onChooseExercises,
 }: EnhancedWorkoutSetupWizardProps) {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedFocus, setSelectedFocus] = useState<TrainingFocus | null>(null);
-  const [selectedSubFocus, setSelectedSubFocus] = useState<string>('');
+  const { state, actions } = useWorkoutSetupContext();
+  const { currentStep: step, selectedFocus, selectedSubFocus } = state;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       console.info('[DEBUG] Wizard opened, flags:', { SETUP_CHOOSE_EXERCISES_ENABLED });
-      setStep(1);
-      setSelectedFocus(null);
-      setSelectedSubFocus('');
+      actions.reset();
       setIsGenerating(false);
       setIsSubmitting(false);
     }
@@ -109,11 +108,11 @@ export function EnhancedWorkoutSetupWizard({
     console.log('setup_focus_selected', { focus: focus.category });
     console.info('[DEBUG] onFocusChosen:', focus.category, subFocus);
     
-    setSelectedFocus(focus);
-    setSelectedSubFocus(subFocus || '');
-    
+    actions.setSelectedFocus(focus);
+    if (subFocus) actions.setSelectedSubFocus(subFocus);
+
     if (SETUP_CHOOSE_EXERCISES_ENABLED) {
-      setStep(2);
+      actions.nextStep();
     } else {
       // Legacy: immediately run smart plan
       runSmartPlan(focus, subFocus);
@@ -149,9 +148,9 @@ export function EnhancedWorkoutSetupWizard({
 
   const handleBackToStep1 = () => {
     console.info('[DEBUG] Back to Step 1');
-    setStep(1);
-    setSelectedFocus(null);
-    setSelectedSubFocus('');
+    actions.previousStep();
+    actions.setSelectedFocus(null);
+    actions.setSelectedSubFocus('');
   };
 
   return (
@@ -161,12 +160,20 @@ export function EnhancedWorkoutSetupWizard({
         className="h-[90vh] rounded-t-xl border-0 bg-background/95 backdrop-blur-md"
       >
         <div className="flex flex-col h-full max-w-2xl mx-auto">
+          <WizardProgress
+            currentStep={step - 1}
+            totalSteps={2}
+            steps={[
+              { title: 'Focus', completed: step > 1 },
+              { title: 'Start', completed: false },
+            ]}
+          />
           {step === 1 ? (
             <>
-              <div className="flex-shrink-0 space-y-4 pt-6 pb-4">
-                <div>
-                  <h1 className="text-2xl font-bold">Workout Setup</h1>
-                  <p className="text-muted-foreground">
+              <div className="flex-shrink-0 pt-6 pb-4">
+                <div className={componentPatterns.modal.header()}>
+                  <h2 className={typography.sectionHeading()}>Workout Setup</h2>
+                  <p className={`${typography.bodyText()} text-zinc-400`}>
                     Choose your training focus to get started
                   </p>
                 </div>
@@ -180,33 +187,32 @@ export function EnhancedWorkoutSetupWizard({
               </div>
 
               <div className="flex-shrink-0 pt-4 border-t">
-                <Button
-                  variant="outline"
+                <button
+                  className={`${componentPatterns.button.secondary()} w-full`}
                   onClick={() => onOpenChange(false)}
-                  className="w-full"
                 >
                   Cancel
-                </Button>
+                </button>
               </div>
             </>
           ) : (
             <>
-              <div className="flex-shrink-0 space-y-4 pt-6 pb-4">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBackToStep1}
-                    className="p-2"
-                    aria-label="Back to focus selection"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div>
-                    <h1 className="text-2xl font-bold">How would you like to start?</h1>
-                    <p className="text-muted-foreground">
-                      We can auto-build a proven plan, or you can pick exercises.
-                    </p>
+              <div className="flex-shrink-0 pt-6 pb-4">
+                <div className={componentPatterns.modal.header()}>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleBackToStep1}
+                      className={componentPatterns.button.ghost() + ' p-2'}
+                      aria-label="Back to focus selection"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <div>
+                      <h2 className={typography.sectionHeading()}>How would you like to start?</h2>
+                      <p className={`${typography.bodyText()} text-zinc-400`}>
+                        We can auto-build a proven plan, or you can pick exercises.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -225,44 +231,40 @@ export function EnhancedWorkoutSetupWizard({
                 )}
 
                 <div className="space-y-4">
-                  <Button
+                  <button
                     onClick={handleGenerateSmartProgram}
                     disabled={isSubmitting}
-                    className="w-full h-16 text-lg"
+                    className={`${componentPatterns.button.primary()} h-14 w-full relative`}
                     aria-label="Generate Smart Program - auto-build a proven workout plan"
                   >
-                    {isGenerating ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin">
-                          <Sparkles className="h-5 w-5" />
-                        </div>
-                        Generating Smart Program...
+                    {isGenerating && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       </div>
-                    ) : (
-                      'Generate Smart Program'
                     )}
-                  </Button>
+                    <span className={isGenerating ? 'opacity-0' : ''}>
+                      Generate Smart Program
+                    </span>
+                  </button>
 
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={handleChooseExercises}
                     disabled={isSubmitting}
-                    className="w-full h-16 text-lg"
+                    className={`${componentPatterns.button.secondary()} w-full h-14`}
                     aria-label="Choose Exercises - manually select exercises from library"
                   >
                     Choose Exercises
-                  </Button>
+                  </button>
                 </div>
               </div>
 
               <div className="flex-shrink-0 pt-4 border-t">
-                <Button
-                  variant="outline"
+                <button
+                  className={`${componentPatterns.button.secondary()} w-full`}
                   onClick={() => onOpenChange(false)}
-                  className="w-full"
                 >
                   Cancel
-                </Button>
+                </button>
               </div>
             </>
           )}
