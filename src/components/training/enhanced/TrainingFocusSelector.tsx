@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { TRAINING_FOCUSES, TrainingFocus } from '@/types/training-setup';
-import { brandColors, componentPatterns, typography } from '@/utils/tokenUtils';
+import {
+  brandColors,
+  componentPatterns,
+  typography,
+  effects,
+} from '@/utils/tokenUtils';
 import { 
   Dumbbell, 
   ArrowUp, 
@@ -32,15 +35,67 @@ const FOCUS_ICONS = {
   'Deload / Rehab': <Shield className="h-5 w-5" />
 };
 
-const FOCUS_CARD_VARIANTS: Record<string, string> = {
-  'Push': `${componentPatterns.card.primary()} border-l-4 border-l-purple-600`,
-  'Pull': `${componentPatterns.card.primary()} border-l-4 border-l-pink-600`,
-  'Legs': `${componentPatterns.card.primary()} border-l-4 border-l-purple-700`,
-  'Full Body': `${componentPatterns.card.primary()} border-l-4 border-l-pink-700`,
-  'Arms': `${componentPatterns.card.primary()} border-l-4 border-l-purple-500`,
-  'Core': `${componentPatterns.card.primary()} border-l-4 border-l-pink-500`,
-  'Deload / Rehab': `${componentPatterns.card.primary()} border-l-4 border-l-zinc-500`
-};
+interface FocusCardProps {
+  focus: TrainingFocus;
+  icon: React.ReactNode;
+  isSelected: boolean;
+  isExpanded: boolean;
+  onClick: () => void;
+}
+
+function FocusCard({
+  focus,
+  icon,
+  isSelected,
+  isExpanded,
+  onClick,
+}: FocusCardProps) {
+  const baseClasses =
+    (componentPatterns as any).cards?.metric?.() ||
+    componentPatterns.card.metric();
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        baseClasses,
+        `hover:${effects.glow.subtle()}`,
+        (isSelected || isExpanded) && effects.glow.medium(),
+        (isSelected || isExpanded) && 'ring-2 ring-purple-500/30'
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div
+            className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
+          >
+            {icon}
+          </div>
+
+          <div>
+            <h3 className={typography.headingMd()}>{focus.category}</h3>
+            <p className={`${typography.caption()} text-zinc-400`}>
+              {focus.description}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {isSelected && (
+            <Badge variant="secondary" className="bg-primary/10 text-primary">
+              Selected
+            </Badge>
+          )}
+          <ChevronRight
+            className={cn(
+              'h-4 w-4 transition-transform duration-200 text-muted-foreground',
+              isExpanded && 'rotate-90'
+            )}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocusSelectorProps) {
   const [expandedFocus, setExpandedFocus] = useState<string | null>(null);
@@ -71,47 +126,13 @@ export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocus
               layout
               className="relative"
             >
-              <Card
-                className={cn(
-                  "cursor-pointer transition-all duration-200 hover:scale-[1.02]",
-                  FOCUS_CARD_VARIANTS[focus.category],
-                  isExpanded && "ring-2 ring-purple-500/30"
-                )}
+              <FocusCard
+                focus={focus}
+                icon={FOCUS_ICONS[focus.category]}
+                isSelected={isSelected}
+                isExpanded={isExpanded}
                 onClick={() => handleFocusSelect(focus)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
-                      >
-                        {FOCUS_ICONS[focus.category]}
-                      </div>
-
-                      <div>
-                        <h3 className={typography.headingMd()}>{focus.category}</h3>
-                        <p className={`${typography.caption()} text-zinc-400`}>
-                          {focus.description}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      {isSelected && (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary">
-                          Selected
-                        </Badge>
-                      )}
-                      <ChevronRight 
-                        className={cn(
-                          "h-4 w-4 transition-transform duration-200 text-muted-foreground",
-                          isExpanded && "rotate-90"
-                        )}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              />
 
               <AnimatePresence>
                 {isExpanded && focus.subFocus && (
