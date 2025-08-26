@@ -52,6 +52,8 @@
     --primary-foreground: 0 0% 98%;
     --secondary: 31 96% 60%; /* mapped to #F97316 */
     --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
     --accent: 92 76% 91%; /* mapped to #F2FCE2 */
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 62.8% 30.6%;
