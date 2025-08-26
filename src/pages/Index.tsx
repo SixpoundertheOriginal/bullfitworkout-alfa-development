@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WeeklySummaryStats } from "@/components/WeeklySummaryStats";
 import { EnhancedWorkoutSetupWizard } from "@/components/training/enhanced/EnhancedWorkoutSetupWizard";
+import { WorkoutSetupProvider } from "@/context/WorkoutSetupContext";
 import { SmartTemplateService } from "@/services/SmartTemplateService";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkoutStats } from "@/hooks/useWorkoutStats";
@@ -205,12 +206,14 @@ const Index = () => {
         </div>
       </div>
 
-      <EnhancedWorkoutSetupWizard
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onComplete={handleEnhancedWorkoutComplete}
-        onChooseExercises={handleManualStart}
-      />
+      <WorkoutSetupProvider>
+        <EnhancedWorkoutSetupWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          onComplete={handleEnhancedWorkoutComplete}
+          onChooseExercises={handleManualStart}
+        />
+      </WorkoutSetupProvider>
       
       <AnimatedLevelUp show={showLevelUp} />
     </AppBackground>
