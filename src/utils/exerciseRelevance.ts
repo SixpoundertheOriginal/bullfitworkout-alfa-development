@@ -39,7 +39,11 @@ export const calculateExerciseRelevance = (
   }
 
   if (selectedSubFocus) {
-    const subMatch = exercise.tags?.includes(selectedSubFocus.toLowerCase());
+    const subMatch = exercise.variations?.some(v => 
+      v.toLowerCase().includes(selectedSubFocus.toLowerCase())
+    ) || exercise.aliases?.some(a => 
+      a.toLowerCase().includes(selectedSubFocus.toLowerCase())
+    );
     if (subMatch) {
       score += 75;
       matchedCriteria.push('Sub-focus match');

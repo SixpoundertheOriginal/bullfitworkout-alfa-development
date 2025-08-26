@@ -42,11 +42,11 @@ const ExerciseCard = ({ exercise, isRecommended, matchedCriteria = [] }: Exercis
 const ExerciseLibraryWithFiltering = () => {
   const { state } = useWorkoutSetupContext();
   const { selectedFocus, selectedSubFocus } = state;
-  const [exercises] = useExercises();
+  const { exercises } = useExercises();
 
   const scoredExercises = useMemo(() =>
     exercises
-      .map((ex) => calculateExerciseRelevance(ex, selectedFocus || '', selectedSubFocus || undefined))
+      .map((ex) => calculateExerciseRelevance(ex, selectedFocus?.toString() || '', selectedSubFocus || undefined))
       .sort((a, b) => b.relevanceScore - a.relevanceScore),
     [exercises, selectedFocus, selectedSubFocus]
   );
@@ -59,7 +59,7 @@ const ExerciseLibraryWithFiltering = () => {
       <div className={componentPatterns.card.secondary()}>
         <div className="flex items-center gap-2 mb-2">
           <Target className="w-4 h-4 text-purple-500" />
-          <span className={typography.caption()}>Showing exercises for {selectedFocus}</span>
+          <span className={typography.caption()}>Showing exercises for {selectedFocus?.toString()}</span>
         </div>
         {selectedSubFocus && (
           <p className={`${typography.caption()} text-zinc-400`}>Sub-focus: {selectedSubFocus}</p>
@@ -86,7 +86,7 @@ const ExerciseLibraryWithFiltering = () => {
         <h3 className={`${typography.sectionHeading()} mb-4`}>Other Exercises</h3>
         <div className="grid gap-3">
           {others.map(({ exercise }) => (
-            <ExerciseCard key={exercise.id} exercise={exercise} />
+            <ExerciseCard key={exercise.id} exercise={exercise} isRecommended={false} />
           ))}
         </div>
       </section>
