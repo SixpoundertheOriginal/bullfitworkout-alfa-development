@@ -65,145 +65,11 @@ function getDayName(day: number): string {
   return days[day - 1];
 }
 
-// Enhanced stat card component
-interface StatCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: number | string;
-  unit?: string;
-  comparison: {
-    percentage: number;
-    label: string;
-    color: string;
-    message?: string;
-  };
-  encouragement?: string;
-  isLoading?: boolean;
-}
+// Import enhanced component
+import { MetricCard } from './ui/enhanced/MetricCard';
 
-const StatCard: React.FC<StatCardProps> = ({ 
-  icon, 
-  title, 
-  value, 
-  unit, 
-  comparison,
-  encouragement,
-  isLoading 
-}) => {
-  const cardStyle = {
-    background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    filter: 'drop-shadow(0 10px 20px rgba(139, 92, 246, 0.15)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
-    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-  };
-
-  const innerHighlightStyle = {
-    background: 'linear-gradient(45deg, rgba(255,255,255,0.05) 0%, transparent 50%)',
-    mixBlendMode: 'overlay' as const
-  };
-
-  return (
-    <div
-      className="p-3 sm:p-4 rounded-xl text-start relative overflow-hidden group transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-      style={cardStyle}
-    >
-      <div
-        className="absolute inset-0 rounded-xl opacity-50"
-        style={innerHighlightStyle}
-      />
-
-      <div className="relative z-10">
-        <div className="flex items-center gap-2 min-w-0 mb-2">
-          <div className="p-2 bg-zinc-800/50 rounded-lg">
-            {icon}
-          </div>
-          <span className="text-sm truncate text-muted-foreground">{title}</span>
-          {comparison.message?.includes('vs last') && comparison.percentage > 0 && (
-            <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
-              On track!
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <p className="text-xl sm:text-2xl font-semibold tabular-nums text-white">
-            {isLoading ? "..." : value}
-            {unit && <span className="text-sm text-white/80 ml-1">{unit}</span>}
-          </p>
-
-          {!isLoading && (
-            <p className="text-xs text-white/70 leading-snug">
-              {comparison.label}
-              {comparison.message ? ` ${comparison.message}` : ''}
-            </p>
-          )}
-
-          {encouragement && !isLoading && (
-            <p className="text-xs text-purple-400 mt-2">{encouragement}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Week progress bar component
-const WeekProgressBar: React.FC<{ currentDay: number }> = ({ currentDay }) => {
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const progressPercentage = (currentDay / 7) * 100;
-  
-  const progressCardStyle = {
-    background: 'linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(236,72,153,0.12) 100%)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    filter: 'drop-shadow(0 10px 20px rgba(139, 92, 246, 0.15)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
-    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(139, 92, 246, 0.1)'
-  };
-
-  return (
-    <div className="p-4 rounded-xl mb-4" style={progressCardStyle}>
-      <div className="flex items-center gap-2 min-w-0 mb-3">
-        <h3 className="text-sm text-white/90 truncate">Week Progress</h3>
-        <span className="text-xs text-white/70 ml-auto shrink-0">
-          Day {currentDay} of 7
-        </span>
-      </div>
-      
-      {/* Progress bar */}
-      <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden mb-3">
-        <div 
-          className="absolute h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
-          style={{ width: `${progressPercentage}%` }}
-        />
-      </div>
-      
-      {/* Day indicators */}
-      <div className="flex justify-between">
-        {days.map((day, index) => (
-          <div
-            key={index}
-            className={`text-xs font-medium ${
-              index < currentDay 
-                ? 'text-purple-400' 
-                : index === currentDay - 1
-                ? 'text-white'
-                : 'text-zinc-600'
-            }`}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-      
-      {currentDay <= 3 && (
-        <p className="text-xs text-zinc-500 mt-3 text-center">
-          Building momentum for the week 💪
-        </p>
-      )}
-    </div>
-  );
-};
+// Import enhanced progress card
+import { ProgressCard } from './ui/enhanced/ProgressCard';
 
 // Streak badge component
 const StreakBadge: React.FC<{ days: number }> = ({ days }) => {
@@ -383,12 +249,17 @@ export const WeeklySummaryStats = React.memo(() => {
 
         {/* Week Progress Bar */}
         <div className="mt-3">
-          <WeekProgressBar currentDay={currentDayOfWeek} />
+          <ProgressCard 
+            title="Week Progress"
+            subtitle={`Day ${currentDayOfWeek} of 7`}
+            currentDay={currentDayOfWeek}
+            encouragementMessage="Building momentum for the week 💪"
+          />
         </div>
 
         {/* Stats Grid */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <StatCard
+          <MetricCard
             icon={<Calendar className="w-4 h-4 text-purple-400" />}
             title="Workouts"
             value={weekStats.workouts.current}
@@ -403,7 +274,7 @@ export const WeeklySummaryStats = React.memo(() => {
             isLoading={isLoading}
           />
 
-          <StatCard
+          <MetricCard
             icon={<Repeat className="w-4 h-4 text-orange-400" />}
             title="Total Reps"
             value={weekStats.reps.current}
@@ -417,7 +288,7 @@ export const WeeklySummaryStats = React.memo(() => {
             isLoading={isLoading}
           />
 
-          <StatCard
+          <MetricCard
             icon={<Layers className="w-4 h-4 text-green-400" />}
             title="Total Sets"
             value={weekStats.sets.current}
@@ -434,7 +305,7 @@ export const WeeklySummaryStats = React.memo(() => {
 
         {/* Total Time - Full Width */}
         <div className="mt-4">
-          <StatCard
+          <MetricCard
             icon={<Clock className="w-4 h-4 text-zinc-400" />}
             title="Total Time"
             value={formatDuration(weekStats.time.current)}
@@ -450,8 +321,8 @@ export const WeeklySummaryStats = React.memo(() => {
           />
         </div>
 
-        {/* Most Active Day */}
-        <div className="mt-4 bg-zinc-900/50 rounded-xl p-4 border border-zinc-800">
+        {/* Most Active Day - Enhanced */}
+        <div className="mt-4 relative p-4 rounded-xl bg-zinc-900/50 border border-zinc-800 hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center mb-2">
             <span className="text-lg mr-2">🔥</span>
             <span className="text-sm text-muted-foreground">Most Active Day</span>
@@ -469,30 +340,33 @@ export const WeeklySummaryStats = React.memo(() => {
           </div>
         )}
 
-        {/* Quick Stats Section */}
-        <div className="mt-4 flex justify-around py-3 bg-zinc-900/30 rounded-xl">
-          <div className="text-center">
-            <p className="text-xs text-zinc-500">This Week</p>
-            <p className="text-sm font-bold text-white">{weekStats.workouts.current}/5</p>
-            <p className="text-xs text-zinc-600">workouts</p>
-          </div>
-          <div className="w-px bg-zinc-800" />
-          <div className="text-center">
-            <p className="text-xs text-zinc-500">Weekly Goal</p>
-            <p className="text-sm font-bold text-green-400">
-              {weekStats.workouts.current >= 3 ? "On Track" : "Building"}
-            </p>
-            <p className="text-xs text-zinc-600">
-              {Math.round((weekStats.workouts.current / 5) * 100)}% done
-            </p>
-          </div>
-          <div className="w-px bg-zinc-800" />
-          <div className="text-center">
-            <p className="text-xs text-zinc-500">Best Day</p>
-            <p className="text-sm font-bold text-purple-400">
-              {mostActiveDay.split(' ')[0] || "None"}
-            </p>
-            <p className="text-xs text-zinc-600">historically</p>
+        {/* Quick Stats Section - Enhanced */}
+        <div className="mt-4 relative p-3 rounded-xl bg-gradient-to-br from-purple-600/12 to-pink-500/12 backdrop-blur-[12px] border border-white/15 overflow-hidden hover:scale-[1.02] transition-all duration-200">
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/5 to-transparent mix-blend-overlay pointer-events-none" />
+          <div className="relative z-10 flex justify-around">
+            <div className="text-center">
+              <p className="text-xs text-zinc-500">This Week</p>
+              <p className="text-sm font-bold text-white">{weekStats.workouts.current}/5</p>
+              <p className="text-xs text-zinc-600">workouts</p>
+            </div>
+            <div className="w-px bg-zinc-800" />
+            <div className="text-center">
+              <p className="text-xs text-zinc-500">Weekly Goal</p>
+              <p className="text-sm font-bold text-green-400">
+                {weekStats.workouts.current >= 3 ? "On Track" : "Building"}
+              </p>
+              <p className="text-xs text-zinc-600">
+                {Math.round((weekStats.workouts.current / 5) * 100)}% done
+              </p>
+            </div>
+            <div className="w-px bg-zinc-800" />
+            <div className="text-center">
+              <p className="text-xs text-zinc-500">Best Day</p>
+              <p className="text-sm font-bold text-purple-400">
+                {mostActiveDay.split(' ')[0] || "None"}
+              </p>
+              <p className="text-xs text-zinc-600">historically</p>
+            </div>
           </div>
         </div>
       </div>

@@ -31,6 +31,50 @@ export const designTokens = {
       },
     },
   },
+  gradients: {
+    brand: {
+      primary: 'from-purple-600 to-pink-500',
+      secondary: 'from-purple-600 to-purple-800',
+      subtle: 'from-purple-700/20 to-pink-600/20',
+      card: 'from-purple-600/12 to-pink-500/12',
+    },
+  },
+  effects: {
+    glow: {
+      subtle: '0 0 20px rgba(168, 85, 247, 0.15)',
+      medium: '0 0 30px rgba(168, 85, 247, 0.25)', 
+      strong: '0 0 40px rgba(168, 85, 247, 0.35)',
+      purple: '0 0 20px rgba(139, 92, 246, 0.15)',
+    },
+    elevation: {
+      card: '0 4px 20px rgba(0, 0, 0, 0.1)',
+      floating: '0 8px 30px rgba(0, 0, 0, 0.15)',
+      modal: '0 20px 60px rgba(0, 0, 0, 0.3)',
+      enhanced: '0 10px 20px rgba(139, 92, 246, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
+    },
+    blur: {
+      card: 'blur(12px)',
+      overlay: 'blur(8px)',
+    },
+  },
+  animations: {
+    press: {
+      scale: 'scale-[0.98]',
+      duration: 'duration-150',
+      easing: 'ease-out'
+    },
+    hover: {
+      scale: 'scale-[1.02]', 
+      scaleStrong: 'scale-[1.05]',
+      duration: 'duration-200',
+      durationFast: 'duration-150',
+      easing: 'ease-in-out'
+    },
+    pulse: {
+      scale: 'animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]',
+      glow: 'animate-[pulse_2.1s_ease-in-out_infinite]',
+    }
+  },
   spacing: {
     xs: '0.25rem',
     sm: '0.5rem',

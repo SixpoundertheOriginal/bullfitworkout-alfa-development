@@ -3,6 +3,7 @@ import { Clock, User as UserIcon, Dumbbell, BarChart3, Zap, Bot } from "lucide-r
 import { useLocation } from "react-router-dom";
 import { useWorkoutNavigation } from "@/context/WorkoutNavigationContext";
 import { useWorkoutStore } from "@/store/workoutStore";
+import { NavigationItem } from "@/components/ui/enhanced/NavigationItem";
 
 export const BottomNav = () => {
   const location = useLocation();
@@ -31,73 +32,50 @@ export const BottomNav = () => {
   }
   
   return (
-    <nav className="fixed bottom-0 left-0 right-0 grid grid-cols-5 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom" style={{ gridTemplateColumns: isWorkoutActive ? 'repeat(6, 1fr)' : 'repeat(5, 1fr)' }}>
-      <NavButton 
-        icon={<Clock size={20} />} 
-        label="Home" 
-        active={isActive('/')} 
-        onClick={() => confirmNavigation('/')} 
-      />
-      <NavButton 
-        icon={<BarChart3 size={20} />} 
-        label="Overview" 
-        active={isActive('/overview')}
-        onClick={() => confirmNavigation('/overview')} 
-      />
-      {isWorkoutActive && (
-        <NavButton 
-          icon={<Zap size={20} />} 
-          label="Training"
-          active={isActive('/training-session')}
-          onClick={() => confirmNavigation('/training-session')}
-          highlight={true}
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-gray-800/50 bg-gray-900/95 backdrop-blur-sm z-10 safe-bottom">
+      <div className="flex justify-around items-center py-2">
+        <NavigationItem 
+          icon={<Clock size={20} />} 
+          label="Home" 
+          isActive={isActive('/')} 
+          onClick={() => confirmNavigation('/')} 
         />
-      )}
-      <NavButton 
-        icon={<Bot size={20} />} 
-        label="AI Coach"
-        active={isActive('/ai-coach')}
-        onClick={() => confirmNavigation('/ai-coach')}
-      />
-      <NavButton 
-        icon={<Dumbbell size={20} />} 
-        label="Exercises"
-        active={isActive('/all-exercises')}
-        onClick={() => confirmNavigation('/all-exercises')}
-      />
-      <NavButton 
-        icon={<UserIcon size={20} />} 
-        label="Profile" 
-        active={isActive('/profile')}
-        onClick={() => confirmNavigation('/profile')} 
-      />
+        <NavigationItem 
+          icon={<BarChart3 size={20} />} 
+          label="Overview" 
+          isActive={isActive('/overview')}
+          onClick={() => confirmNavigation('/overview')} 
+        />
+        {isWorkoutActive && (
+          <NavigationItem 
+            icon={<Zap size={20} />} 
+            label="Training"
+            isActive={isActive('/training-session')}
+            onClick={() => confirmNavigation('/training-session')}
+            className="relative"
+          />
+        )}
+        <NavigationItem 
+          icon={<Bot size={20} />} 
+          label="AI Coach"
+          isActive={isActive('/ai-coach')}
+          onClick={() => confirmNavigation('/ai-coach')}
+        />
+        <NavigationItem 
+          icon={<Dumbbell size={20} />} 
+          label="Exercises"
+          isActive={isActive('/all-exercises')}
+          onClick={() => confirmNavigation('/all-exercises')}
+        />
+        <NavigationItem 
+          icon={<UserIcon size={20} />} 
+          label="Profile" 
+          isActive={isActive('/profile')}
+          onClick={() => confirmNavigation('/profile')} 
+        />
+      </div>
     </nav>
   );
 };
 
-const NavButton = ({ 
-  icon, 
-  label, 
-  active = false, 
-  onClick,
-  highlight = false
-}: { 
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-  highlight?: boolean;
-}) => {
-  return (
-    <button 
-      onClick={onClick} 
-      className={`flex flex-col items-center justify-center py-3 ${active ? 'text-white' : 'text-gray-500'} ${highlight ? 'relative' : ''}`}
-    >
-      {icon}
-      <span className="text-xs mt-1">{label}</span>
-      {highlight && (
-        <span className="absolute top-2 right-1/4 h-2 w-2 bg-green-500 rounded-full"></span>
-      )}
-    </button>
-  );
-};
+// NavButton component removed - now using NavigationItem

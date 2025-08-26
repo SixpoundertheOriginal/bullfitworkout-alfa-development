@@ -67,7 +67,13 @@ const config: Config = {
       fontWeight: designTokens.typography.weight,
       spacing: designTokens.spacing,
       borderRadius: designTokens.radius,
-      boxShadow: designTokens.shadows,
+      boxShadow: {
+        ...designTokens.shadows,
+        'glow-subtle': '0 0 20px rgba(168, 85, 247, 0.15)',
+        'glow-medium': '0 0 30px rgba(168, 85, 247, 0.25)',
+        'glow-strong': '0 0 40px rgba(168, 85, 247, 0.35)',
+        'elevation-enhanced': '0 10px 20px rgba(139, 92, 246, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1)',
+      },
       keyframes: {
         "accordion-down": {
           from: { height: 0 },
