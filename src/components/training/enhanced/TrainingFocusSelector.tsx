@@ -99,16 +99,19 @@ function FocusCard({
 
 export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocusSelectorProps) {
   const [expandedFocus, setExpandedFocus] = useState<string | null>(null);
+  const [selectedSubFocus, setSelectedSubFocus] = useState<string | null>(null);
 
   const handleFocusSelect = (focus: TrainingFocus) => {
     if (expandedFocus === focus.category) {
       onSelect(focus);
     } else {
+      setSelectedSubFocus(null);
       setExpandedFocus(focus.category);
     }
   };
 
   const handleSubFocusSelect = (focus: TrainingFocus, subFocus: string) => {
+    setSelectedSubFocus(subFocus);
     onSelect(focus, subFocus);
     setExpandedFocus(null);
   };
@@ -143,33 +146,75 @@ export function TrainingFocusSelector({ selectedFocus, onSelect }: TrainingFocus
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden mt-2"
                   >
-                    <div className={`${componentPatterns.card.secondary()} mt-1`}>
-                      <h4 className={`${typography.caption()} text-zinc-400 uppercase tracking-wide mb-3`}>
+                    <div
+                      className={`${
+                        (componentPatterns as any).cards?.progress?.() ||
+                        componentPatterns.card.progress()
+                      } mt-1`}
+                    >
+                      <h4
+                        className={`${typography.caption()} text-zinc-400 uppercase tracking-wide mb-3`}
+                      >
                         Choose sub-focus:
                       </h4>
                       <div className="grid grid-cols-2 gap-2">
                         {focus.subFocus.map((subFocus) => (
-                          <button
+                          <motion.button
                             key={subFocus}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSubFocusSelect(focus, subFocus);
                             }}
-                            className={`${componentPatterns.button.secondary()} px-3 py-2 rounded-lg text-sm`}
+                            className={cn(
+                              componentPatterns.card.secondary(),
+                              'relative overflow-hidden px-3 py-2 text-sm rounded-lg transition-all',
+                              `hover:${effects.glow.subtle()}`,
+                              selectedSubFocus === subFocus &&
+                                `text-white ${effects.glow.medium()}`
+                            )}
                           >
-                            {subFocus}
-                          </button>
+                            <AnimatePresence>
+                              {selectedSubFocus === subFocus && (
+                                <motion.span
+                                  layoutId="subFocusSelection"
+                                  className={`absolute inset-0 rounded-lg bg-gradient-to-r ${brandColors.gradient()}`}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                />
+                              )}
+                            </AnimatePresence>
+                            <span className="relative z-10">{subFocus}</span>
+                          </motion.button>
                         ))}
-                        <button
+                        <motion.button
                           onClick={(e) => {
                             e.stopPropagation();
+                            setSelectedSubFocus('general');
                             onSelect(focus);
                             setExpandedFocus(null);
                           }}
-                          className={`${componentPatterns.button.secondary()} px-3 py-2 rounded-lg text-sm text-zinc-400`}
+                          className={cn(
+                            componentPatterns.card.secondary(),
+                            'relative overflow-hidden px-3 py-2 text-sm rounded-lg text-zinc-400 transition-all',
+                            `hover:${effects.glow.subtle()}`,
+                            selectedSubFocus === 'general' &&
+                              `text-white ${effects.glow.medium()}`
+                          )}
                         >
-                          General {focus.category}
-                        </button>
+                          <AnimatePresence>
+                            {selectedSubFocus === 'general' && (
+                              <motion.span
+                                layoutId="subFocusSelection"
+                                className={`absolute inset-0 rounded-lg bg-gradient-to-r ${brandColors.gradient()}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                              />
+                            )}
+                          </AnimatePresence>
+                          <span className="relative z-10">General {focus.category}</span>
+                        </motion.button>
                       </div>
                     </div>
                   </motion.div>
