@@ -79,44 +79,47 @@ export const effects = {
 };
 
 // Enhanced component pattern utilities
+const cardPatterns = {
+  primary: () => `${surfaceColors.primary()} rounded-2xl p-4 border border-zinc-700/50`,
+  secondary: () => `${surfaceColors.secondary()} rounded-lg p-3 border border-zinc-700/30`,
+  elevated: () => `${surfaceColors.elevated()} rounded-2xl p-6 shadow-lg border border-zinc-600/30`,
+
+  // Enhanced patterns matching Start button aesthetics
+  metric: () => `
+    relative p-3 sm:p-4 rounded-xl
+    bg-gradient-to-br ${gradients.brand.card()}
+    ${effects.blur.card()} ${effects.elevation.enhanced()}
+    border border-white/15
+    before:absolute before:inset-0 before:rounded-xl
+    before:bg-gradient-to-br before:from-white/5 before:to-transparent
+    before:mix-blend-overlay before:pointer-events-none
+    hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}
+    transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
+    cursor-pointer group overflow-hidden
+  `,
+
+  progress: () => `
+    relative p-4 rounded-xl
+    bg-gradient-to-br ${gradients.brand.card()}
+    ${effects.blur.card()} ${effects.elevation.enhanced()}
+    border border-white/15
+    before:absolute before:inset-0 before:rounded-xl
+    before:bg-gradient-to-br before:from-white/5 before:to-transparent
+    before:mix-blend-overlay before:pointer-events-none
+    overflow-hidden
+  `,
+
+  stats: () => `
+    relative p-4 rounded-xl
+    bg-zinc-900/50 border border-zinc-800
+    hover:${designTokens.animations.hover.scale}
+    transition-all ${designTokens.animations.hover.duration}
+  `,
+};
+
 export const componentPatterns = {
-  card: {
-    primary: () => `${surfaceColors.primary()} rounded-2xl p-4 border border-zinc-700/50`,
-    secondary: () => `${surfaceColors.secondary()} rounded-lg p-3 border border-zinc-700/30`,
-    elevated: () => `${surfaceColors.elevated()} rounded-2xl p-6 shadow-lg border border-zinc-600/30`,
-    
-    // Enhanced patterns matching Start button aesthetics
-    metric: () => `
-      relative p-3 sm:p-4 rounded-xl 
-      bg-gradient-to-br ${gradients.brand.card()}
-      ${effects.blur.card()} ${effects.elevation.enhanced()}
-      border border-white/15
-      before:absolute before:inset-0 before:rounded-xl 
-      before:bg-gradient-to-br before:from-white/5 before:to-transparent
-      before:mix-blend-overlay before:pointer-events-none
-      hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}
-      transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
-      cursor-pointer group overflow-hidden
-    `,
-    
-    progress: () => `
-      relative p-4 rounded-xl
-      bg-gradient-to-br ${gradients.brand.card()}
-      ${effects.blur.card()} ${effects.elevation.enhanced()}
-      border border-white/15
-      before:absolute before:inset-0 before:rounded-xl 
-      before:bg-gradient-to-br before:from-white/5 before:to-transparent
-      before:mix-blend-overlay before:pointer-events-none
-      overflow-hidden
-    `,
-    
-    stats: () => `
-      relative p-4 rounded-xl
-      bg-zinc-900/50 border border-zinc-800
-      hover:${designTokens.animations.hover.scale}
-      transition-all ${designTokens.animations.hover.duration}
-    `,
-  },
+  card: cardPatterns,
+  cards: cardPatterns,
   
   cta: {
     primary: () => `
