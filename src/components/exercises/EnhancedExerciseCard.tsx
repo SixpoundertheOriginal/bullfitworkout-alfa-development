@@ -197,68 +197,90 @@ export function EnhancedExerciseCard({
       <CardContent className="space-y-4 relative z-10">
         {/* Key Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Primary Muscles</p>
-              <p className="text-sm font-medium">{formatMuscleGroups(exercise.primary_muscle_groups)}</p>
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              <div>
+                <p className={typography.caption()}>Primary Muscles</p>
+                <p className={typography.cardSubtitle()}>
+                  {formatMuscleGroups(exercise.primary_muscle_groups)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-primary" />
+              <div>
+                <p className={typography.caption()}>Equipment</p>
+                <p className={typography.cardSubtitle()}>
+                  {formatEquipment(exercise.equipment_type)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{getMovementPatternIcon(exercise.movement_pattern)}</span>
+              <div>
+                <p className={typography.caption()}>Movement</p>
+                <p className={`${typography.cardSubtitle()} capitalize`}>
+                  {exercise.movement_pattern}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Equipment</p>
-              <p className="text-sm font-medium">{formatEquipment(exercise.equipment_type)}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{getMovementPatternIcon(exercise.movement_pattern)}</span>
-            <div>
-              <p className="text-xs text-muted-foreground">Movement</p>
-              <p className="text-sm font-medium capitalize">{exercise.movement_pattern}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-2">
-          <Badge className={getDifficultyColor(exercise.difficulty)}>
-            {exercise.difficulty.charAt(0).toUpperCase() + exercise.difficulty.slice(1)}
-          </Badge>
-          <Badge variant="secondary">
-            {exercise.is_compound ? 'Compound' : 'Isolation'}
-          </Badge>
-          {exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.length > 0 && (
-            <Badge variant="outline">
-              +{exercise.secondary_muscle_groups.length} Secondary
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge className={`${getDifficultyColor(exercise.difficulty)} ${typography.caption()}`}>
+              {exercise.difficulty.charAt(0).toUpperCase() + exercise.difficulty.slice(1)}
             </Badge>
-          )}
+            <Badge variant="secondary" className={typography.caption()}>
+              {exercise.is_compound ? 'Compound' : 'Isolation'}
+            </Badge>
+            {exercise.secondary_muscle_groups && exercise.secondary_muscle_groups.length > 0 && (
+              <Badge variant="outline" className={typography.caption()}>
+                +
+                <span className={`${typography.metricNumber()} text-xs`}>
+                  {exercise.secondary_muscle_groups.length}
+                </span>{' '}
+                Secondary
+              </Badge>
+            )}
           
           {/* Bodyweight Load Estimation Badge (Feature Flagged) */}
-          {showLoadBadge && effectiveLoad !== null && exercise.type === 'reps' && (
-            <Badge 
-              variant="outline" 
-              className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-200 border-emerald-500/30 shadow-lg"
-              aria-label={`Estimated load per rep: ${formatLoadKg(effectiveLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
-            >
-              <Activity className="w-3 h-3 mr-1" />
-              Est. Load @ {formatLoadKg(bodyweightKg)} kg{isDefaultBw ? ' (default)' : ''}: ≈{formatLoadKg(effectiveLoad)} kg
-            </Badge>
-          )}
+            {showLoadBadge && effectiveLoad !== null && exercise.type === 'reps' && (
+              <Badge
+                variant="outline"
+                className={`bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-emerald-200 border-emerald-500/30 shadow-lg ${typography.caption()}`}
+                aria-label={`Estimated load per rep: ${formatLoadKg(effectiveLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
+              >
+                <Activity className="w-3 h-3 mr-1" />
+                Est. Load @
+                <span className={`${typography.metricNumber()} text-xs ml-1`}>
+                  {formatLoadKg(bodyweightKg)}
+                </span>
+                kg{isDefaultBw ? ' (default)' : ''}: ≈
+                <span className={`${typography.metricNumber()} text-xs ml-1`}>
+                  {formatLoadKg(effectiveLoad)}
+                </span>
+                kg
+              </Badge>
+            )}
           
           {/* Isometric Load Badge */}
-          {showLoadBadge && isometricLoad !== null && ['hold', 'time'].includes(exercise.type) && (
-            <Badge 
-              variant="outline" 
-              className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-200 border-amber-500/30 shadow-lg"
-              aria-label={`Isometric load: ${formatLoadKg(isometricLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
-            >
-              <Target className="w-3 h-3 mr-1" />
-              Isometric load: {formatLoadKg(isometricLoad)} kg{isDefaultBw ? ' (default)' : ''}
-            </Badge>
-          )}
+            {showLoadBadge && isometricLoad !== null && ['hold', 'time'].includes(exercise.type) && (
+              <Badge
+                variant="outline"
+                className={`bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-200 border-amber-500/30 shadow-lg ${typography.caption()}`}
+                aria-label={`Isometric load: ${formatLoadKg(isometricLoad)} kg using ${isDefaultBw ? 'default' : 'profile'} bodyweight`}
+              >
+                <Target className="w-3 h-3 mr-1" />
+                Isometric load:
+                <span className={`${typography.metricNumber()} text-xs ml-1`}>
+                  {formatLoadKg(isometricLoad)}
+                </span>
+                kg{isDefaultBw ? ' (default)' : ''}
+              </Badge>
+            )}
         </div>
 
         {/* Smart Insights Section */}

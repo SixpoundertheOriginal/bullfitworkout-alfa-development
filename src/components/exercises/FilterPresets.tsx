@@ -118,30 +118,35 @@ export function FilterPresets({ onApplyFilter, activeFilters }: FilterPresetsPro
   };
 
   return (
-    <div className={`mb-[${designTokens.spacing.lg}]`}>
-      <h3 className={`mb-[${designTokens.spacing.sm}] text-sm font-medium text-muted-foreground`}>
-        Quick Filters
-      </h3>
-      <div className={`flex flex-wrap gap-[${designTokens.spacing.sm}]`}>
-        {QUICK_FILTERS.map((preset) => (
-          <Button
-            key={preset.name}
-            variant="ghost"
-            size="sm"
-            onClick={() => handlePresetClick(preset)}
-            className={cn(
-              componentPatterns.button.secondary(),
-              typography.caption(),
-              'flex items-center gap-2 h-8 px-3',
-              `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
-              `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
-              isPresetActive(preset) && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
-            )}
-          >
-            <span>{preset.icon}</span>
-            {preset.name}
-          </Button>
-        ))}
+      <div className={`mb-[${designTokens.spacing.lg}]`}>
+        <h3
+          className={cn(
+            typography.sectionHeading(),
+            `mb-[${designTokens.spacing.sm}]`
+          )}
+        >
+          Quick Filters
+        </h3>
+        <div className={`flex flex-wrap gap-[${designTokens.spacing.sm}]`}>
+          {QUICK_FILTERS.map((preset) => (
+            <Button
+              key={preset.name}
+              variant="ghost"
+              size="sm"
+              onClick={() => handlePresetClick(preset)}
+              className={cn(
+                componentPatterns.button.secondary(),
+                typography.bodySmall(),
+                'flex items-center gap-2 h-8 px-3',
+                `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                isPresetActive(preset) && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
+              )}
+            >
+              <span>{preset.icon}</span>
+              {preset.name}
+            </Button>
+          ))}
       </div>
     </div>
   );

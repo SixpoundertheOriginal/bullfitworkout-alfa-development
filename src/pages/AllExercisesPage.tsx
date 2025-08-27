@@ -414,7 +414,13 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
           )}
           
           <div className="flex-1 flex justify-center">
-            <h1 className="text-xl font-semibold text-center">
+            <h1
+              className={cn(
+                typography.pageHeading(),
+                typography.brandGradient(),
+                'text-center'
+              )}
+            >
               {standalone ? "Exercise Library" : "Browse Exercises"}
             </h1>
           </div>
@@ -536,20 +542,22 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
                 {getActiveFilterCount() > 0 && (
                   <Badge
                     variant="secondary"
-                    className={cn(
-                      'ml-2 h-5 px-1.5',
-                      typography.caption()
-                    )}
+                    className={cn('ml-2 h-5 px-1.5', typography.caption())}
                   >
-                    {getActiveFilterCount()}
+                    <span className={cn(typography.metricNumber(), 'text-xs')}>
+                      {getActiveFilterCount()}
+                    </span>
                   </Badge>
                 )}
               </Button>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {filteredExercises.length} exercise{filteredExercises.length !== 1 ? 's' : ''}
+              <span className={typography.metricNumber()}>
+                {filteredExercises.length}
+              </span>
+              <span className={typography.caption()}>
+                exercise{filteredExercises.length !== 1 ? 's' : ''}
               </span>
               <div className="flex border border-white/15 rounded-md">
                 <Button
