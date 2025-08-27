@@ -20,7 +20,10 @@ export const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     
-    const recentWorkouts = workouts.filter(w => new Date(w.date) >= oneWeekAgo);
+    const recentWorkouts = workouts.filter(w => {
+      const workoutDate = new Date(w.date ?? w.start_time);
+      return workoutDate >= oneWeekAgo;
+    });
     return recentWorkouts.reduce((total, workout) => {
       return total + (workout.total_volume || 0);
     }, 0);
@@ -31,10 +34,10 @@ export const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     
-    return workouts.filter(w => 
-      new Date(w.date) >= oneMonthAgo && 
-      w.notes?.toLowerCase().includes('pr')
-    ).length;
+    return workouts.filter(w => {
+      const workoutDate = new Date(w.date ?? w.start_time);
+      return workoutDate >= oneMonthAgo && w.notes?.toLowerCase().includes('pr');
+    }).length;
   }, [workouts]);
 
   // Calculate consistency (days with workouts this week)
@@ -44,8 +47,14 @@ export const PerformanceSummary: React.FC<PerformanceSummaryProps> = ({
     
     const workoutDays = new Set(
       workouts
-        .filter(w => new Date(w.date) >= oneWeekAgo)
-        .map(w => new Date(w.date).toDateString())
+        .filter(w => {
+          const workoutDate = new Date(w.date ?? w.start_time);
+          return workoutDate >= oneWeekAgo;
+        })
+        .map(w => {
+          const workoutDate = new Date(w.date ?? w.start_time);
+          return workoutDate.toDateString();
+        })
     );
     
     return workoutDays.size;
