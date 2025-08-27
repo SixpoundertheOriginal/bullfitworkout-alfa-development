@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
 import {
-  ArrowLeft,
   ArrowUp,
   ArrowDown,
   Dumbbell,
@@ -10,6 +9,7 @@ import {
   Heart,
   Shield,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   componentPatterns,
   typography,
@@ -25,6 +25,8 @@ import {
   TrainingGoals,
   EnhancedTrainingConfig,
 } from '@/types/training-setup';
+import { BackButton } from '@/components/ui/BackButton';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 // Dev-only feature flag exposure
 if (typeof window !== 'undefined') {
@@ -59,6 +61,27 @@ const FOCUS_ICONS: Record<TrainingFocus['category'], React.ReactNode> = {
   Core: <Heart className="h-5 w-5" />,
   'Deload / Rehab': <Shield className="h-5 w-5" />,
 };
+
+const StepTransition = ({
+  step,
+  children,
+}: {
+  step: number;
+  children: React.ReactNode;
+}) => (
+  <AnimatePresence mode="wait">
+    <motion.div
+      key={step}
+      initial={{ x: 50, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: -50, opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col flex-1"
+    >
+      {children}
+    </motion.div>
+  </AnimatePresence>
+);
 
 export function EnhancedWorkoutSetupWizard({
   open,
@@ -204,7 +227,8 @@ export function EnhancedWorkoutSetupWizard({
               { title: 'Start', completed: false },
             ]}
           />
-          {step === 1 ? (
+          <StepTransition step={step}>
+            {step === 1 ? (
             <>
               <div className="flex-shrink-0 pt-6 pb-4">
                 <div className={componentPatterns.modal.header()}>
@@ -231,18 +255,15 @@ export function EnhancedWorkoutSetupWizard({
                 </button>
               </div>
             </>
-          ) : (
-            <>
+            ) : (
+              <>
               <div className="flex-shrink-0 pt-6 pb-4">
                 <div className={componentPatterns.modal.header()}>
                   <div className="flex items-center gap-3">
-                    <button
+                    <BackButton
                       onClick={handleBackToStep1}
-                      className={componentPatterns.button.ghost() + ' p-2'}
                       aria-label="Back to focus selection"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </button>
+                    />
                     <div>
                       <h2 className={typography.sectionHeading()}>How would you like to start?</h2>
                       <p className={`${typography.bodyText()} text-zinc-400`}>
@@ -280,14 +301,7 @@ export function EnhancedWorkoutSetupWizard({
                     className={`${componentPatterns.cta.primary()} w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
                     aria-label="Generate Smart Program - auto-build a proven workout plan"
                   >
-                    {isGenerating && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                    <span className={`relative z-10 ${isGenerating ? 'opacity-0' : ''}`}>
-                      Generate Smart Program
-                    </span>
+                    <span className="relative z-10">Generate Smart Program</span>
                     <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
 
@@ -311,8 +325,10 @@ export function EnhancedWorkoutSetupWizard({
                   Cancel
                 </button>
               </div>
-            </>
-          )}
+              </>
+            )}
+          </StepTransition>
+          {isGenerating && <LoadingOverlay />}
         </div>
       </div>
     </div>
