@@ -47,6 +47,12 @@ export const typography = {
   
   // Gradient text effects
   brandGradient: () => `bg-gradient-to-r ${gradients.brand.primary()} bg-clip-text text-transparent`,
+  
+  // Chat-specific typography
+  chatMessage: () => `${typography.body()} leading-relaxed`,
+  chatTimestamp: () => `text-xs text-zinc-500 font-medium`,
+  chatPlaceholder: () => `${typography.body()} text-zinc-400`,
+  chatHeader: () => `${typography.sectionHeading()} text-center`,
 };
 
 // Enhanced gradients from design tokens
@@ -176,6 +182,86 @@ export const componentPatterns = {
     
     iconContainer: () => `
       p-2 rounded-lg transition-all ${designTokens.animations.hover.duration}
+    `,
+  },
+
+  chat: {
+    // AI message bubbles - premium card styling
+    aiMessage: () => `
+      relative max-w-[85%] mr-auto mb-4
+      ${cardPatterns.metric()}
+      animate-in slide-in-from-left-4 fade-in-0 duration-300
+    `,
+    
+    // User message bubbles - brand gradient styling
+    userMessage: () => `
+      relative max-w-[85%] ml-auto mb-4
+      ${cardPatterns.secondary()}
+      bg-gradient-to-r ${gradients.brand.primary()}
+      text-white border-purple-400/30
+      animate-in slide-in-from-right-4 fade-in-0 duration-300
+    `,
+    
+    // Chat input container
+    inputContainer: () => `
+      ${cardPatterns.secondary()}
+      p-3 flex items-end gap-3 min-h-[56px] max-h-32
+      border border-zinc-700/50 backdrop-blur-sm
+    `,
+    
+    // Text input field
+    inputField: () => `
+      flex-1 bg-transparent resize-none outline-none
+      ${typography.body()} text-white placeholder-zinc-400
+      min-h-[2rem] max-h-20 py-2
+    `,
+    
+    // Enhanced send button
+    sendButton: () => `
+      w-12 h-12 rounded-full flex-shrink-0
+      bg-gradient-to-r ${gradients.brand.primary()}
+      ${effects.glow.subtle()} hover:${effects.glow.medium()}
+      flex items-center justify-center transition-all duration-200
+      hover:scale-110 active:scale-95 disabled:opacity-50
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400
+    `,
+    
+    // Message timestamp
+    timestamp: () => `
+      ${typography.caption()} text-zinc-500 mt-1
+      select-none pointer-events-none
+    `,
+    
+    // Typing indicator
+    typingIndicator: () => `
+      ${cardPatterns.secondary()}
+      px-4 py-3 max-w-[85%] mr-auto mb-4
+      flex items-center gap-2
+    `,
+  },
+  
+  // Chat layout patterns for mobile web
+  chatLayout: {
+    container: () => `
+      h-screen flex flex-col bg-zinc-900
+      pb-[env(safe-area-inset-bottom,0px)]
+    `,
+    
+    header: () => `
+      ${effects.blur.card()} border-b border-zinc-700/50
+      sticky top-0 z-20 backdrop-blur-lg bg-zinc-900/90 p-4
+    `,
+    
+    messageArea: () => `
+      flex-1 overflow-y-auto px-4 py-4
+      pb-[max(1rem,env(keyboard-inset-height,0px))]
+      scroll-behavior-smooth
+    `,
+    
+    inputArea: () => `
+      p-4 border-t border-zinc-700/30 ${effects.blur.card()}
+      pb-[calc(1rem+env(safe-area-inset-bottom,0px))]
+      sticky bottom-0 backdrop-blur-lg bg-zinc-900/80
     `,
   },
 

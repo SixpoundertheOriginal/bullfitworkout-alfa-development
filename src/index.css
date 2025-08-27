@@ -93,6 +93,32 @@
   }
 }
 
+/* Mobile web keyboard and safe area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@supports (height: env(keyboard-inset-height)) {
+  .keyboard-aware {
+    padding-bottom: env(keyboard-inset-height, 0px);
+  }
+}
+
+/* Smooth keyboard transitions for mobile web */
+.chat-container {
+  transition: padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure proper viewport behavior on mobile */
+@media screen and (max-width: 768px) {
+  .mobile-chat-viewport {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for modern browsers */
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ring-animate {
     animation: none !important;

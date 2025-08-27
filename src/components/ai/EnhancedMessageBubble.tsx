@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { User, Bot, Image as ImageIcon, Maximize2, RotateCcw } from 'lucide-react';
+import { User, Bot, Image as ImageIcon, Maximize2, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { formatTime } from '@/utils/formatTime';
 import type { UploadedImage } from './ImageUpload';
-import { UniversalCard, UniversalCardContent } from '@/components/ui/UniversalCard';
+import { componentPatterns, typography, gradients } from '@/utils/tokenUtils';
 
 interface Message {
   id: string;
@@ -67,30 +67,30 @@ export function EnhancedMessageBubble({ message, onRetry }: EnhancedMessageBubbl
   };
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {/* Avatar */}
+    <div className={`flex items-start gap-3 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {/* AI Avatar */}
       {!isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bot className="h-4 w-4 text-primary" />
+          <div className={`
+            w-10 h-10 rounded-full flex-shrink-0
+            bg-gradient-to-r ${gradients.brand.primary()}
+            shadow-[0_0_20px_rgba(168,85,247,0.15)]
+            flex items-center justify-center
+          `}>
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
         </div>
       )}
 
       {/* Message Content */}
-      <div className={`max-w-[80%] space-y-2 ${isUser ? 'order-1' : ''}`}>
-        <UniversalCard 
-          variant="glass" 
-          intensity={isUser ? "premium" : "medium"}
-          className={isUser ? 'text-white' : 'text-white/90'}
-        >
-          <UniversalCardContent className="p-3">
-            {/* Message Text */}
-            <div className="prose prose-sm max-w-none">
-              <p className={`mb-0 ${isUser ? 'text-primary-foreground' : 'text-foreground'} whitespace-pre-wrap`}>
-                {message.content}
-              </p>
-            </div>
+      <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
+        <div className={isUser ? componentPatterns.chat.userMessage() : componentPatterns.chat.aiMessage()}>
+          {/* Message Text */}
+          <div className="prose prose-sm max-w-none">
+            <p className={`mb-0 ${typography.chatMessage()} ${isUser ? 'text-white' : 'text-white'} whitespace-pre-wrap`}>
+              {message.content}
+            </p>
+          </div>
 
             {/* Images */}
             {message.images && message.images.length > 0 && (
@@ -159,44 +159,44 @@ export function EnhancedMessageBubble({ message, onRetry }: EnhancedMessageBubbl
                 </div>
               </div>
             )}
-          </UniversalCardContent>
-        </UniversalCard>
+        </div>
 
         {/* Message metadata */}
-        <div className={`flex items-center gap-2 text-xs ${
-          isUser ? 'justify-end' : 'justify-start'
-        }`}>
-          <span className="text-muted-foreground">
+        {message.timestamp && (
+          <div className={componentPatterns.chat.timestamp()}>
             {message.timestamp.toLocaleTimeString()}
-          </span>
-          
-          {isUser && (
-            <>
-              <span className={getStatusColor()}>
-                {getStatusText()}
-              </span>
-              
-              {message.status === 'failed' && onRetry && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onRetry(message.id)}
-                  className="h-6 px-2 text-xs"
-                >
-                  <RotateCcw className="h-3 w-3 mr-1" />
-                  Retry
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+            
+            {isUser && (
+              <>
+                <span className={`ml-2 ${getStatusColor()}`}>
+                  {getStatusText()}
+                </span>
+                
+                {message.status === 'failed' && onRetry && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onRetry(message.id)}
+                    className="h-6 px-2 text-xs ml-2"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Retry
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* User Avatar */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <User className="h-4 w-4 text-primary-foreground" />
+          <div className={`
+            w-10 h-10 rounded-full bg-gradient-to-r ${gradients.brand.primary()}
+            flex items-center justify-center
+          `}>
+            <User className="h-5 w-5 text-white" />
           </div>
         </div>
       )}
