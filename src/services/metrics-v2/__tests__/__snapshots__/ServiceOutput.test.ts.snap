@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`] = `
+{
+  "meta": {
+    "generatedAt": "2025-08-27T17:40:15.004Z",
+    "inputs": {
+      "tz": "Europe/Warsaw",
+      "units": "kg|min",
+    },
+    "version": "v2",
+  },
+  "perWorkout": [],
+  "prs": [],
+  "series": {
+    "cvr": [],
+    "density": [],
+    "reps": [],
+    "sets": [],
+    "volume": [],
+  },
+  "totals": {
+    "durationMin": 0,
+    "totalReps": 0,
+    "totalSets": 0,
+    "totalVolumeKg": 0,
+    "workouts": 0,
+  },
+}
+`;
