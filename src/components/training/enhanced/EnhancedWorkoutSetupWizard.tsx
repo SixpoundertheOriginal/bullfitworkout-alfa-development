@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
-import { ArrowLeft } from 'lucide-react';
-import { componentPatterns, typography, effects, gradients } from '@/utils/tokenUtils';
+import {
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  Dumbbell,
+  Zap,
+  Target,
+  Heart,
+  Shield,
+} from 'lucide-react';
+import {
+  componentPatterns,
+  typography,
+  effects,
+  gradients,
+  brandColors,
+} from '@/utils/tokenUtils';
 import WizardProgress from './WizardProgress';
 import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
 import { SETUP_CHOOSE_EXERCISES_ENABLED } from '@/constants/featureFlags';
@@ -34,6 +48,16 @@ const DEFAULT_TRAINING_GOALS: TrainingGoals = {
   includeIsometrics: false,
   includeUnilateral: false,
   includeCore: false,
+};
+
+const FOCUS_ICONS: Record<TrainingFocus['category'], React.ReactNode> = {
+  Push: <ArrowUp className="h-5 w-5" />,
+  Pull: <ArrowDown className="h-5 w-5" />,
+  Legs: <Dumbbell className="h-5 w-5" />,
+  'Full Body': <Zap className="h-5 w-5" />,
+  Arms: <Target className="h-5 w-5" />,
+  Core: <Heart className="h-5 w-5" />,
+  'Deload / Rehab': <Shield className="h-5 w-5" />,
 };
 
 export function EnhancedWorkoutSetupWizard({
@@ -231,22 +255,29 @@ export function EnhancedWorkoutSetupWizard({
 
               <div className="flex-1 overflow-y-auto pb-4">
                 {selectedFocus && (
-                  <Card className="mb-6 bg-primary/5 border-primary/20">
-                    <CardContent className="p-4">
-                      <div className="text-sm text-muted-foreground">Selected Focus</div>
-                      <div className="font-medium">{selectedFocus.category}</div>
+                  <div
+                    className={`${componentPatterns.cards.metric()} mb-6 flex items-center gap-3`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
+                    >
+                      {FOCUS_ICONS[selectedFocus.category]}
+                    </div>
+                    <div>
+                      <div className="text-sm text-white/80">Selected Focus</div>
+                      <div className="font-medium text-white">{selectedFocus.category}</div>
                       {selectedSubFocus && (
-                        <div className="text-sm text-muted-foreground">{selectedSubFocus}</div>
+                        <div className="text-xs text-white/70">{selectedSubFocus}</div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )}
 
                 <div className="space-y-4">
                   <button
                     onClick={handleGenerateSmartProgram}
                     disabled={isSubmitting}
-                    className={`${componentPatterns.button.primary()} h-14 w-full relative`}
+                    className={`${componentPatterns.cta.primary()} w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
                     aria-label="Generate Smart Program - auto-build a proven workout plan"
                   >
                     {isGenerating && (
@@ -254,18 +285,20 @@ export function EnhancedWorkoutSetupWizard({
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
-                    <span className={isGenerating ? 'opacity-0' : ''}>
+                    <span className={`relative z-10 ${isGenerating ? 'opacity-0' : ''}`}>
                       Generate Smart Program
                     </span>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
 
                   <button
                     onClick={handleChooseExercises}
                     disabled={isSubmitting}
-                    className={`${componentPatterns.button.secondary()} w-full h-14`}
+                    className={`${componentPatterns.cta.primary()} bg-none !bg-white/10 text-white/90 backdrop-blur-sm border border-white/15 w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
                     aria-label="Choose Exercises - manually select exercises from library"
                   >
-                    Choose Exercises
+                    <span className="relative z-10">Choose Exercises</span>
+                    <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 </div>
               </div>
