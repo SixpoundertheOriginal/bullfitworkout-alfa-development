@@ -3,42 +3,61 @@ import type { ServiceOutput } from '../metrics-v2';
 export type ParityDiff = {
   mismatches: string[]; // e.g., ['totals.totalVolumeKg', 'prs.length', 'series.volume.len']
   totals?: { v1?: number; v2?: number };
-  prsLength?: { v1: number; v2: number };
-  seriesVolumeLen?: { v1: number; v2: number };
+  prsLength?: { v1?: number; v2?: number };
+  seriesVolumeLen?: { v1?: number; v2?: number };
 };
 
-// Non-throwing summary comparator: returns null if "good enough" equal
+type PartialMetrics = {
+  totals?: { totalVolumeKg?: unknown };
+  prs?: unknown;
+  series?: { volume?: unknown };
+};
+
+// Non-throwing summary comparator: returns null if "good enough" equal.
+// Treats "presence/absence" or NaN vs number as a mismatch without throwing.
 export function summarizeParityDiff(v1: unknown, v2: unknown): ParityDiff | null {
-  // We only compare a few load-bearing fields to avoid overfitting to v1 internals
   const mismatches: string[] = [];
 
-  // Total volume (if present)
-  const v1Total = (v1 as any)?.totals?.totalVolumeKg;
-  const v2Total = (v2 as ServiceOutput | undefined)?.totals?.totalVolumeKg;
-  if (isFiniteNumber(v1Total) && isFiniteNumber(v2Total) && v1Total !== v2Total) {
-    mismatches.push('totals.totalVolumeKg');
+  const v1Data = v1 as PartialMetrics;
+  const v2Data = v2 as (ServiceOutput & PartialMetrics) | PartialMetrics | undefined;
+
+  // Total volume
+  const v1Total = v1Data?.totals?.totalVolumeKg;
+  const v2Total = v2Data?.totals?.totalVolumeKg;
+  if (isFiniteNumber(v1Total) && isFiniteNumber(v2Total)) {
+    if (v1Total !== v2Total) mismatches.push('totals.totalVolumeKg');
+  } else if (v1Total !== v2Total) {
+    mismatches.push('totals.totalVolumeKg.presence');
   }
 
   // PRs length
-  const v1PrLen = Array.isArray((v1 as any)?.prs) ? (v1 as any).prs.length : undefined;
-  const v2PrLen = Array.isArray((v2 as any)?.prs) ? (v2 as any).prs.length : undefined;
-  if (isFiniteNumber(v1PrLen) && isFiniteNumber(v2PrLen) && v1PrLen !== v2PrLen) {
-    mismatches.push('prs.length');
+  const v1Prs = v1Data?.prs;
+  const v2Prs = v2Data?.prs;
+  const v1PrLen = Array.isArray(v1Prs) ? v1Prs.length : v1Prs;
+  const v2PrLen = Array.isArray(v2Prs) ? v2Prs.length : v2Prs;
+  if (isFiniteNumber(v1PrLen) && isFiniteNumber(v2PrLen)) {
+    if (v1PrLen !== v2PrLen) mismatches.push('prs.length');
+  } else if (v1PrLen !== v2PrLen) {
+    mismatches.push('prs.length.presence');
   }
 
   // Volume series length
-  const v1VolLen = Array.isArray((v1 as any)?.series?.volume) ? (v1 as any).series.volume.length : undefined;
-  const v2VolLen = Array.isArray((v2 as any)?.series?.volume) ? (v2 as any).series.volume.length : undefined;
-  if (isFiniteNumber(v1VolLen) && isFiniteNumber(v2VolLen) && v1VolLen !== v2VolLen) {
-    mismatches.push('series.volume.len');
+  const v1Vol = v1Data?.series?.volume;
+  const v2Vol = v2Data?.series?.volume;
+  const v1VolLen = Array.isArray(v1Vol) ? v1Vol.length : v1Vol;
+  const v2VolLen = Array.isArray(v2Vol) ? v2Vol.length : v2Vol;
+  if (isFiniteNumber(v1VolLen) && isFiniteNumber(v2VolLen)) {
+    if (v1VolLen !== v2VolLen) mismatches.push('series.volume.len');
+  } else if (v1VolLen !== v2VolLen) {
+    mismatches.push('series.volume.len.presence');
   }
 
   if (mismatches.length === 0) return null;
 
   const diff: ParityDiff = { mismatches };
   if (isFiniteNumber(v1Total) || isFiniteNumber(v2Total)) diff.totals = { v1: v1Total, v2: v2Total };
-  if (isFiniteNumber(v1PrLen) && isFiniteNumber(v2PrLen)) diff.prsLength = { v1: v1PrLen, v2: v2PrLen };
-  if (isFiniteNumber(v1VolLen) && isFiniteNumber(v2VolLen)) diff.seriesVolumeLen = { v1: v1VolLen, v2: v2VolLen };
+  if (isFiniteNumber(v1PrLen) || isFiniteNumber(v2PrLen)) diff.prsLength = { v1: v1PrLen, v2: v2PrLen };
+  if (isFiniteNumber(v1VolLen) || isFiniteNumber(v2VolLen)) diff.seriesVolumeLen = { v1: v1VolLen, v2: v2VolLen };
   return diff;
 }
 
