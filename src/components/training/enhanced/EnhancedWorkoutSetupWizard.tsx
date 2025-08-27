@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TrainingFocusSelector } from './TrainingFocusSelector';
 import {
   ArrowUp,
@@ -16,6 +16,7 @@ import {
   effects,
   gradients,
   brandColors,
+  surfaceColors,
 } from '@/utils/tokenUtils';
 import WizardProgress from './WizardProgress';
 import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
@@ -93,6 +94,18 @@ export function EnhancedWorkoutSetupWizard({
   const { currentStep: step, selectedFocus, selectedSubFocus } = state;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      setHeaderHeight(headerRef.current?.offsetHeight ?? 0);
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, [step, open]);
 
   useEffect(() => {
     if (open) {
@@ -229,102 +242,113 @@ export function EnhancedWorkoutSetupWizard({
           />
           <StepTransition step={step}>
             {step === 1 ? (
-            <>
-              <div className="flex-shrink-0 pt-6 pb-4">
-                <div className={componentPatterns.modal.header()}>
-                  <h2 className={typography.sectionHeading()}>Workout Setup</h2>
-                  <p className={`${typography.bodyText()} text-zinc-400`}>
-                    Choose your training focus to get started
-                  </p>
+              <>
+                <div className="relative flex-1">
+                  <div
+                    ref={headerRef}
+                    className={`${componentPatterns.modal.header()} absolute top-0 left-0 right-0 ${surfaceColors.primary()} z-10`}
+                  >
+                    <h2 className={typography.sectionHeading()}>Workout Setup</h2>
+                    <p className={`${typography.bodyText()} text-zinc-400`}>
+                      Choose your training focus to get started
+                    </p>
+                  </div>
+                  <div
+                    className="h-full overflow-y-auto pb-4"
+                    style={{ paddingTop: headerHeight }}
+                  >
+                    <TrainingFocusSelector
+                      selectedFocus={selectedFocus}
+                      onSelect={handleFocusSelect}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex-1 overflow-y-auto pb-4">
-                <TrainingFocusSelector
-                  selectedFocus={selectedFocus}
-                  onSelect={handleFocusSelect}
-                />
-              </div>
-
-              <div className="flex-shrink-0 pt-4 border-t">
-                <button
-                  className={`${componentPatterns.button.secondary()} w-full`}
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
+                <div className="flex-shrink-0 pt-4 border-t">
+                  <button
+                    className={`${componentPatterns.button.secondary()} w-full`}
+                    onClick={() => onOpenChange(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
             ) : (
               <>
-              <div className="flex-shrink-0 pt-6 pb-4">
-                <div className={componentPatterns.modal.header()}>
-                  <div className="flex items-center gap-3">
-                    <BackButton
-                      onClick={handleBackToStep1}
-                      aria-label="Back to focus selection"
-                    />
-                    <div>
-                      <h2 className={typography.sectionHeading()}>How would you like to start?</h2>
-                      <p className={`${typography.bodyText()} text-zinc-400`}>
-                        We can auto-build a proven plan, or you can pick exercises.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto pb-4">
-                {selectedFocus && (
+                <div className="relative flex-1">
                   <div
-                    className={`${componentPatterns.cards.metric()} mb-6 flex items-center gap-3`}
+                    ref={headerRef}
+                    className={`${componentPatterns.modal.header()} absolute top-0 left-0 right-0 ${surfaceColors.primary()} z-10`}
                   >
-                    <div
-                      className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
-                    >
-                      {FOCUS_ICONS[selectedFocus.category]}
-                    </div>
-                    <div>
-                      <div className="text-sm text-white/80">Selected Focus</div>
-                      <div className="font-medium text-white">{selectedFocus.category}</div>
-                      {selectedSubFocus && (
-                        <div className="text-xs text-white/70">{selectedSubFocus}</div>
-                      )}
+                    <div className="flex items-center gap-3">
+                      <BackButton
+                        onClick={handleBackToStep1}
+                        aria-label="Back to focus selection"
+                      />
+                      <div>
+                        <h2 className={typography.sectionHeading()}>How would you like to start?</h2>
+                        <p className={`${typography.bodyText()} text-zinc-400`}>
+                          We can auto-build a proven plan, or you can pick exercises.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                <div className="space-y-4">
-                  <button
-                    onClick={handleGenerateSmartProgram}
-                    disabled={isSubmitting}
-                    className={`${componentPatterns.cta.primary()} w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
-                    aria-label="Generate Smart Program - auto-build a proven workout plan"
+                  <div
+                    className="h-full overflow-y-auto pb-4"
+                    style={{ paddingTop: headerHeight }}
                   >
-                    <span className="relative z-10">Generate Smart Program</span>
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+                    {selectedFocus && (
+                      <div
+                        className={`${componentPatterns.cards.metric()} mb-6 flex items-center gap-3`}
+                      >
+                        <div
+                          className={`w-12 h-12 rounded-lg bg-gradient-to-r ${brandColors.gradient()} flex items-center justify-center`}
+                        >
+                          {FOCUS_ICONS[selectedFocus.category]}
+                        </div>
+                        <div>
+                          <div className="text-sm text-white/80">Selected Focus</div>
+                          <div className="font-medium text-white">{selectedFocus.category}</div>
+                          {selectedSubFocus && (
+                            <div className="text-xs text-white/70">{selectedSubFocus}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
+                    <div className="space-y-4">
+                      <button
+                        onClick={handleGenerateSmartProgram}
+                        disabled={isSubmitting}
+                        className={`${componentPatterns.cta.primary()} w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
+                        aria-label="Generate Smart Program - auto-build a proven workout plan"
+                      >
+                        <span className="relative z-10">Generate Smart Program</span>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+
+                      <button
+                        onClick={handleChooseExercises}
+                        disabled={isSubmitting}
+                        className={`${componentPatterns.cta.primary()} bg-none !bg-white/10 text-white/90 backdrop-blur-sm border border-white/15 w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
+                        aria-label="Choose Exercises - manually select exercises from library"
+                      >
+                        <span className="relative z-10">Choose Exercises</span>
+                        <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-shrink-0 pt-4 border-t">
                   <button
-                    onClick={handleChooseExercises}
-                    disabled={isSubmitting}
-                    className={`${componentPatterns.cta.primary()} bg-none !bg-white/10 text-white/90 backdrop-blur-sm border border-white/15 w-full h-14 relative overflow-hidden group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed`}
-                    aria-label="Choose Exercises - manually select exercises from library"
+                    className={`${componentPatterns.button.secondary()} w-full`}
+                    onClick={() => onOpenChange(false)}
                   >
-                    <span className="relative z-10">Choose Exercises</span>
-                    <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    Cancel
                   </button>
                 </div>
-              </div>
-
-              <div className="flex-shrink-0 pt-4 border-t">
-                <button
-                  className={`${componentPatterns.button.secondary()} w-full`}
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </button>
-              </div>
               </>
             )}
           </StepTransition>
