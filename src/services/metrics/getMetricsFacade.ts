@@ -32,26 +32,28 @@ export async function getMetricsShadow<TV1>(
   // Default path: return v1
   const v1 = await fetchV1(userId, range);
 
-  // Shadow path: run v2 in parallel, compare, emit telemetry (non-throwing)
+  // Shadow path: run v2 in the background (fire-and-forget). Do not add latency to v1.
   if (flags.shadow) {
-    try {
-      const v2 = await getMetricsV2(repoV2, userId, range);
-      const diff = summarizeParityDiff(v1, v2);
-      if (diff) {
-        const event: ParityEvent = {
-          kind: 'metrics_parity_mismatch',
+    void (async () => {
+      try {
+        const v2 = await getMetricsV2(repoV2, userId, range);
+        const diff = summarizeParityDiff(v1, v2);
+        if (diff) {
+          const event: ParityEvent = {
+            kind: 'metrics_parity_mismatch',
+            userIdHash: userIdHashFn ? userIdHashFn(userId) : undefined,
+            diff,
+          };
+          emitMetricsTelemetry(event);
+        }
+      } catch (e) {
+        emitMetricsTelemetry({
+          kind: 'metrics_parity_error',
           userIdHash: userIdHashFn ? userIdHashFn(userId) : undefined,
-          diff,
-        };
-        emitMetricsTelemetry(event);
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
-    } catch (e) {
-      emitMetricsTelemetry({
-        kind: 'metrics_parity_error',
-        userIdHash: userIdHashFn ? userIdHashFn(userId) : undefined,
-        error: e instanceof Error ? e.message : String(e),
-      });
-    }
+    })();
   }
 
   return v1;
