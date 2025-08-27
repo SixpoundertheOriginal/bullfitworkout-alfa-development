@@ -40,16 +40,17 @@ export function FilterChips({ filters, onRemoveFilter, onClearAll }: FilterChips
         'rounded-lg border border-white/15'
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-foreground">
-          Active Filters ({totalActiveFilters})
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClearAll}
-          className={cn(
-            componentPatterns.button.ghost(),
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <span className={typography.bodySmall()}>Active Filters</span>
+            <span className={typography.metricNumber()}>{totalActiveFilters}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            className={cn(
+              componentPatterns.button.ghost(),
             typography.caption(),
             'h-6 px-2',
             `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
