@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
+import { useUnifiedOverviewData } from "@/hooks/useUnifiedOverviewData";
 import { Users2, Flame, Activity, Dumbbell, Target, TrendingUp } from "lucide-react";
 import { MuscleGroupBalance } from '@/components/metrics/MuscleGroupBalance';
 import { InsightsPanel } from "@/components/ai/InsightsPanel";
@@ -27,20 +28,29 @@ const Overview: React.FC = () => {
   const [userWeightUnit, setUserWeightUnit] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<{type: string; data: any} | null>(null);
 
-    const {
-      stats,
-      workouts,
-      insights,
+  // Feature flag for gradual rollout
+  const USE_UNIFIED_OVERVIEW_DATA = process.env.NODE_ENV === 'development' || 
+                                    localStorage.getItem('enableUnifiedOverview') === 'true';
+
+  // Use unified data service or fallback to existing
+  const unifiedData = useUnifiedOverviewData();
+  const parallelData = useParallelOverviewData();
+  
+  // Extract data - use existing parallel data for now with feature flag placeholder
+  const {
+    stats,
+    workouts,
     processedMetrics,
     volumeOverTimeData,
     densityOverTimeData,
     densityStats,
+    chartData,
     loading,
-    insightsLoading,
     refetch,
-    generateWorkoutInsights,
-    chartData
-  } = useParallelOverviewData();
+    insights,
+    insightsLoading,
+    generateWorkoutInsights
+  } = parallelData;
 
     const generateInsightsCallback = useCallback(() => {
     if (workouts.length > 0) {
@@ -204,7 +214,7 @@ const Overview: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           {[
             { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
-            { title: "Efficiency Score", value: processedMetrics?.processedMetrics ? `${Math.round(processedMetrics.processedMetrics.efficiencyMetrics.efficiencyScore)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
+            { title: "Efficiency Score", value: processedMetrics?.processedMetrics?.efficiencyMetrics?.efficiencyScore ? `${Math.round(processedMetrics.processedMetrics.efficiencyMetrics.efficiencyScore)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
               {/* Subtle inner highlight */}
