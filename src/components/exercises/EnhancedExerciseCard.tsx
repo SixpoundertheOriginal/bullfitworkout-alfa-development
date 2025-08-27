@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  Target, 
-  Dumbbell, 
-  Activity, 
+import {
+  ChevronDown,
+  ChevronUp,
+  Target,
+  Dumbbell,
+  Activity,
   Info,
   Lightbulb,
   Shuffle,
@@ -29,13 +28,15 @@ import { VariantSelectionData } from '@/types/exercise-variants';
 import { formatDistanceToNow } from 'date-fns';
 import { useFeatureFlag } from '@/config/flags';
 import { useBodyweightKg } from '@/providers/ProfileProvider';
-import { 
-  isBodyweight, 
-  effectiveLoadPerRepKg, 
-  isometricLoadKg, 
+import {
+  isBodyweight,
+  effectiveLoadPerRepKg,
+  isometricLoadKg,
   formatLoadKg,
-  isUsingDefaultBodyweight 
+  isUsingDefaultBodyweight
 } from '@/utils/load';
+import { componentPatterns, typography, effects } from '@/utils/tokenUtils';
+import { designTokens } from '@/designTokens';
 
 interface EnhancedExerciseCardProps {
   exercise: Exercise;
@@ -97,15 +98,16 @@ export function EnhancedExerciseCard({
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'bg-green-500/10 text-green-700 border-green-500/20';
-      case 'intermediate': return 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20';
-      case 'advanced': return 'bg-orange-500/10 text-orange-700 border-orange-500/20';
-      case 'expert': return 'bg-red-500/10 text-red-700 border-red-500/20';
-      default: return 'bg-gray-500/10 text-gray-700 border-gray-500/20';
-    }
+  const difficultyBadgeColors: Record<string, string> = {
+    beginner: `bg-[${designTokens.colors.semantic.success}]/10 text-[${designTokens.colors.semantic.success}] border-[${designTokens.colors.semantic.success}]/20`,
+    intermediate: `bg-[${designTokens.colors.semantic.info}]/10 text-[${designTokens.colors.semantic.info}] border-[${designTokens.colors.semantic.info}]/20`,
+    advanced: `bg-[${designTokens.colors.semantic.warning}]/10 text-[${designTokens.colors.semantic.warning}] border-[${designTokens.colors.semantic.warning}]/20`,
+    expert: `bg-[${designTokens.colors.semantic.error}]/10 text-[${designTokens.colors.semantic.error}] border-[${designTokens.colors.semantic.error}]/20`,
+    default: 'bg-gray-500/10 text-gray-700 border-gray-500/20'
   };
+
+  const getDifficultyColor = (difficulty: string) =>
+    difficultyBadgeColors[difficulty] || difficultyBadgeColors.default;
 
   const getMovementPatternIcon = (pattern: string) => {
     switch (pattern) {
@@ -143,48 +145,16 @@ export function EnhancedExerciseCard({
   const instructions = parseInstructions(exercise.instructions);
 
   return (
-    <Card 
-      className="w-full transition-all duration-300 group relative overflow-hidden"
-      style={{
-        background: `
-          linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(236,72,153,0.1) 100%),
-          linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)
-        `,
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        filter: 'drop-shadow(0 8px 16px rgba(139, 92, 246, 0.1)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))'
-      }}
+    <Card
+      className={`${componentPatterns.cards.metric()} w-full after:absolute after:inset-0 after:rounded-xl after:bg-gradient-to-br after:from-purple-600/15 after:to-pink-500/15 after:opacity-0 group-hover:after:opacity-100 after:transition-opacity after:duration-300 after:blur-sm group-hover:${effects.glow.purple()}`}
     >
-      {/* Inner highlight overlay */}
-      <div 
-        className="absolute inset-0 rounded-lg"
-        style={{
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 50%)'
-        }}
-      />
-
-      {/* Premium glow effect on hover */}
-      <div 
-        className="absolute inset-0 rounded-lg transition-opacity duration-300 opacity-0 group-hover:opacity-100"
-        style={{
-          background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(236,72,153,0.15) 100%)',
-          filter: 'blur(1px)'
-        }}
-      />
-
       <CardHeader className="pb-3 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle 
-              className="text-lg font-semibold transition-colors"
-              style={{ color: 'rgba(255,255,255,0.9)' }}
-            >
+            <CardTitle className={typography.cardTitle()}>
               {exercise.name}
             </CardTitle>
-            <p 
-              className="text-sm mt-1 line-clamp-2"
-              style={{ color: 'rgba(255,255,255,0.6)' }}
-            >
+            <p className={`${typography.cardSubtitle()} mt-1 line-clamp-2`}>
               {exercise.description}
             </p>
           </div>
@@ -192,9 +162,9 @@ export function EnhancedExerciseCard({
             {onToggleFavorite && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => onToggleFavorite(exercise)}
-                className={`p-2 ${isFavorite ? 'text-red-500' : 'text-muted-foreground'}`}
+                className={`${componentPatterns.button.ghost()} h-8 w-8 p-2 ${isFavorite ? 'text-red-500' : 'text-muted-foreground'} hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`}
               >
                 <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
               </Button>
@@ -202,24 +172,19 @@ export function EnhancedExerciseCard({
             {onViewDetails && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => onViewDetails(exercise)}
-                className="flex items-center gap-1"
+                className={`${componentPatterns.button.ghost()} h-8 w-8 p-2 hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`}
               >
                 <Eye className="h-4 w-4" />
               </Button>
             )}
             {showAddToWorkout && onAddToWorkout && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={handleAddToWorkout}
-                className="flex items-center gap-1 relative overflow-hidden group/btn"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(236,72,153,0.2) 100%)',
-                  border: '1px solid rgba(139,92,246,0.3)',
-                  color: 'rgba(255,255,255,0.9)'
-                }}
+                className={`${componentPatterns.button.primary()} h-8 text-xs px-3 flex items-center gap-1 active:${designTokens.animations.press.scale}`}
               >
                 <Activity className="h-4 w-4" />
                 Add
@@ -457,7 +422,7 @@ export function EnhancedExerciseCard({
           variant="ghost"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          className={`${componentPatterns.button.ghost()} w-full flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`}
         >
           {isExpanded ? (
             <>
