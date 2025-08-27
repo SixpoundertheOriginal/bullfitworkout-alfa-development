@@ -11,6 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import {
+  componentPatterns,
+  surfaceColors,
+  effects,
+  typography,
+} from '@/utils/tokenUtils';
+import { designTokens } from '@/designTokens';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import {
   Search,
@@ -425,29 +433,83 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
         </div>
 
         {/* Search and filter controls */}
-        <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-40 pb-4 mb-4 border-b border-border">
+        <div
+          className={cn(
+            `sticky top-0 z-40 mb-[${designTokens.spacing.lg}] pb-[${designTokens.spacing.lg}]`,
+            componentPatterns.card.secondary(),
+            effects.blur.card()
+          )}
+        >
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-4">
             <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="suggested">Suggested</TabsTrigger>
-              <TabsTrigger value="recent">Recent</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger
+                value="suggested"
+                className={cn(
+                  componentPatterns.navigation.item(),
+                  typography.caption(),
+                  'w-full text-zinc-400 hover:text-white',
+                  `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                  `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                  `data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:${effects.glow.purple()}`
+                )}
+              >
+                Suggested
+              </TabsTrigger>
+              <TabsTrigger
+                value="recent"
+                className={cn(
+                  componentPatterns.navigation.item(),
+                  typography.caption(),
+                  'w-full text-zinc-400 hover:text-white',
+                  `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                  `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                  `data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:${effects.glow.purple()}`
+                )}
+              >
+                Recent
+              </TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className={cn(
+                  componentPatterns.navigation.item(),
+                  typography.caption(),
+                  'w-full text-zinc-400 hover:text-white',
+                  `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                  `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                  `data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:${effects.glow.purple()}`
+                )}
+              >
+                All
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           {/* Search bar */}
-          <div className="relative mb-4">
+          <div className={`relative mb-[${designTokens.spacing.lg}]`}>
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search exercises by name, muscle group, equipment..."
               value={filters.searchQuery}
               onChange={(e) => handleFiltersChange({ searchQuery: e.target.value })}
-              className="pl-9 pr-9 h-10 bg-card border-border"
+              className={cn(
+                'pl-9 pr-9 h-10 rounded-md',
+                surfaceColors.secondary(),
+                effects.blur.card(),
+                'border border-white/15',
+                `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                `focus-visible:ring-2 focus-visible:ring-[${designTokens.colors.brand.primary}]`
+              )}
             />
             {filters.searchQuery && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleFiltersChange({ searchQuery: '' })}
-                className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-muted"
+                className={cn(
+                  componentPatterns.button.ghost(),
+                  'absolute right-1 top-1 h-8 w-8 p-0 rounded-md',
+                  `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                  `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`
+                )}
               >
                 <X size={14} />
               </Button>
@@ -458,15 +520,27 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Button
-                variant={showFilters ? "default" : "outline"}
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
-                className="h-9"
+                className={cn(
+                  componentPatterns.button.secondary(),
+                  'h-9',
+                  `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                  `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                  showFilters && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
+                )}
               >
                 <Filter size={16} className="mr-1" />
                 Filters
                 {getActiveFilterCount() > 0 && (
-                  <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'ml-2 h-5 px-1.5',
+                      typography.caption()
+                    )}
+                  >
                     {getActiveFilterCount()}
                   </Badge>
                 )}
@@ -477,20 +551,32 @@ export default function AllExercisesPage({ onAddExercise, standalone = true, onB
               <span className="text-sm text-muted-foreground">
                 {filteredExercises.length} exercise{filteredExercises.length !== 1 ? 's' : ''}
               </span>
-              <div className="flex border border-border rounded-md">
+              <div className="flex border border-white/15 rounded-md">
                 <Button
-                  variant={viewMode === 'list' ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="h-8 px-3 rounded-none rounded-l-md"
+                  className={cn(
+                    componentPatterns.button.secondary(),
+                    'h-8 px-3 rounded-none rounded-l-md',
+                    `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                    `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                    viewMode === 'list' && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
+                  )}
                 >
                   <List size={14} />
                 </Button>
                 <Button
-                  variant={viewMode === 'grid' ? "default" : "ghost"}
+                  variant="ghost"
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="h-8 px-3 rounded-none rounded-r-md"
+                  className={cn(
+                    componentPatterns.button.secondary(),
+                    'h-8 px-3 rounded-none rounded-r-md',
+                    `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+                    `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+                    viewMode === 'grid' && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
+                  )}
                 >
                   <Grid3X3 size={14} />
                 </Button>

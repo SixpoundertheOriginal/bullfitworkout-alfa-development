@@ -1,6 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MuscleGroup, EquipmentType, Difficulty, MovementPattern } from '@/types/exercise';
+import { cn } from '@/lib/utils';
+import { componentPatterns, typography, effects } from '@/utils/tokenUtils';
+import { designTokens } from '@/designTokens';
 
 export interface FilterState {
   muscleGroups: MuscleGroup[];
@@ -115,22 +118,25 @@ export function FilterPresets({ onApplyFilter, activeFilters }: FilterPresetsPro
   };
 
   return (
-    <div className="mb-4">
-      <h3 className="text-sm font-medium text-muted-foreground mb-2">Quick Filters</h3>
-      <div className="flex flex-wrap gap-2">
+    <div className={`mb-[${designTokens.spacing.lg}]`}>
+      <h3 className={`mb-[${designTokens.spacing.sm}] text-sm font-medium text-muted-foreground`}>
+        Quick Filters
+      </h3>
+      <div className={`flex flex-wrap gap-[${designTokens.spacing.sm}]`}>
         {QUICK_FILTERS.map((preset) => (
           <Button
             key={preset.name}
-            variant={isPresetActive(preset) ? "default" : "outline"}
+            variant="ghost"
             size="sm"
             onClick={() => handlePresetClick(preset)}
-            className={`
-              flex items-center gap-2 h-8 px-3 text-xs
-              ${isPresetActive(preset) 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-background border-border hover:bg-accent'
-              }
-            `}
+            className={cn(
+              componentPatterns.button.secondary(),
+              typography.caption(),
+              'flex items-center gap-2 h-8 px-3',
+              `transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}`,
+              `hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}`,
+              isPresetActive(preset) && `bg-gradient-to-r from-purple-600 to-pink-500 text-white ${effects.glow.purple()}`
+            )}
           >
             <span>{preset.icon}</span>
             {preset.name}
