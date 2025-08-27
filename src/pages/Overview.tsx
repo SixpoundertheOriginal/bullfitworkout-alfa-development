@@ -33,7 +33,7 @@ const Overview: React.FC = () => {
                                     localStorage.getItem('enableUnifiedOverview') === 'true';
 
   // Use unified data service or fallback to existing
-  const unifiedData = useUnifiedOverviewData();
+  const unifiedData = useUnifiedOverviewData(USE_UNIFIED_OVERVIEW_DATA);
   const parallelData = useParallelOverviewData();
 
   // Determine data source based on feature flag

@@ -5,7 +5,9 @@ import { useDateRange } from '@/context/DateRangeContext';
 import { useWeightUnit } from '@/context/WeightUnitContext';
 import { OverviewDataUnificationService } from '@/services/overview';
 
-export function useUnifiedOverviewData() {
+// Optional `enabled` flag allows consumers to skip fetching when the feature flag
+// is disabled. Defaults to `true` to preserve existing behaviour.
+export function useUnifiedOverviewData(enabled: boolean = true) {
   const { user } = useAuth();
   const { dateRange } = useDateRange();
   const { weightUnit } = useWeightUnit();
@@ -16,7 +18,8 @@ export function useUnifiedOverviewData() {
       if (!user) throw new Error('User not authenticated');
       return OverviewDataUnificationService.getUnifiedOverviewData(dateRange, user.id, weightUnit);
     },
-    enabled: !!user,
+    // Only enable the query if the caller allows it and we have a user
+    enabled: enabled && !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes - same as existing hooks
     gcTime: 10 * 60 * 1000, // 10 minutes cache
     retry: 3,
