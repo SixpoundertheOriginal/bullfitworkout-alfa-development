@@ -35,12 +35,13 @@ const Overview: React.FC = () => {
   // Use unified data service or fallback to existing
   const unifiedData = useUnifiedOverviewData();
   const parallelData = useParallelOverviewData();
-  
-  // Extract data - use existing parallel data for now with feature flag placeholder
+
+  // Determine data source based on feature flag
+  const dataSource = USE_UNIFIED_OVERVIEW_DATA ? unifiedData.data : parallelData;
   const {
-    stats,
-    workouts,
-    processedMetrics,
+    stats = {},
+    workouts = [],
+    processedMetrics = {},
     volumeOverTimeData,
     densityOverTimeData,
     densityStats,
@@ -50,11 +51,11 @@ const Overview: React.FC = () => {
     insights,
     insightsLoading,
     generateWorkoutInsights
-  } = parallelData;
+  } = dataSource || {};
 
-    const generateInsightsCallback = useCallback(() => {
+  const generateInsightsCallback = useCallback(() => {
     if (workouts.length > 0) {
-      generateWorkoutInsights();
+      generateWorkoutInsights?.();
     }
   }, [workouts.length, generateWorkoutInsights]);
 
