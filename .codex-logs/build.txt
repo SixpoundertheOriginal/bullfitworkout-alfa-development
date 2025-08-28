@@ -1,0 +1,213 @@
+
+> vite_react_shadcn_ts@0.0.0 build
+> vite build
+
+vite v5.1.4 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 4047 modules transformed.
+rendering chunks...
+warnings when minifying css:
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4613:20:
+      4613 │   --tw-shadow-color: ${designTokens.effects.elevation.card};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4613:21:
+      4613 │   --tw-shadow-color: ${designTokens.effects.elevation.card};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4613:35:
+      4613 │   --tw-shadow-color: ${designTokens.effects.elevation.card};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4617:20:
+      4617 │   --tw-shadow-color: ${designTokens.effects.elevation.enhanced};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4617:21:
+      4617 │   --tw-shadow-color: ${designTokens.effects.elevation.enhanced};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4617:35:
+      4617 │   --tw-shadow-color: ${designTokens.effects.elevation.enhanced};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4621:20:
+      4621 │   --tw-shadow-color: ${designTokens.effects.elevation.floating};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4621:21:
+      4621 │   --tw-shadow-color: ${designTokens.effects.elevation.floating};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4621:35:
+      4621 │   --tw-shadow-color: ${designTokens.effects.elevation.floating};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4625:20:
+      4625 │   --tw-shadow-color: ${designTokens.effects.glow.medium};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4625:21:
+      4625 │   --tw-shadow-color: ${designTokens.effects.glow.medium};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4625:35:
+      4625 │   --tw-shadow-color: ${designTokens.effects.glow.medium};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4629:20:
+      4629 │   --tw-shadow-color: ${designTokens.effects.glow.purple};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4629:21:
+      4629 │   --tw-shadow-color: ${designTokens.effects.glow.purple};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4629:35:
+      4629 │   --tw-shadow-color: ${designTokens.effects.glow.purple};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4633:20:
+      4633 │   --tw-shadow-color: ${designTokens.effects.glow.strong};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4633:21:
+      4633 │   --tw-shadow-color: ${designTokens.effects.glow.strong};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4633:35:
+      4633 │   --tw-shadow-color: ${designTokens.effects.glow.strong};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:4637:20:
+      4637 │   --tw-shadow-color: ${designTokens.effects.glow.subtle};
+           ╵                     ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:4637:21:
+      4637 │   --tw-shadow-color: ${designTokens.effects.glow.subtle};
+           ╵                      ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:4637:35:
+      4637 │   --tw-shadow-color: ${designTokens.effects.glow.subtle};
+           │                                    ^
+           ╵                                    :
+
+
+▲ [WARNING] Expected identifier but found whitespace [css-syntax-error]
+
+    <stdin>:5965:18:
+      5965 │   --tw-ring-color: ${designTokens.colors.brand.primary};
+           ╵                   ^
+
+
+▲ [WARNING] Unexpected "$" [css-syntax-error]
+
+    <stdin>:5965:19:
+      5965 │   --tw-ring-color: ${designTokens.colors.brand.primary};
+           ╵                    ^
+
+
+▲ [WARNING] Expected ":" [css-syntax-error]
+
+    <stdin>:5965:33:
+      5965 │   --tw-ring-color: ${designTokens.colors.brand.primary};
+           │                                  ^
+           ╵                                  :
+
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/integrations/supabase/client.ts is dynamically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/workouts/ManualWorkoutLogger.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/openAIService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/openAIService.ts but also statically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/exercises/hooks/useExerciseCard.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/profile/ProfileHeader.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/context/AuthContext.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/context/WeightUnitContext.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useAIWorkoutRecommendations.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useBasicWorkoutStats.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useEnhancedThreadManager.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useEnhancedWorkoutHistory.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useExercises.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useFavoriteExercises.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useOverviewKpis.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useWorkoutById.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useWorkoutDetails.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useWorkoutHistory.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/hooks/useWorkoutStats.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/lib/uploadImage.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/pages/ProfilePage.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/providers/ProfileProvider.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/exerciseSetService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/overview/OverviewDataUnificationService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/personalRecordsService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/restTimeAnalyticsService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/workoutManagementService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/workoutRecoveryService.ts, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/services/workoutSaveService.ts, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/metrics/TimeOfDayChart.tsx is dynamically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/pages/Overview.tsx but also statically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/workouts/analysis/WorkoutAnalysisSection.tsx, /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/pages/workout/WorkoutDetailsPage.tsx, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter] 
+(!) /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/components/metrics/MuscleGroupChart.tsx is dynamically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/pages/Overview.tsx but also statically imported by /Users/igorblinov/bulffit_project/bullfitworkout-alfa-development/src/pages/workout/WorkoutDetailsPage.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                          1.44 kB │ gzip:   0.65 kB
+dist/assets/index-BtxOYpdH.css                         172.02 kB │ gzip:  25.03 kB
+dist/assets/WorkoutDaysChart-DL_rAeZw.js                 1.38 kB │ gzip:   0.79 kB
+dist/assets/WorkoutTypeChart-7syPKe8x.js                 2.88 kB │ gzip:   1.11 kB
+dist/assets/WorkoutsTopExercisesTable-DgnG0y48.js        3.44 kB │ gzip:   1.06 kB
+dist/assets/WorkoutVolumeOverTimeChart-BRInWcry.js       3.50 kB │ gzip:   1.46 kB
+dist/assets/CartesianGrid-BVnZJ8c_.js                    6.79 kB │ gzip:   2.36 kB
+dist/assets/WorkoutDensityOverTimeChart-DmykmJ0V.js     15.08 kB │ gzip:   5.44 kB
+dist/assets/index-CF-sQN0i.js                        1,812.46 kB │ gzip: 511.99 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 13.86s

@@ -8,6 +8,8 @@ interface FeatureFlags {
   BW_LOADS_ENABLED: boolean;
   ADVANCED_METRICS: boolean;
   AI_RECOMMENDATIONS: boolean;
+  // Gate for KPI Analytics tab/flows
+  KPI_ANALYTICS_ENABLED: boolean;
 }
 
 // Environment-based defaults
@@ -24,11 +26,15 @@ const DEFAULT_FLAGS: FeatureFlags = {
   
   // AI-powered recommendations
   AI_RECOMMENDATIONS: true,
+
+  // KPI analytics: off in prod by default; on in staging/dev
+  KPI_ANALYTICS_ENABLED: isDevelopment || isStaging || false,
 };
 
 // Override flags from environment variables if present
 const ENV_OVERRIDES: Partial<FeatureFlags> = {
   BW_LOADS_ENABLED: import.meta.env.VITE_BW_LOADS_ENABLED === 'true',
+  KPI_ANALYTICS_ENABLED: import.meta.env.VITE_KPI_ANALYTICS_ENABLED === 'true',
 };
 
 // Merge defaults with environment overrides

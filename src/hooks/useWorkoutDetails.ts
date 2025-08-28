@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ExerciseSet } from "@/types/exercise";
+import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 
 export function useWorkoutDetails(workoutId: string | undefined) {
   const [workoutDetails, setWorkoutDetails] = useState<any>(null);
@@ -43,15 +44,41 @@ export function useWorkoutDetails(workoutId: string | undefined) {
           return;
         }
         
-        const groupedSets = sets?.reduce<Record<string, ExerciseSet[]>>((acc, set) => {
-          if (!acc[set.exercise_name]) {
-            acc[set.exercise_name] = [];
+        if (isRestAuditEnabled()) {
+          restAuditLog('after_load_api_sets', {
+            workoutId,
+            count: sets?.length || 0,
+            sample: (sets || []).slice(0, 10).map(s => ({
+              id: s.id,
+              exercise_name: s.exercise_name,
+              set_number: s.set_number,
+              rest_time: (s as any).rest_time ?? null
+            }))
+          });
+        }
+
+        const groupedSets = sets?.reduce<Record<string, ExerciseSet[]>>((acc, raw) => {
+          const set = raw as any;
+          const exerciseName = set.exercise_name;
+          const mapped = {
+            ...(set as ExerciseSet),
+            restTime: (set.rest_time ?? null) as number | null,
+          } as ExerciseSet;
+          if (!acc[exerciseName]) {
+            acc[exerciseName] = [];
           }
-          acc[set.exercise_name].push(set as ExerciseSet);
+          acc[exerciseName].push(mapped);
           return acc;
         }, {}) || {};
-        
+
         setExerciseSets(groupedSets);
+        if (isRestAuditEnabled()) {
+          const post = Object.fromEntries(Object.entries(groupedSets).map(([name, s]) => [
+            name,
+            s.slice(0, 5).map(x => ({ id: x.id, set_number: x.set_number, rest_raw: (x as any).rest_time ?? (x as any).restTime ?? null }))
+          ]));
+          restAuditLog('after_load_grouped_sets', { size: Object.keys(groupedSets).length, sample: post });
+        }
       } catch (error) {
         console.error('Error in workout details fetch:', error);
         toast.error('Failed to load workout data');

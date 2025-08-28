@@ -5,23 +5,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { EnhancedExerciseCard } from '../EnhancedExerciseCard';
-import { ProfileProvider } from '@/providers/ProfileProvider';
+// Note: we intentionally do NOT import the component or provider statically so
+// that vitest's vi.mock() can replace module implementations before import.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Exercise } from '@/types/exercise';
 
-// Mock the config flags
-vi.mock('@/config/flags', () => ({
-  useFeatureFlag: vi.fn(),
-  FEATURE_FLAGS: { BW_LOADS_ENABLED: true },
-}));
+// Use typed mocks from src/__mocks__
+vi.mock('@/config/flags');
+import * as flags from '@/config/flags';
 
-// Mock the profile provider hook
-vi.mock('@/providers/ProfileProvider', () => ({
-  ProfileProvider: ({ children }: { children: React.ReactNode }) => children,
-  useBodyweightKg: vi.fn(),
-  useProfile: vi.fn(),
-}));
+// Use typed mocks from src/__mocks__
+vi.mock('@/providers/ProfileProvider');
+import * as profileProvider from '@/providers/ProfileProvider';
 
 // Mock the exercise variants hook
 vi.mock('@/hooks/useExerciseVariants', () => ({
@@ -56,13 +51,15 @@ const createMockExercise = (overrides: Partial<Exercise>): Exercise => ({
   ...overrides
 });
 
-const renderWithProviders = (component: React.ReactElement) => {
+const renderWithProviders = async (component: React.ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
+
+  const { ProfileProvider } = await import('@/providers/ProfileProvider');
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -81,13 +78,11 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('when BW_LOADS_ENABLED flag is on', () => {
     beforeEach(() => {
-      const { useFeatureFlag } = require('@/config/flags');
-      useFeatureFlag.mockReturnValue(true);
+      (flags.useFeatureFlag as any).mockReturnValue(true);
     });
 
-    it('shows estimated load badge for bodyweight reps exercise with profile weight', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('shows estimated load badge for bodyweight reps exercise with profile weight', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Push-ups',
@@ -95,7 +90,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.65
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -105,9 +101,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.queryByText(/\(default\)/)).not.toBeInTheDocument();
     });
 
-    it('shows estimated load badge with default marker when using 70kg fallback', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(70);
+    it('shows estimated load badge with default marker when using 70kg fallback', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(70);
 
       const exercise = createMockExercise({
         name: 'Pull-ups',
@@ -115,7 +110,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.95
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -124,9 +120,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.getByText(/≈66\.5 kg/)).toBeInTheDocument();
     });
 
-    it('shows isometric load badge for hold/time exercises', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(90);
+    it('shows isometric load badge for hold/time exercises', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(90);
 
       const exercise = createMockExercise({
         name: 'Plank',
@@ -135,7 +130,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         static_posture_factor: 1.0
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -144,9 +140,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.getByText(/22\.5 kg/)).toBeInTheDocument();
     });
 
-    it('applies static posture factor for isometric exercises', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('applies static posture factor for isometric exercises', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'L-Sit',
@@ -155,7 +150,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         static_posture_factor: 1.2
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -163,9 +159,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.getByText(/67\.2 kg/)).toBeInTheDocument();
     });
 
-    it('does not show badges for non-bodyweight exercises', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('does not show badges for non-bodyweight exercises', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Barbell Bench Press',
@@ -174,7 +169,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: undefined
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -183,9 +179,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.queryByText(/Isometric load/)).not.toBeInTheDocument();
     });
 
-    it('includes proper accessibility labels', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('includes proper accessibility labels', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Push-ups',
@@ -193,7 +188,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.65
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -204,13 +200,11 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('when BW_LOADS_ENABLED flag is off', () => {
     beforeEach(() => {
-      const { useFeatureFlag } = require('@/config/flags');
-      useFeatureFlag.mockReturnValue(false);
+      (flags.useFeatureFlag as any).mockReturnValue(false);
     });
 
-    it('hides load badges when feature flag is disabled', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('hides load badges when feature flag is disabled', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Push-ups',
@@ -218,7 +212,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.65
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -230,13 +225,11 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('specific exercise calculations', () => {
     beforeEach(() => {
-      const { useFeatureFlag } = require('@/config/flags');
-      useFeatureFlag.mockReturnValue(true);
+      (flags.useFeatureFlag as any).mockReturnValue(true);
     });
 
-    it('calculates hanging leg raise load correctly', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('calculates hanging leg raise load correctly', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Hanging Leg Raise',
@@ -244,7 +237,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.60
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 
@@ -252,9 +246,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
       expect(screen.getByText(/≈48 kg/)).toBeInTheDocument();
     });
 
-    it('calculates hanging knee raise load correctly', () => {
-      const { useBodyweightKg } = require('@/providers/ProfileProvider');
-      useBodyweightKg.mockReturnValue(80);
+    it('calculates hanging knee raise load correctly', async () => {
+      (profileProvider.useBodyweightKg as any).mockReturnValue(80);
 
       const exercise = createMockExercise({
         name: 'Hanging Knee Raise',
@@ -262,7 +255,8 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
         bw_multiplier: 0.45
       });
 
-      renderWithProviders(
+      const { EnhancedExerciseCard } = await import('../EnhancedExerciseCard');
+      await renderWithProviders(
         <EnhancedExerciseCard exercise={exercise} />
       );
 

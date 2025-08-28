@@ -1,6 +1,7 @@
 
 import { ExerciseSet as TypesExerciseSet } from "@/types/exercise";
 import { ExerciseSet as StoreExerciseSet } from "@/store/workoutStore";
+import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 
 /**
  * Adapts workout store exercise sets to the format expected by exercise components
@@ -44,6 +45,12 @@ export const adaptToStoreFormat = (
       completed: set.completed,
       isEditing: set.isEditing || false
     }));
+    if (isRestAuditEnabled()) {
+      const fallbacks = sets.filter(s => s.restTime == null).length;
+      if (fallbacks > 0) {
+        restAuditLog('adapter_rest_fallback', { exerciseName, fallbackCount: fallbacks });
+      }
+    }
   });
   
   return storeExercises;

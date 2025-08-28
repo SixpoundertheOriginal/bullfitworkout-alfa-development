@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FinishWorkoutDialog } from "@/components/training/FinishWorkoutDialog";
+import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
@@ -59,7 +60,8 @@ const TrainingSessionPage = () => {
     setTrainingConfig,
     setWorkoutStatus,
     getExerciseDisplayName,
-    getExerciseConfig
+    getExerciseConfig,
+    currentRest
   } = useWorkoutStore();
 
   const {
@@ -269,6 +271,17 @@ const TrainingSessionPage = () => {
         return newExercises;
       });
 
+      // Audit: set completed
+      if (isRestAuditEnabled()) {
+        restAuditLog('set_complete', {
+          exerciseName,
+          setIndex: setIndex + 1,
+          completedAt: timingData?.endTime || new Date().toISOString(),
+          restSeconds: timingData?.actualRestTime ?? null,
+          note: timingData?.actualRestTime == null ? 'pending' : 'finalized'
+        });
+      }
+
       // Start rest timer for next set if there is one
       const exerciseData = storeExercises[exerciseName];
       const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
@@ -279,6 +292,14 @@ const TrainingSessionPage = () => {
           startedAt: Date.now(),
           targetSetKey: `${exerciseName}_${setIndex + 2}`,
         });
+        if (isRestAuditEnabled()) {
+          restAuditLog('start_next_set', {
+            exerciseName,
+            nextSetIndex: setIndex + 2,
+            plannedRestSeconds: sets[setIndex + 1]?.restTime ?? null,
+            fallbackApplied: sets[setIndex + 1]?.restTime == null
+          });
+        }
       }
     }
 
@@ -354,6 +375,56 @@ const TrainingSessionPage = () => {
       setShowFinishDialog(false);
       setIsSaving(true);
       
+      // Freeze any pending rest for the targeted set (compute on finish)
+      if (currentRest && currentRest.targetSetKey) {
+        try {
+          const key = currentRest.targetSetKey;
+          const lastUnderscore = key.lastIndexOf('_');
+          const exerciseId = key.slice(0, lastUnderscore);
+          const setNumber = parseInt(key.slice(lastUnderscore + 1), 10);
+          const restBeforeMs = Date.now() - currentRest.startedAt;
+          setStoreExercises(prev => {
+            const updated = { ...prev } as any;
+            const ex = updated[exerciseId];
+            const sets = Array.isArray(ex) ? ex : ex?.sets;
+            if (sets && sets[setNumber - 1]) {
+              const original = sets[setNumber - 1];
+              sets[setNumber - 1] = {
+                ...original,
+                metadata: { ...(original.metadata || {}), restBefore: restBeforeMs }
+              };
+              if (!Array.isArray(ex) && ex) {
+                updated[exerciseId] = { ...ex, sets };
+              } else {
+                updated[exerciseId] = sets;
+              }
+            }
+            return updated;
+          });
+          if (isRestAuditEnabled()) {
+            restAuditLog('finish_freeze_pending_rest', {
+              key,
+              exerciseId,
+              setNumber,
+              restSeconds: Math.floor(restBeforeMs / 1000)
+            });
+          }
+          setCurrentRest(null);
+        } catch (e) {
+          console.warn('Failed to freeze pending rest on finish:', e);
+        }
+      }
+
+      // Audit: finishing workout
+      if (isRestAuditEnabled()) {
+        restAuditLog('finish_workout', {
+          exerciseCount,
+          totalSets,
+          completedSets,
+          elapsedTime,
+        });
+      }
+
       // Actually save the workout to the database using useWorkoutSave
       const workoutId = await handleCompleteWorkout(trainingConfig);
       
