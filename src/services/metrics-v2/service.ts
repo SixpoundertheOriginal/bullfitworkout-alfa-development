@@ -38,6 +38,7 @@ export const metricsServiceV2 = {
 
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
       const out = await computeV2(adapter, userId, range)
+      console.log('[MetricsV2][debug] workouts:', out.totals.workouts, 'totalVolumeKg:', out.totals.totalVolumeKg, 'totalSets:', out.totals.totalSets)
       if (Array.isArray(out.series.volume) && out.series.volume.length === 0) {
         console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId })
       }

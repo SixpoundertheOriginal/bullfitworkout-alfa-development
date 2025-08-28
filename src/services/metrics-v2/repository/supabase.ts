@@ -54,7 +54,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
 
-      if (error || !sets) {
+      if (error) {
         console.error('[MetricsV2] Error fetching sets:', error)
         // Fallback: try without join (in case RLS allows)
         const alt = await this.client
@@ -72,6 +72,27 @@ export class SupabaseMetricsRepository implements MetricsRepository {
           reps: s.reps,
           exerciseId: undefined
         }))
+      }
+
+      if (!sets || sets.length === 0) {
+        console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
+        const alt = await this.client
+          .from('exercise_sets')
+          .select('id, workout_id, weight, reps, completed')
+          .in('workout_id', workoutIds)
+        if (alt.error) {
+          console.error('[MetricsV2] Fallback sets query failed:', alt.error)
+          return []
+        }
+        const mapped = (alt.data || []).map((s: any) => ({
+          id: s.id,
+          workoutId: s.workout_id,
+          weightKg: s.weight,
+          reps: s.reps,
+          exerciseId: undefined
+        }))
+        console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
+        return mapped
       }
 
       return sets.map((s: any) => ({
