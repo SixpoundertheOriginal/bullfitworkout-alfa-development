@@ -23,12 +23,33 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         .lt('start_time', endExclusive)
         .order('start_time', { ascending: true })
 
-      if (error || !workouts) {
+      if (error) {
         console.error('[MetricsV2] Error fetching workouts:', error)
         return this.getMockWorkouts(range)
       }
 
-      return workouts.map(w => ({
+      let list = workouts || []
+      if (!list.length) {
+        console.warn('[MetricsV2] No workouts in range via DB filter; retrying without range and filtering in app', { range, userId })
+        const alt = await this.client
+          .from('workout_sessions')
+          .select('id, start_time, end_time, duration')
+          .eq('user_id', userId)
+          .order('start_time', { ascending: true })
+        if (!alt.error && alt.data) {
+          const from = new Date(range.start).getTime()
+          const to = new Date(endExclusive).getTime()
+          list = alt.data.filter((w: any) => {
+            const t = new Date(w.start_time).getTime()
+            return t >= from && t < to
+          })
+          console.log('[MetricsV2] Fallback workouts filtered in app:', list.length)
+        } else {
+          console.error('[MetricsV2] Fallback workouts query failed:', alt.error)
+        }
+      }
+
+      return list.map((w: any) => ({
         id: w.id,
         startedAt: w.start_time,
         endedAt: w.end_time,
