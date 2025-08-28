@@ -4,21 +4,22 @@ import { Target } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 interface MuscleGroupBalanceProps {
-  muscleFocus: Record<string, number>;
+  muscleFocus?: Record<string, number> | null;
 }
 
 const MuscleGroupBalanceComponent: React.FC<MuscleGroupBalanceProps> = ({ muscleFocus }) => {
   // Transform muscle focus data for radar chart
   const chartData = React.useMemo(() => {
-    const totalVolume = Object.values(muscleFocus).reduce((sum, volume) => sum + volume, 0);
+    const mf = muscleFocus ?? {};
+    const totalVolume = Object.values(mf).reduce((sum, volume) => sum + (Number(volume) || 0), 0);
     
     if (totalVolume === 0) return [];
 
-    return Object.entries(muscleFocus)
+    return Object.entries(mf)
       .map(([muscle, volume]) => ({
         muscle: muscle.charAt(0).toUpperCase() + muscle.slice(1),
-        percentage: Math.round((volume / totalVolume) * 100),
-        volume
+        percentage: Math.round(((Number(volume) || 0) / totalVolume) * 100),
+        volume: Number(volume) || 0
       }))
       .sort((a, b) => b.volume - a.volume)
       .slice(0, 6); // Show top 6 muscle groups
