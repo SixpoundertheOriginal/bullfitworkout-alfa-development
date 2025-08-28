@@ -12,6 +12,7 @@ import {
   WorkoutError, 
   RestTimerState 
 } from '@/types/workout-enhanced';
+import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
 import { 
   validateWorkoutState, 
   recoverFromCorruption, 
@@ -342,6 +343,13 @@ setSetStartTime: (exerciseId, setNumber) => set((state) => {
         };
       }
     }
+    if (isRestAuditEnabled()) {
+      restAuditLog('freeze_prev_set_rest', {
+        targetSetKey: key,
+        restSeconds: Math.floor(restBefore / 1000),
+        note: 'Computed on next set start'
+      });
+    }
     return {
       setTimings: timings,
       exercises: exercisesCopy,
@@ -532,11 +540,45 @@ clearAllRestTimers: () => set({
       },
       
       endWorkout: () => {
-        set({ 
-          isActive: false,
-          explicitlyEnded: true,
-          workoutStatus: 'idle',
-          lastTabActivity: Date.now(),
+        set((state) => {
+          // Freeze any pending rest for targeted set if present
+          let exercises = state.exercises as WorkoutExercises;
+          if (state.currentRest && state.currentRest.targetSetKey) {
+            try {
+              const key = state.currentRest.targetSetKey;
+              const lastUnderscore = key.lastIndexOf('_');
+              const exerciseId = key.slice(0, lastUnderscore);
+              const setNumber = parseInt(key.slice(lastUnderscore + 1), 10);
+              const restBeforeMs = Date.now() - state.currentRest.startedAt;
+              const updated = { ...exercises } as any;
+              const ex = updated[exerciseId];
+              const sets = Array.isArray(ex) ? ex : ex?.sets;
+              if (sets && sets[setNumber - 1]) {
+                const original = sets[setNumber - 1];
+                sets[setNumber - 1] = {
+                  ...original,
+                  metadata: { ...(original.metadata || {}), restBefore: restBeforeMs }
+                };
+                if (!Array.isArray(ex) && ex) {
+                  updated[exerciseId] = { ...ex, sets };
+                } else {
+                  updated[exerciseId] = sets;
+                }
+                exercises = updated;
+              }
+            } catch (e) {
+              console.warn('Failed to freeze pending rest on endWorkout:', e);
+            }
+          }
+
+          return {
+            exercises,
+            currentRest: null,
+            isActive: false,
+            explicitlyEnded: true,
+            workoutStatus: 'idle',
+            lastTabActivity: Date.now(),
+          };
         });
         console.log("Workout ended");
       },

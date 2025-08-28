@@ -2,9 +2,10 @@
 
 import { ExerciseSet } from '@/types/exercise';
 import { calculateEffectiveWeight, getExerciseLoadFactor, isBodyweightExercise } from '@/types/exercise';
-import { useFeatureFlag } from '@/config/flags';
+import { isFeatureEnabled } from '@/config/flags';
 import { effectiveLoadPerRepKg, isometricWorkKgSec, isBodyweight } from '@/utils/load';
 import { emitBwLoadApplied, emitIsometricWorkLogged } from '@/config/flags';
+import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
 
 // Enhanced ProcessedWorkoutMetrics with bodyweight and isometric work separation
 export interface ProcessedWorkoutMetrics {
@@ -172,6 +173,10 @@ export const processWorkoutMetrics = (
   const exerciseNames = Object.keys(exercises);
   metrics.exerciseCount = exerciseNames.length;
 
+  // Configurable fallbacks and feature gates
+  const REST_FALLBACK_SECONDS = 60; // used when set.restTime is missing
+  const BW_LOADS_ENABLED = isFeatureEnabled('BW_LOADS_ENABLED');
+
   let totalRpe = 0;
   let rpeCount = 0;
   let peakLoad = 0;
@@ -234,22 +239,28 @@ export const processWorkoutMetrics = (
                                    exerciseName.toLowerCase().includes('bodyweight');
         
         if (isBodyweightExercise && set.weight === 0) {
-          // For bodyweight exercises with no external weight, estimate effective load
-          // This is a simplified version - in practice, you'd get exercise config
-          const estimatedMultiplier = exerciseName.toLowerCase().includes('push-up') ? 0.65 :
-                                     exerciseName.toLowerCase().includes('pull-up') ? 0.95 : 0.65;
-          const effectiveLoad = userWeightKg * estimatedMultiplier;
-          const bodyweightVolume = effectiveLoad * set.reps;
-          
-          metrics.totalVolume += bodyweightVolume;
-          metrics.adjustedVolume += bodyweightVolume;
-          
-          // Emit telemetry for bodyweight load application
-          emitBwLoadApplied({
-            exerciseId: exerciseName,
-            userBw: userWeightKg,
-            loadPerRep: effectiveLoad
-          });
+          if (BW_LOADS_ENABLED) {
+            // For bodyweight exercises with no external weight, estimate effective load
+            // This is a simplified version - in practice, you'd get exercise config
+            const estimatedMultiplier = exerciseName.toLowerCase().includes('push-up') ? 0.65 :
+                                       exerciseName.toLowerCase().includes('pull-up') ? 0.95 : 0.65;
+            const effectiveLoad = userWeightKg * estimatedMultiplier;
+            const bodyweightVolume = effectiveLoad * set.reps;
+            
+            metrics.totalVolume += bodyweightVolume;
+            metrics.adjustedVolume += bodyweightVolume;
+            
+            // Emit telemetry for bodyweight load application
+            emitBwLoadApplied({
+              exerciseId: exerciseName,
+              userBw: userWeightKg,
+              loadPerRep: effectiveLoad
+            });
+          } else {
+            // BW loads disabled: skip adding estimated volume (treat as 0 external load)
+            metrics.totalVolume += 0;
+            metrics.adjustedVolume += 0;
+          }
         } else {
           metrics.totalVolume += standardVolume;
           metrics.adjustedVolume += standardVolume;
@@ -308,8 +319,15 @@ export const processWorkoutMetrics = (
       }
       
       // Enhanced rest time tracking for efficiency calculations (exclude first set per exercise)
-      const isFirstSet = setIndex === 0;
-      const restTime = isFirstSet ? 0 : (set.restTime ?? 60);
+  const isFirstSet = setIndex === 0;
+  const restTime = isFirstSet ? 0 : (set.restTime ?? REST_FALLBACK_SECONDS);
+      if (!isFirstSet && set.restTime == null && isRestAuditEnabled()) {
+        restAuditLog('metrics_rest_fallback', {
+          exerciseName,
+          setIndex: setIndex + 1,
+          appliedFallbackSeconds: REST_FALLBACK_SECONDS
+        });
+      }
       if (!isFirstSet) {
         exerciseRestTime += restTime;
         totalRestTime += restTime;

@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EnhancedExerciseSet, WorkoutError, SaveProgress } from "@/types/workout";
 import { ExerciseSet } from "@/types/exercise";
 import { toast } from "@/hooks/use-toast";
+import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 
 interface SaveWorkoutParams {
   userData: {
@@ -88,7 +89,7 @@ export const saveWorkout = async ({
         const setNumber = setIndex + 1;
         // Try to get actual rest time from analytics, fallback to planned time
         const actualRestTime = actualRestTimes.get(exerciseName)?.get(setNumber);
-        const restTime = actualRestTime || set.restTime || 60;
+        const restTime = (actualRestTime ?? set.restTime ?? null);
         
         if (actualRestTime) {
           console.log(`🔄 Using actual rest time for ${exerciseName} set ${setNumber}: ${actualRestTime}s`);
@@ -104,6 +105,17 @@ export const saveWorkout = async ({
         };
       });
     });
+
+    if (isRestAuditEnabled()) {
+      restAuditLog('before_save_service_formatted_sets', {
+        totalSets: formattedSets.length,
+        sample: formattedSets.slice(0, 10).map(s => ({
+          exercise_name: s.exercise_name,
+          set_number: s.set_number,
+          rest_time: s.rest_time
+        }))
+      });
+    }
 
     console.log(`Saving workout with ${formattedSets.length} exercise sets`);
     
@@ -371,7 +383,7 @@ async function saveExerciseSetsWithRetry(
             reps: set.reps || 0,
             set_number: i + batch.indexOf(set) + 1,
             completed: set.completed || false,
-            rest_time: set.restTime || 60
+            rest_time: set.restTime ?? null
           })));
           
         if (batchError) {
@@ -393,7 +405,7 @@ async function saveExerciseSetsWithRetry(
                     reps: set.reps || 0,
                     set_number: i + batch.indexOf(set) + 1,
                     completed: set.completed || false,
-                    rest_time: set.restTime || 60
+                    rest_time: set.restTime ?? null
                   });
                   
                 if (!setError) {
@@ -503,7 +515,7 @@ export const processRetryQueue = async (userId: string): Promise<boolean> => {
           reps: set.reps || 0,
           set_number: index + 1,
           completed: set.completed || false,
-          rest_time: set.restTime || 60
+          rest_time: set.restTime ?? null
         })));
         
       if (batchError && attempt < 3) {

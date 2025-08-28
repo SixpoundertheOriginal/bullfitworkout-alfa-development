@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { saveWorkout, processRetryQueue, recoverPartiallyCompletedWorkout } from "@/services/workoutSaveService";
 import { WorkoutError, EnhancedExerciseSet } from "@/types/workout";
 import { ExerciseSet, useWorkoutStore } from '@/store/workoutStore';
+import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
 
 export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsedTime: number, resetSession: () => void) => {
   const [saveStatus, setSaveStatus] = useState<{
@@ -167,12 +168,28 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
         console.warn('Could not load rest analytics data:', error);
       }
       
+      // Audit: dump store snapshot of sets before building payload
+      if (isRestAuditEnabled()) {
+        const snapshot = Object.fromEntries(Object.entries(exercises).map(([name, sets]) => [
+          name,
+          sets.map((s, i) => ({
+            idx: i + 1,
+            weight: s.weight,
+            reps: s.reps,
+            restTime: s.restTime ?? null,
+            completed: s.completed,
+            metadata: s.metadata || null
+          }))
+        ]));
+        restAuditLog('before_save_store_snapshot', { sets: snapshot });
+      }
+
       // Convert ExerciseSet to EnhancedExerciseSet and inject actual rest times
       const enhancedExercises: Record<string, EnhancedExerciseSet[]> = {};
       Object.entries(exercises).forEach(([exerciseName, sets]) => {
         enhancedExercises[exerciseName] = sets.map((set, setIndex) => {
           // Try to get actual rest time from analytics for this specific set
-          let actualRestTime = set.restTime || 60; // fallback to preset
+          let actualRestTime = (set.restTime ?? null); // preserve null unless analytics provides actual
           
           const restKey = `${exerciseName}-${setIndex + 1}`;
           if (actualRestTimes.has(restKey)) {
@@ -187,6 +204,14 @@ export const useWorkoutSave = (exercises: Record<string, ExerciseSet[]>, elapsed
           };
         });
       });
+
+      if (isRestAuditEnabled()) {
+        const audit = Object.fromEntries(Object.entries(enhancedExercises).map(([name, sets]) => [
+          name,
+          sets.map((s, i) => ({ idx: i + 1, restTime: s.restTime }))
+        ]));
+        restAuditLog('before_save_enhanced_sets', { exercises: audit });
+      }
       
       const saveResult = await saveWorkout({
         userData: user,

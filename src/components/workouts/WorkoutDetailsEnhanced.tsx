@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { ExerciseSet } from '@/types/exercise';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { useWeightUnit } from '@/context/WeightUnitContext';
 import { cn } from '@/lib/utils';
 import { WorkoutAnalysisSection } from './analysis/WorkoutAnalysisSection';
 import { processWorkoutMetrics } from '@/utils/workoutMetricsProcessor';
+import { formatTime } from '@/utils/formatTime';
+import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
 
 interface WorkoutDetailsEnhancedProps {
   workout: {
@@ -51,6 +53,22 @@ export const WorkoutDetailsEnhanced = ({
     workout.duration,
     weightUnit as 'kg' | 'lb'
   ), [exercises, workout.duration, weightUnit]);
+
+  useEffect(() => {
+    if (!isRestAuditEnabled()) return;
+    try {
+      const audit = Object.fromEntries(Object.entries(exercises).map(([name, sets]) => [
+        name,
+        sets.slice(0, 10).map((set: any) => ({
+          id: set.id,
+          set_number: set.set_number,
+          rest_raw: set.restTime ?? set.rest_time ?? null,
+          display_rest: (set.restTime ?? null)
+        }))
+      ]));
+      restAuditLog('details_render_sets', { sample: audit });
+    } catch {}
+  }, [exercises]);
   
   const handleEditExercise = (exerciseName: string) => {
     if (onEditExercise) {
@@ -290,7 +308,12 @@ export const WorkoutDetailsEnhanced = ({
                           <td className="py-3 px-4">Set {set.set_number}</td>
                           <td className="py-3 px-4 font-mono">{set.weight}</td>
                           <td className="py-3 px-4 font-mono">{set.reps}</td>
-                          <td className="py-3 px-4 font-mono">{set.restTime || 60}s</td>
+                          <td className="py-3 px-4 font-mono">
+                            {(() => {
+                              const raw = (set as any).restTime ?? null;
+                              return raw == null ? 'Pending' : formatTime(raw);
+                            })()}
+                          </td>
                           <td className="py-3 px-4 text-right">
                             <Badge 
                               className={cn(
