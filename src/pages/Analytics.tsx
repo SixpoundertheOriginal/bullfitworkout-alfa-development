@@ -47,19 +47,37 @@ const Analytics: React.FC = () => {
         date: (p.date ?? p.x) as string,
         value: (p.value ?? p.y) as number,
       }));
-      // Build duration/workouts series from perWorkout (enriched with duration)
-      const perWorkout = Array.isArray(raw.perWorkout) ? raw.perWorkout : [];
-      const byDay = new Map<string, { workouts: number; duration: number }>();
-      for (const w of perWorkout) {
-        const day = (w.startedAt || '').split('T')[0];
-        if (!day) continue;
-        const cur = byDay.get(day) || { workouts: 0, duration: 0 };
-        cur.workouts += 1;
-        cur.duration += Number(w.durationMin || 0);
-        byDay.set(day, cur);
+      // Prefer service-provided series; fallback to perWorkout derivation if needed
+      let workoutsSeries = (raw.series?.workouts || []).map((p: any) => ({
+        date: (p.date ?? p.x) as string,
+        value: (p.value ?? p.y) as number,
+      }));
+      let durationSeries = (raw.series?.duration || []).map((p: any) => ({
+        date: (p.date ?? p.x) as string,
+        value: (p.value ?? p.y) as number,
+      }));
+      if (workoutsSeries.length === 0 || durationSeries.length === 0) {
+        const perWorkout = Array.isArray(raw.perWorkout) ? raw.perWorkout : [];
+        const byDay = new Map<string, { workouts: number; duration: number }>();
+        for (const w of perWorkout) {
+          const day = (w.startedAt || '').split('T')[0];
+          if (!day) continue;
+          const cur = byDay.get(day) || { workouts: 0, duration: 0 };
+          cur.workouts += 1;
+          cur.duration += Number((w as any).durationMin || 0);
+          byDay.set(day, cur);
+        }
+        if (workoutsSeries.length === 0) {
+          workoutsSeries = Array.from(byDay.entries())
+            .map(([date, v]) => ({ date, value: v.workouts }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+        }
+        if (durationSeries.length === 0) {
+          durationSeries = Array.from(byDay.entries())
+            .map(([date, v]) => ({ date, value: v.duration }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+        }
       }
-      const workoutsSeries = Array.from(byDay.entries()).map(([date, v]) => ({ date, value: v.workouts })).sort((a, b) => a.date.localeCompare(b.date));
-      const durationSeries = Array.from(byDay.entries()).map(([date, v]) => ({ date, value: v.duration })).sort((a, b) => a.date.localeCompare(b.date));
 
       return {
         totals: {
