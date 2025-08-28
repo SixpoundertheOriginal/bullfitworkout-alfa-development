@@ -29,23 +29,19 @@ const DEFAULT_FLAGS: FeatureFlags = {
   // AI-powered recommendations
   AI_RECOMMENDATIONS: true,
 
-  // KPI analytics: off in prod by default; on in staging/dev
-  KPI_ANALYTICS_ENABLED: isDevelopment || isStaging || isLovablePreview || false,
+  // KPI analytics: ENABLED by default pre-MVP; can be disabled via env
+  KPI_ANALYTICS_ENABLED: true,
 };
 
-// Override flags from environment variables if present
-const ENV_OVERRIDES: Partial<FeatureFlags> = {
-  BW_LOADS_ENABLED: import.meta.env.VITE_BW_LOADS_ENABLED === 'true',
-  KPI_ANALYTICS_ENABLED: import.meta.env.VITE_KPI_ANALYTICS_ENABLED === 'true',
-};
+// Override flags from environment variables if present (only when explicitly set)
+const ENV_OVERRIDES: Partial<FeatureFlags> = {};
+const BW_RAW = (import.meta as any).env?.VITE_BW_LOADS_ENABLED;
+if (typeof BW_RAW !== 'undefined') ENV_OVERRIDES.BW_LOADS_ENABLED = BW_RAW === 'true';
+const KPI_RAW = (import.meta as any).env?.VITE_KPI_ANALYTICS_ENABLED;
+if (typeof KPI_RAW !== 'undefined') ENV_OVERRIDES.KPI_ANALYTICS_ENABLED = KPI_RAW === 'true';
 
 // Merge defaults with environment overrides
-export const FEATURE_FLAGS: FeatureFlags = {
-  ...DEFAULT_FLAGS,
-  ...Object.fromEntries(
-    Object.entries(ENV_OVERRIDES).filter(([_, value]) => value !== undefined)
-  ) as Partial<FeatureFlags>,
-};
+export const FEATURE_FLAGS: FeatureFlags = { ...DEFAULT_FLAGS, ...ENV_OVERRIDES };
 
 export type FeatureFlagKey = keyof FeatureFlags;
 
