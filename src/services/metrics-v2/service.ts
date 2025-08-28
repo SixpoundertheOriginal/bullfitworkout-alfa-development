@@ -16,6 +16,31 @@ try {
 export const metricsServiceV2 = {
   getMetricsV2: async ({ dateRange, userId }: { dateRange: DateRange; userId: string }) => {
     try {
+      // Fetch raw data first via repository (with built-in fallbacks)
+      const rawWorkouts = await repository.getWorkouts(dateRange, userId)
+      const workoutIds = rawWorkouts.map(w => w.id)
+      const rawSets = await repository.getSets(workoutIds, userId)
+
+      // Compute simple totals directly from repository data (authoritative)
+      const totalSets = rawSets.length
+      const totalReps = rawSets.reduce((a, s) => a + (Number(s.reps) || 0), 0)
+      const totalWorkouts = rawWorkouts.length
+      const durationMin = rawWorkouts.reduce((a, w) => a + (Number(w.duration) || 0), 0)
+      const totalVolumeKg = rawSets.reduce((a, s) => a + (Number(s.weightKg) || 0) * (Number(s.reps) || 0), 0)
+
+      // Build volume series (YYYY-MM-DD) based on repository data
+      const volByDay = new Map<string, number>()
+      for (const s of rawSets) {
+        const w = rawWorkouts.find(w => w.id === s.workoutId)
+        if (!w) continue
+        const day = new Date(w.startedAt).toISOString().split('T')[0]
+        const inc = (Number(s.weightKg) || 0) * (Number(s.reps) || 0)
+        volByDay.set(day, (volByDay.get(day) || 0) + inc)
+      }
+      const repoVolumeSeries = Array.from(volByDay.entries())
+        .map(([date, value]) => ({ date, value }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+
       // Adapter: bridge our Supabase repository (string dates + RLS user) to compute's repo
       const adapter: ComputeRepo = {
         getWorkouts: async (range: ComputeRange, uid: string) => {
@@ -38,16 +63,27 @@ export const metricsServiceV2 = {
 
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
       const out = await computeV2(adapter, userId, range)
-      console.log('[MetricsV2][debug] workouts:', out.totals.workouts, 'totalVolumeKg:', out.totals.totalVolumeKg, 'totalSets:', out.totals.totalSets)
-      if (Array.isArray(out.series.volume) && out.series.volume.length === 0) {
+      console.log('[MetricsV2][debug] repoTotals -> workouts:', totalWorkouts, 'totalVolumeKg:', totalVolumeKg, 'totalSets:', totalSets)
+      if (Array.isArray(out.series.volume) && out.series.volume.length === 0 && repoVolumeSeries.length > 0) {
         console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId })
       }
-      // Augment with real duration from workout_sessions if available
-      const workouts = await repository.getWorkouts(dateRange, userId)
-      const totalDurationMin = workouts.reduce((sum, w) => sum + (w.duration || 0), 0)
+
+      // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       return {
         ...out,
-        totals: { ...out.totals, durationMin: totalDurationMin },
+        totals: {
+          ...out.totals,
+          totalVolumeKg,
+          totalSets,
+          totalReps,
+          workouts: totalWorkouts,
+          durationMin,
+        },
+        series: {
+          ...out.series,
+          // Use repo series in UI (select() in Analytics handles both {date,value} and {x,y})
+          volume: repoVolumeSeries,
+        },
       }
     } catch (error) {
       console.error('Error in getMetricsV2:', error)
