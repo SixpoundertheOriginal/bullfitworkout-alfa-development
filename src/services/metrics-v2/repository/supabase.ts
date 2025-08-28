@@ -46,16 +46,32 @@ export class SupabaseMetricsRepository implements MetricsRepository {
     }
 
     try {
+      // Primary query: RLS-safe inner join to user's workouts; include completed or null
       const { data: sets, error } = await this.client
         .from('exercise_sets')
-        .select('id, workout_id, weight, reps, completed, workout_sessions!inner(user_id)')
+        .select('id, workout_id, weight, reps, completed, workout_sessions!inner(id,user_id)')
         .in('workout_id', workoutIds)
         .eq('workout_sessions.user_id', userId)
-        .eq('completed', true)
+        .or('completed.is.null,completed.eq.true')
 
       if (error || !sets) {
         console.error('[MetricsV2] Error fetching sets:', error)
-        return this.getMockSets(workoutIds)
+        // Fallback: try without join (in case RLS allows)
+        const alt = await this.client
+          .from('exercise_sets')
+          .select('id, workout_id, weight, reps, completed')
+          .in('workout_id', workoutIds)
+        if (alt.error || !alt.data) {
+          console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
+          return this.getMockSets(workoutIds)
+        }
+        return alt.data.map((s: any) => ({
+          id: s.id,
+          workoutId: s.workout_id,
+          weightKg: s.weight,
+          reps: s.reps,
+          exerciseId: undefined
+        }))
       }
 
       return sets.map((s: any) => ({

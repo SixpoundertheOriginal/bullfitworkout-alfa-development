@@ -38,6 +38,9 @@ export const metricsServiceV2 = {
 
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
       const out = await computeV2(adapter, userId, range)
+      if (Array.isArray(out.series.volume) && out.series.volume.length === 0) {
+        console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId })
+      }
       // Augment with real duration from workout_sessions if available
       const workouts = await repository.getWorkouts(dateRange, userId)
       const totalDurationMin = workouts.reduce((sum, w) => sum + (w.duration || 0), 0)
