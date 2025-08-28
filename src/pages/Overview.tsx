@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { FEATURE_FLAGS } from "@/config/flags";
+import { Link } from "react-router-dom";
 import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
 import { useUnifiedOverviewData } from "@/hooks/useUnifiedOverviewData";
 import { Users2, Flame, Activity, Dumbbell, Target, TrendingUp } from "lucide-react";
@@ -150,12 +153,19 @@ const Overview: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900/98 to-gray-900/95">
       <div className="container mx-auto py-6 px-4 space-y-8">
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
             Workout Overview
           </h1>
-          <div className="flex justify-start">
+          <div className="flex items-center gap-3">
             <DateRangeFilter />
+            {FEATURE_FLAGS.KPI_ANALYTICS_ENABLED && (
+              <Link to="/analytics">
+                <Button variant="outline" className="border-white/20 text-white/90 hover:bg-white/10">
+                  Analytics
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
