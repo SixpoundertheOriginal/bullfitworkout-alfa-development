@@ -16,6 +16,8 @@ interface FeatureFlags {
 const isDevelopment = import.meta.env.DEV;
 const isStaging = import.meta.env.VITE_APP_ENV === 'staging';
 const isProduction = import.meta.env.VITE_APP_ENV === 'production';
+// Treat lovable.dev previews as staging-like environments at runtime
+const isLovablePreview = typeof window !== 'undefined' && /lovable\.dev$/i.test(window.location.hostname);
 
 const DEFAULT_FLAGS: FeatureFlags = {
   // Bodyweight loads: enabled in dev/staging, controlled rollout in production
@@ -28,7 +30,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   AI_RECOMMENDATIONS: true,
 
   // KPI analytics: off in prod by default; on in staging/dev
-  KPI_ANALYTICS_ENABLED: isDevelopment || isStaging || false,
+  KPI_ANALYTICS_ENABLED: isDevelopment || isStaging || isLovablePreview || false,
 };
 
 // Override flags from environment variables if present
