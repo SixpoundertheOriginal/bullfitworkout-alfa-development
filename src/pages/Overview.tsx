@@ -45,7 +45,7 @@ const Overview: React.FC = () => {
     volumeOverTimeData,
     densityOverTimeData,
     densityStats,
-    chartData,
+    chartData = undefined,
     loading,
     refetch,
     insights,
@@ -91,7 +91,7 @@ const Overview: React.FC = () => {
           <WorkoutTypeChart workoutTypes={data} height={250} />
         </Suspense>
       ),
-      data: chartData.workoutTypes
+      data: chartData?.workoutTypes
     },
     {
       title: "Muscle Focus", 
@@ -101,7 +101,7 @@ const Overview: React.FC = () => {
           <MuscleGroupChart muscleFocus={data} height={250} />
         </Suspense>
       ),
-      data: chartData.muscleFocus
+      data: chartData?.muscleFocus
     },
     {
       title: "Workout Days",
@@ -111,7 +111,7 @@ const Overview: React.FC = () => {
           <WorkoutDaysChart daysFrequency={data} height={250} />
         </Suspense>
       ),
-      data: chartData.timePatterns.daysFrequency
+      data: chartData?.timePatterns?.daysFrequency
     },
     {
       title: "Time of Day",
@@ -121,7 +121,7 @@ const Overview: React.FC = () => {
           <TimeOfDayChart durationByTimeOfDay={data} height={250} />
         </Suspense>
       ),
-      data: chartData.timePatterns.durationByTimeOfDay
+      data: chartData?.timePatterns?.durationByTimeOfDay
     },
     {
       title: "Top Exercises",
@@ -131,7 +131,7 @@ const Overview: React.FC = () => {
           <TopExercisesTable exercises={data} />
         </Suspense>
       ),
-      data: chartData.exerciseVolumeHistory
+      data: chartData?.exerciseVolumeHistory
     }
   ]), [chartData]);
 
@@ -242,7 +242,7 @@ const Overview: React.FC = () => {
           <div className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism}`}>
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-green-500/5 pointer-events-none" />
             <div className="relative z-10">
-              <MuscleGroupBalance muscleFocus={chartData.muscleFocus} />
+              <MuscleGroupBalance muscleFocus={chartData?.muscleFocus} />
             </div>
           </div>
 
