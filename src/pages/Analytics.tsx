@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { metricsServiceV2 } from '@/services/metrics-v2/service';
 import type { AnalyticsData } from '@/types/analytics';
 import { parseKpiTabParams, writeKpiTabParams } from '@/utils/url';
+import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { useAuth } from '@/context/AuthContext';
 
 const Analytics: React.FC = () => {
@@ -19,6 +20,8 @@ const Analytics: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { kpi: kpiParam } = parseKpiTabParams(location.search);
+  const sp = new URLSearchParams(location.search);
+  const groupParam = (sp.get('group') as 'day' | 'week' | 'month') || 'day';
   const selectedKpi = (kpiParam as 'tonnage' | 'sets' | 'reps' | 'duration' | 'workouts') || 'tonnage';
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['metrics-v2', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
@@ -80,6 +83,37 @@ const Analytics: React.FC = () => {
   const onSelectKpi = (k: 'tonnage' | 'sets' | 'reps' | 'duration' | 'workouts') => {
     const next = writeKpiTabParams(location.search, { tab: 'analytics', kpi: k });
     navigate({ search: next }, { replace: false });
+  };
+
+  const onGroupChange = (g: 'day' | 'week' | 'month') => {
+    const u = new URLSearchParams(location.search);
+    u.set('group', g);
+    navigate({ search: `?${u.toString()}` }, { replace: false });
+  };
+
+  // Grouping helpers
+  const groupSeries = (series: Array<{ date: string; value: number }>) => {
+    if (groupParam === 'day') return series;
+    const map = new Map<string, number>();
+    for (const p of series) {
+      const d = new Date(p.date);
+      let key = '';
+      if (groupParam === 'week') {
+        // ISO week by approximate method: Thursday of week
+        const tmp = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+        const dayNum = (tmp.getUTCDay() + 6) % 7; // Mon=0..Sun=6
+        tmp.setUTCDate(tmp.getUTCDate() - dayNum + 3);
+        const firstThursday = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 4));
+        const week = 1 + Math.round(((tmp.getTime() - firstThursday.getTime()) / 86400000 - 3) / 7);
+        key = `${tmp.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+      } else {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      }
+      map.set(key, (map.get(key) || 0) + (p.value || 0));
+    }
+    return Array.from(map.entries())
+      .map(([date, value]) => ({ date, value }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   };
 
   if (!FEATURE_FLAGS.KPI_ANALYTICS_ENABLED) {
@@ -154,6 +188,10 @@ const Analytics: React.FC = () => {
               </div>
             </Card>
           </div>
+          {/* Filter bar */}
+          <div className="flex items-center justify-between">
+            <AnalyticsFilterBar groupBy={groupParam} onGroupByChange={onGroupChange} />
+          </div>
 
           <Card className="bg-gray-800/50 border-gray-700 p-6">
             <h3 className="text-lg font-medium text-white mb-4">
@@ -166,13 +204,13 @@ const Analytics: React.FC = () => {
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={
+                  data={groupSeries(
                     selectedKpi === 'tonnage' ? data.series.volume
                     : selectedKpi === 'sets' ? (data.series.sets || [])
                     : selectedKpi === 'reps' ? (data.series.reps || [])
                     : selectedKpi === 'duration' ? (data.series.duration || [])
                     : (data.series.workouts || [])
-                  }
+                  )}
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <XAxis 
