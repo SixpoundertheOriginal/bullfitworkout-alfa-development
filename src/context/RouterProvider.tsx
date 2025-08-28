@@ -13,6 +13,8 @@ import ProfilePage from "@/pages/ProfilePage";
 import Auth from "@/pages/Auth";
 import AllExercisesPage from "@/pages/AllExercisesPage";
 import Overview from "@/pages/Overview";
+import Analytics from "@/pages/Analytics";
+import { FEATURE_FLAGS } from "@/config/flags";
 import { WorkoutManagementPage } from "@/pages/WorkoutManagementPage";
 import EnhancedTrainingCoachPage from "@/pages/EnhancedTrainingCoachPage";
 
@@ -58,6 +60,15 @@ export const RouterProvider = () => {
                 </MainLayout>
               </ProtectedRoute>
             } />
+            {FEATURE_FLAGS.KPI_ANALYTICS_ENABLED && (
+              <Route path="/analytics" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Analytics />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+            )}
             <Route path="/workouts" element={
               <ProtectedRoute>
                 <MainLayout>

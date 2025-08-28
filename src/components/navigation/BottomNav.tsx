@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useWorkoutNavigation } from "@/context/WorkoutNavigationContext";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { NavigationItem } from "@/components/ui/enhanced/NavigationItem";
+import { FEATURE_FLAGS } from "@/config/flags";
 
 export const BottomNav = () => {
   const location = useLocation();
@@ -46,6 +47,14 @@ export const BottomNav = () => {
           isActive={isActive('/overview')}
           onClick={() => confirmNavigation('/overview')} 
         />
+        {FEATURE_FLAGS.KPI_ANALYTICS_ENABLED && (
+          <NavigationItem 
+            icon={<BarChart3 size={20} />} 
+            label="Analytics" 
+            isActive={isActive('/analytics')}
+            onClick={() => confirmNavigation('/analytics')} 
+          />
+        )}
         {isWorkoutActive && (
           <NavigationItem 
             icon={<Zap size={20} />} 

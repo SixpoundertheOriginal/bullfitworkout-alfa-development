@@ -1,6 +1,7 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Clock, BarChart3, Zap, Dumbbell, User } from "lucide-react"
+import { FEATURE_FLAGS } from "@/config/flags";
 import { useLocation, Link } from "react-router-dom"
 
 export const MainMenu = () => {
@@ -9,6 +10,9 @@ export const MainMenu = () => {
   const menuItems = [
     { icon: <Clock className="w-5 h-5" />, label: "Home", path: "/" },
     { icon: <BarChart3 className="w-5 h-5" />, label: "Overview", path: "/overview" },
+    ...(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED ? [
+      { icon: <BarChart3 className="w-5 h-5" />, label: "Analytics", path: "/analytics" },
+    ] : []),
     { icon: <Zap className="w-5 h-5" />, label: "Workouts", path: "/workouts" },
     { icon: <Dumbbell className="w-5 h-5" />, label: "Exercises", path: "/all-exercises" },
     { icon: <User className="w-5 h-5" />, label: "Profile", path: "/profile" },
