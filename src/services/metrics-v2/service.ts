@@ -28,16 +28,26 @@ export const metricsServiceV2 = {
       const durationMin = rawWorkouts.reduce((a, w) => a + (Number(w.duration) || 0), 0)
       const totalVolumeKg = rawSets.reduce((a, s) => a + (Number(s.weightKg) || 0) * (Number(s.reps) || 0), 0)
 
-      // Build volume series (YYYY-MM-DD) based on repository data
+      // Build series per day based on repository data
       const volByDay = new Map<string, number>()
+      const setsCountByDay = new Map<string, number>()
+      const repsByDay = new Map<string, number>()
       for (const s of rawSets) {
         const w = rawWorkouts.find(w => w.id === s.workoutId)
         if (!w) continue
         const day = new Date(w.startedAt).toISOString().split('T')[0]
         const inc = (Number(s.weightKg) || 0) * (Number(s.reps) || 0)
         volByDay.set(day, (volByDay.get(day) || 0) + inc)
+        setsCountByDay.set(day, (setsCountByDay.get(day) || 0) + 1)
+        repsByDay.set(day, (repsByDay.get(day) || 0) + (Number(s.reps) || 0))
       }
       const repoVolumeSeries = Array.from(volByDay.entries())
+        .map(([date, value]) => ({ date, value }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      const repoSetsSeries = Array.from(setsCountByDay.entries())
+        .map(([date, value]) => ({ date, value }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      const repoRepsSeries = Array.from(repsByDay.entries())
         .map(([date, value]) => ({ date, value }))
         .sort((a, b) => a.date.localeCompare(b.date))
 
@@ -91,6 +101,8 @@ export const metricsServiceV2 = {
           ...out.series,
           // Use repo series in UI (select() in Analytics handles both {date,value} and {x,y})
           volume: repoVolumeSeries,
+          sets: repoSetsSeries,
+          reps: repoRepsSeries,
         },
         perWorkout,
       }
