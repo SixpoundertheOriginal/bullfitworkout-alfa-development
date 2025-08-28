@@ -41,20 +41,20 @@ const Overview: React.FC = () => {
 
   // Determine data source based on feature flag
   const dataSource = USE_UNIFIED_OVERVIEW_DATA ? unifiedData.data : parallelData;
-  const {
-    stats = {},
-    workouts = [],
-    processedMetrics = {},
-    volumeOverTimeData,
-    densityOverTimeData,
-    densityStats,
-    chartData = undefined,
-    loading,
-    refetch,
-    insights,
-    insightsLoading,
-    generateWorkoutInsights
-  } = dataSource || {};
+  
+  // Type-safe destructuring with fallbacks
+  const stats = dataSource?.stats || {};
+  const workouts = dataSource?.workouts || [];
+  const processedMetrics = dataSource?.processedMetrics || {};
+  const volumeOverTimeData = dataSource?.volumeOverTimeData;
+  const densityOverTimeData = dataSource?.densityOverTimeData;
+  const densityStats = dataSource?.densityStats;
+  const chartData = dataSource?.chartData;
+  const loading = (dataSource as any)?.loading || unifiedData.isLoading || false;
+  const refetch = (dataSource as any)?.refetch || (async () => {});
+  const insights = (dataSource as any)?.insights || [];
+  const insightsLoading = (dataSource as any)?.insightsLoading || false;
+  const generateWorkoutInsights = (dataSource as any)?.generateWorkoutInsights || (async () => []);
 
   const generateInsightsCallback = useCallback(() => {
     if (workouts.length > 0) {
@@ -213,7 +213,14 @@ const Overview: React.FC = () => {
               <Skeleton className="w-full h-full bg-white/10" />
             ) : hasData(volumeOverTimeData) ? (
               <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
-                <WorkoutVolumeOverTimeChart data={volumeOverTimeData} height={300} />
+                <WorkoutVolumeOverTimeChart 
+                  data={(volumeOverTimeData || []).map(d => ({
+                    ...d,
+                    originalDate: d.date,
+                    formattedDate: d.date
+                  }))} 
+                  height={300} 
+                />
               </Suspense>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-400">No volume data available</div>
@@ -224,8 +231,8 @@ const Overview: React.FC = () => {
           {/* KPI cards - Premium styled */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
           {[
-            { title: "Total Workouts", value: stats.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
-            { title: "Efficiency Score", value: processedMetrics?.processedMetrics?.efficiencyMetrics?.efficiencyScore ? `${Math.round(processedMetrics.processedMetrics.efficiencyMetrics.efficiencyScore)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
+            { title: "Total Workouts", value: (stats as any)?.totalWorkouts || 0, icon: Users2, color: "from-blue-500 to-purple-600" },
+            { title: "Efficiency Score", value: (processedMetrics as any)?.processedMetrics?.efficiencyMetrics?.efficiencyScore ? `${Math.round((processedMetrics as any).processedMetrics.efficiencyMetrics.efficiencyScore)}/100` : 'N/A', icon: TrendingUp, color: "from-emerald-500 to-teal-600" }
           ].map((metric, idx) => (
             <div key={idx} className={`${premiumCardStyles} ${gradientBackground} ${glassmorphism} p-6`}>
               {/* Subtle inner highlight */}
@@ -297,7 +304,17 @@ const Overview: React.FC = () => {
                 <Skeleton className="w-full h-full bg-white/10" />
               ) : hasData(densityOverTimeData) ? (
                 <Suspense fallback={<Skeleton className="w-full h-full bg-white/10" />}>
-                  <WorkoutDensityOverTimeChart data={densityOverTimeData} height={250} />
+                  <WorkoutDensityOverTimeChart 
+                    data={(densityOverTimeData || []).map(d => ({
+                      ...d,
+                      formattedDate: d.date,
+                      overallDensity: d.density,
+                      activeOnlyDensity: d.density,
+                      totalTime: 0,
+                      activeTime: 0
+                    }))} 
+                    height={250} 
+                  />
                 </Suspense>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">No density data available</div>

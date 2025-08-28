@@ -55,9 +55,9 @@ export function summarizeParityDiff(v1: unknown, v2: unknown): ParityDiff | null
   if (mismatches.length === 0) return null;
 
   const diff: ParityDiff = { mismatches };
-  if (isFiniteNumber(v1Total) || isFiniteNumber(v2Total)) diff.totals = { v1: v1Total, v2: v2Total };
-  if (isFiniteNumber(v1PrLen) || isFiniteNumber(v2PrLen)) diff.prsLength = { v1: v1PrLen, v2: v2PrLen };
-  if (isFiniteNumber(v1VolLen) || isFiniteNumber(v2VolLen)) diff.seriesVolumeLen = { v1: v1VolLen, v2: v2VolLen };
+  if (isFiniteNumber(v1Total) || isFiniteNumber(v2Total)) diff.totals = { v1: Number(v1Total) || 0, v2: Number(v2Total) || 0 };
+  if (isFiniteNumber(v1PrLen) || isFiniteNumber(v2PrLen)) diff.prsLength = { v1: Number(v1PrLen) || 0, v2: Number(v2PrLen) || 0 };
+  if (isFiniteNumber(v1VolLen) || isFiniteNumber(v2VolLen)) diff.seriesVolumeLen = { v1: Number(v1VolLen) || 0, v2: Number(v2VolLen) || 0 };
   return diff;
 }
 

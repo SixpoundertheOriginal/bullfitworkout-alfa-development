@@ -8,6 +8,7 @@ interface NavigationItemProps {
   isActive?: boolean;
   onClick?: () => void;
   className?: string;
+  variant?: 'default' | 'brutal';
 }
 
 export const NavigationItem: React.FC<NavigationItemProps> = ({
@@ -16,12 +17,24 @@ export const NavigationItem: React.FC<NavigationItemProps> = ({
   isActive = false,
   onClick,
   className,
+  variant = 'default',
 }) => {
+  const itemClass = variant === 'brutal' 
+    ? componentPatterns.navigation.itemBrutal()
+    : componentPatterns.navigation.item();
+  
+  const iconContainerClass = variant === 'brutal'
+    ? componentPatterns.navigation.iconContainerBrutal()
+    : componentPatterns.navigation.iconContainer();
+    
+  const activeIndicatorClass = variant === 'brutal'
+    ? componentPatterns.navigation.activeIndicatorBrutal()
+    : componentPatterns.navigation.activeIndicator();
   return (
     <button
       onClick={onClick}
       className={cn(
-        componentPatterns.navigation.item(),
+        itemClass,
         isActive 
           ? 'text-white' 
           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50',
@@ -30,9 +43,11 @@ export const NavigationItem: React.FC<NavigationItemProps> = ({
     >
       {/* Icon container */}
       <div className={cn(
-        componentPatterns.navigation.iconContainer(),
+        iconContainerClass,
         isActive 
-          ? `bg-gradient-to-r from-purple-600 to-pink-500 shadow-[0_0_20px_rgba(168,85,247,0.15)]` 
+          ? variant === 'brutal'
+            ? 'bg-white/20 border-white/40'
+            : `bg-gradient-to-r from-purple-600 to-pink-500 shadow-[0_0_20px_rgba(168,85,247,0.15)]`
           : 'bg-transparent'
       )}>
         {React.cloneElement(icon as React.ReactElement, { 
@@ -41,11 +56,11 @@ export const NavigationItem: React.FC<NavigationItemProps> = ({
       </div>
       
       {/* Label */}
-      <span className={typography.navigationLabel()}>{label}</span>
+      <span className={variant === 'brutal' ? typography.navigationLabelBrutal() : typography.navigationLabel()}>{label}</span>
       
       {/* Active indicator */}
       {isActive && (
-        <div className={componentPatterns.navigation.activeIndicator()} />
+        <div className={activeIndicatorClass} />
       )}
     </button>
   );

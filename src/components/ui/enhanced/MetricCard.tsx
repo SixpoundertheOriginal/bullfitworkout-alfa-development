@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { componentPatterns, typography } from '@/utils/tokenUtils';
+import { componentPatterns, typography, createBrutalCard } from '@/utils/tokenUtils';
 
 interface MetricCardProps {
   icon: React.ReactNode;
@@ -17,6 +17,7 @@ interface MetricCardProps {
   isLoading?: boolean;
   className?: string;
   onClick?: () => void;
+  variant?: 'default' | 'brutal';
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -29,10 +30,15 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   isLoading = false,
   className,
   onClick,
+  variant = 'default',
 }) => {
+  const cardClass = variant === 'brutal' 
+    ? createBrutalCard('metric')
+    : componentPatterns.card.metric();
+
   return (
     <div
-      className={cn(componentPatterns.card.metric(), className)}
+      className={cn(cardClass, className)}
       onClick={onClick}
     >
       {/* Header with icon and title */}
@@ -40,7 +46,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         <div className="p-2 bg-zinc-800/50 rounded-lg">
           {icon}
         </div>
-        <span className={typography.cardTitle()}>{title}</span>
+        <span className={variant === 'brutal' ? typography.cardTitleBrutal() : typography.cardTitle()}>{title}</span>
         {comparison?.message?.includes('vs last') && comparison.percentage > 0 && (
           <span className="ml-auto shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
             On track!
@@ -50,7 +56,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
       {/* Value display */}
       <div className="space-y-1">
-        <p className={typography.metricNumber()}>
+        <p className={variant === 'brutal' ? typography.metricNumberBrutal() : typography.metricNumber()}>
           {isLoading ? "..." : value}
           {unit && <span className={typography.metricUnit()}>{unit}</span>}
         </p>
@@ -65,7 +71,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
         {/* Encouragement text */}
         {encouragement && !isLoading && (
-          <p className={cn(typography.encouragement(), "mt-2")}>{encouragement}</p>
+          <p className={cn(variant === 'brutal' ? typography.encouragementBrutal() : typography.encouragement(), "mt-2")}>{encouragement}</p>
         )}
       </div>
     </div>

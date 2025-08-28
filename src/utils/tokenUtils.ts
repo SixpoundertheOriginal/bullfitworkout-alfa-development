@@ -1,52 +1,83 @@
 import { designTokens } from '../designTokens';
 
-// Brand color utilities
+// Enhanced brand color utilities with brutalist variants
 export const brandColors = {
   primary: () => `text-[${designTokens.colors.brand.primary}]`,
   secondary: () => `text-[${designTokens.colors.brand.secondary}]`,
   gradient: () => designTokens.colors.brand.gradient,
+  harsh: () => `text-[${designTokens.colors.brutal.contrast.harsh}]`,
+  extreme: () => `text-[${designTokens.colors.brutal.contrast.extreme}]`,
 };
 
-// Semantic color utilities
+// Enhanced semantic color utilities
 export const semanticColors = {
   success: () => `text-[${designTokens.colors.semantic.success}]`,
   warning: () => `text-[${designTokens.colors.semantic.warning}]`,
   error: () => `text-[${designTokens.colors.semantic.error}]`,
   info: () => `text-[${designTokens.colors.semantic.info}]`,
+  electric: () => `text-[${designTokens.colors.brutal.accent.electric}]`,
+  neon: () => `text-[${designTokens.colors.brutal.accent.neon}]`,
+  critical: () => `text-[${designTokens.colors.brutal.accent.critical}]`,
 };
 
-// Surface color utilities (for consistent card/modal backgrounds)
+// Enhanced surface color utilities with industrial variants
 export const surfaceColors = {
   primary: () => `bg-[${designTokens.colors.neutral.surface.primary}]`,
   secondary: () => `bg-[${designTokens.colors.neutral.surface.secondary}]`,
   elevated: () => `bg-[${designTokens.colors.neutral.surface.elevated}]`,
+  brutal: () => `bg-[${designTokens.colors.neutral.surface.brutal}]`,
+  industrial: () => `bg-[${designTokens.colors.neutral.surface.industrial}]`,
+  steel: () => `bg-[${designTokens.colors.brutal.industrial.steel}]`,
+  concrete: () => `bg-[${designTokens.colors.brutal.industrial.concrete}]`,
 };
 
-// Enhanced typography utilities for consistent text styling
+// Enhanced typography utilities with brutalist patterns
 export const typography = {
+  // Basic scales
   headingXl: () => 'text-headingXl',
   headingLg: () => 'text-headingLg',
   headingMd: () => 'text-headingMd',
   body: () => 'text-body',
   bodySmall: () => 'text-bodySmall',
   caption: () => 'text-caption',
-  pageHeading: () => 'text-headingXl font-bold',
-  sectionHeading: () => 'text-headingLg font-semibold',
-  bodyText: () => 'text-body font-normal',
   
-  // Enhanced typography patterns for metrics and dashboard
-  metricNumber: () => 'text-xl sm:text-2xl font-semibold tabular-nums text-white',
-  metricNumberLarge: () => 'text-4xl font-bold tracking-tight',
-  metricUnit: () => 'text-sm text-white/80 ml-1',
-  cardTitle: () => 'text-sm text-white/90 truncate',
-  cardSubtitle: () => 'text-xs text-white/70',
-  navigationLabel: () => 'text-xs font-medium',
-  statusBadge: () => 'text-xs font-bold uppercase tracking-wide',
-  comparison: () => 'text-xs text-white/70 leading-snug',
-  encouragement: () => 'text-xs text-purple-400',
+  // Enhanced patterns
+  pageHeading: () => `text-headingXl font-black ${designTokens.typography.family.display}`,
+  sectionHeading: () => `text-headingLg font-bold ${designTokens.typography.family.display}`,
+  bodyText: () => `text-body font-normal ${designTokens.typography.family.body}`,
+  
+  // Brutalist typography
+  displayMassive: () => `text-[${designTokens.typography.scale.display.massive}] font-black ${designTokens.typography.family.display} leading-none tracking-tight`,
+  displayLarge: () => `text-[${designTokens.typography.scale.display.large}] font-extrabold ${designTokens.typography.family.display} leading-tight`,
+  technical: () => `text-[${designTokens.typography.scale.display.technical}] font-medium ${designTokens.typography.family.mono} tracking-wide`,
+  
+  // Enhanced metrics patterns
+  metricNumber: () => `text-xl sm:text-2xl font-bold tabular-nums text-white`,
+  metricNumberLarge: () => `text-4xl font-black tracking-tight text-white`,
+  metricNumberBrutal: () => `text-[${designTokens.typography.scale.display.massive}] font-black tabular-nums text-white leading-none`,
+  metricUnit: () => `text-sm text-white/80 ml-1 font-medium`,
+  
+  // Enhanced card typography
+  cardTitle: () => `text-sm text-white/90 truncate font-semibold`,
+  cardTitleBrutal: () => `text-base text-white truncate font-bold uppercase tracking-wide`,
+  cardSubtitle: () => `text-xs text-white/70 font-medium`,
+  
+  // Enhanced navigation
+  navigationLabel: () => 'text-xs font-bold uppercase tracking-wider',
+  navigationLabelBrutal: () => 'text-xs font-black uppercase tracking-widest',
+  
+  // Enhanced status and badges
+  statusBadge: () => 'text-xs font-black uppercase tracking-widest',
+  statusBadgeBrutal: () => 'text-xs font-black uppercase tracking-[0.2em] leading-none',
+  
+  // Enhanced comparisons and encouragement
+  comparison: () => `text-xs text-white/70 leading-snug font-medium`,
+  encouragement: () => `text-xs text-purple-400 font-semibold`,
+  encouragementBrutal: () => `text-sm text-cyan-400 font-bold uppercase tracking-wide`,
   
   // Gradient text effects
-  brandGradient: () => `bg-gradient-to-r ${gradients.brand.primary()} bg-clip-text text-transparent`,
+  brandGradient: () => `bg-gradient-to-r ${gradients.brand.primary()} bg-clip-text text-transparent font-bold`,
+  brutalGradient: () => `bg-gradient-to-r ${gradients.brutal.electric()} bg-clip-text text-transparent font-black`,
   
   // Chat-specific typography
   chatMessage: () => `${typography.body()} leading-relaxed`,
@@ -62,6 +93,12 @@ export const gradients = {
     secondary: () => designTokens.gradients.brand.secondary,
     subtle: () => designTokens.gradients.brand.subtle,
     card: () => designTokens.gradients.brand.card,
+  },
+  brutal: {
+    harsh: () => designTokens.gradients.brutal.harsh,
+    industrial: () => designTokens.gradients.brutal.industrial,
+    electric: () => designTokens.gradients.brutal.electric,
+    warning: () => designTokens.gradients.brutal.warning,
   }
 };
 
@@ -72,25 +109,61 @@ export const effects = {
     medium: () => `shadow-[${designTokens.effects.glow.medium}]`,
     strong: () => `shadow-[${designTokens.effects.glow.strong}]`,
     purple: () => `shadow-[${designTokens.effects.glow.purple}]`,
+    aggressive: () => `shadow-[${designTokens.effects.glow.aggressive}]`,
+    industrial: () => `shadow-[${designTokens.effects.glow.industrial}]`,
   },
   elevation: {
     card: () => `shadow-[${designTokens.effects.elevation.card}]`,
     floating: () => `shadow-[${designTokens.effects.elevation.floating}]`,
     enhanced: () => `shadow-[${designTokens.effects.elevation.enhanced}]`,
+    brutal: () => `shadow-[${designTokens.effects.elevation.brutal}]`,
+    carved: () => `shadow-[${designTokens.effects.elevation.carved}]`,
+    stamped: () => `shadow-[${designTokens.effects.elevation.stamped}]`,
   },
   blur: {
     card: () => `backdrop-blur-[12px]`,
     overlay: () => `backdrop-blur-[8px]`,
+    industrial: () => `backdrop-blur-[16px]`,
+  },
+  texture: {
+    concrete: () => `bg-[${designTokens.effects.texture.concrete}]`,
+    steel: () => `bg-[${designTokens.effects.texture.steel}]`,
   }
 };
 
-// Enhanced component pattern utilities
+// Enhanced component pattern utilities with brutalist variants
 const cardPatterns = {
+  // Standard patterns
   primary: () => `${surfaceColors.primary()} rounded-2xl p-4 border border-zinc-700/50`,
   secondary: () => `${surfaceColors.secondary()} rounded-lg p-3 border border-zinc-700/30`,
   elevated: () => `${surfaceColors.elevated()} rounded-2xl p-6 shadow-lg border border-zinc-600/30`,
 
-  // Enhanced patterns matching Start button aesthetics
+  // Enhanced brutalist patterns
+  brutal: () => `
+    relative p-4 rounded-none
+    ${surfaceColors.brutal()} ${effects.elevation.brutal()}
+    border-2 border-white/20
+    before:absolute before:inset-0
+    before:bg-[${designTokens.effects.texture.concrete}]
+    before:mix-blend-overlay before:pointer-events-none
+    hover:${designTokens.animations.hover.aggressive} active:${designTokens.animations.press.brutal}
+    transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
+    cursor-pointer group overflow-hidden
+  `,
+
+  industrial: () => `
+    relative p-3 sm:p-4 rounded-[${designTokens.radius.brutal.industrial}]
+    ${surfaceColors.industrial()} ${effects.elevation.carved()}
+    border border-white/10
+    before:absolute before:inset-0 before:rounded-[${designTokens.radius.brutal.industrial}]
+    before:bg-[${designTokens.effects.texture.steel}]
+    before:mix-blend-overlay before:pointer-events-none
+    hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}
+    transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
+    cursor-pointer group overflow-hidden
+  `,
+
+  // Enhanced metric card with brutal aesthetics
   metric: () => `
     relative p-3 sm:p-4 rounded-xl
     bg-gradient-to-br ${gradients.brand.card()}
@@ -101,6 +174,18 @@ const cardPatterns = {
     before:mix-blend-overlay before:pointer-events-none
     hover:${designTokens.animations.hover.scale} active:${designTokens.animations.press.scale}
     transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
+    cursor-pointer group overflow-hidden
+  `,
+
+  metricBrutal: () => `
+    relative p-4 rounded-none
+    ${surfaceColors.brutal()} ${effects.elevation.stamped()}
+    border-l-4 border-l-purple-500 border-r border-r-white/20 border-t border-t-white/10 border-b border-b-black/50
+    before:absolute before:inset-0
+    before:bg-[${designTokens.effects.texture.concrete}]
+    before:mix-blend-overlay before:pointer-events-none
+    hover:${designTokens.animations.hover.aggressive} active:${designTokens.animations.press.brutal}
+    transition-all ${designTokens.animations.hover.durationFast} ease-out
     cursor-pointer group overflow-hidden
   `,
 
@@ -135,6 +220,18 @@ export const componentPatterns = {
       transition-all ${designTokens.animations.hover.duration} ${designTokens.animations.hover.easing}
     `,
     
+    brutal: () => `
+      relative flex flex-col items-center justify-center group
+      ${surfaceColors.brutal()} ${effects.elevation.brutal()}
+      text-white font-black rounded-none border-2 border-white/30 overflow-hidden
+      hover:${designTokens.animations.hover.aggressive} active:${designTokens.animations.press.brutal}
+      transition-all ${designTokens.animations.hover.durationFast} ease-out
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400
+      before:absolute before:inset-0
+      before:bg-[${designTokens.effects.texture.steel}]
+      before:mix-blend-overlay before:pointer-events-none
+    `,
+    
     circular: () => `
       relative flex flex-col items-center justify-center group
       bg-gradient-to-r ${gradients.brand.primary()} ${effects.glow.medium()}
@@ -149,6 +246,13 @@ export const componentPatterns = {
     primary: () => `bg-gradient-to-r ${gradients.brand.primary()} text-white font-semibold px-5 py-2 rounded-full hover:${designTokens.animations.hover.scaleStrong} transition-transform`,
     secondary: () => `${surfaceColors.secondary()} hover:bg-zinc-700 text-zinc-300 px-4 py-2 rounded-lg transition-colors`,
     ghost: () => `hover:${surfaceColors.secondary()} text-zinc-400 hover:text-white px-3 py-1 rounded-md transition-colors`,
+    brutal: () => `
+      ${surfaceColors.brutal()} text-white font-black px-6 py-3 rounded-none 
+      border-2 border-white/30 ${effects.elevation.stamped()}
+      hover:${designTokens.animations.hover.aggressive} active:${designTokens.animations.press.brutal}
+      transition-all ${designTokens.animations.hover.durationFast} ease-out
+      uppercase tracking-wider
+    `,
   },
   
   progress: {
@@ -156,11 +260,24 @@ export const componentPatterns = {
       relative h-2 bg-zinc-800 rounded-full overflow-hidden
     `,
     
+    barBrutal: () => `
+      relative h-3 ${surfaceColors.brutal()} rounded-none overflow-hidden
+      ${effects.elevation.carved()}
+    `,
+    
     fill: () => `
       absolute h-full bg-gradient-to-r ${gradients.brand.primary()} rounded-full 
       transition-all duration-500
       before:absolute before:inset-0 before:bg-white/20 
       before:animate-pulse before:rounded-full
+    `,
+    
+    fillBrutal: () => `
+      absolute h-full bg-gradient-to-r ${gradients.brutal.electric()} rounded-none
+      transition-all duration-300
+      ${effects.glow.industrial()}
+      before:absolute before:inset-0 before:bg-white/30 
+      before:${designTokens.animations.pulse.aggressive}
     `,
     
     indicator: () => `
@@ -174,14 +291,31 @@ export const componentPatterns = {
       transition-all ${designTokens.animations.hover.duration}
     `,
     
+    itemBrutal: () => `
+      relative flex flex-col items-center gap-1 py-3 px-4 rounded-none
+      transition-all ${designTokens.animations.hover.durationFast}
+      border-b-2 border-transparent
+    `,
+    
     activeIndicator: () => `
       absolute -bottom-1 left-1/2 transform -translate-x-1/2 
       w-8 h-1 bg-gradient-to-r ${gradients.brand.primary()} rounded-full
       ${effects.glow.subtle()}
     `,
     
+    activeIndicatorBrutal: () => `
+      absolute -bottom-1 left-0 right-0
+      h-1 bg-gradient-to-r ${gradients.brutal.electric()} rounded-none
+      ${effects.glow.industrial()}
+    `,
+    
     iconContainer: () => `
       p-2 rounded-lg transition-all ${designTokens.animations.hover.duration}
+    `,
+    
+    iconContainerBrutal: () => `
+      p-2 rounded-none transition-all ${designTokens.animations.hover.durationFast}
+      border border-transparent
     `,
   },
 
@@ -268,9 +402,12 @@ export const componentPatterns = {
   modal: {
     overlay: () => 'fixed inset-0 bg-black/80 flex items-center justify-center z-50',
     container: () => `${surfaceColors.primary()} rounded-2xl shadow-2xl border border-zinc-700 max-w-md w-full mx-4`,
+    containerBrutal: () => `${surfaceColors.brutal()} rounded-none ${effects.elevation.brutal()} border-2 border-white/30 max-w-md w-full mx-4`,
     header: () => 'p-6 pb-4 border-b border-zinc-700/50',
+    headerBrutal: () => 'p-6 pb-4 border-b-2 border-white/20',
     content: () => 'p-6',
     footer: () => 'p-6 pt-4 border-t border-zinc-700/50 flex gap-3 justify-end',
+    footerBrutal: () => 'p-6 pt-4 border-t-2 border-white/20 flex gap-3 justify-end',
   },
 };
 
@@ -293,4 +430,29 @@ export const responsive = {
     section: () => 'space-y-4 md:space-y-6 lg:space-y-8',
     component: () => 'gap-2 md:gap-3 lg:gap-4',
   },
+};
+
+// Enhanced utility functions for dynamic token usage
+export const createBrutalCard = (variant: 'metric' | 'industrial' | 'brutal' = 'brutal') => {
+  return componentPatterns.card[variant === 'metric' ? 'metricBrutal' : variant]();
+};
+
+export const createBrutalButton = (size: 'sm' | 'md' | 'lg' = 'md') => {
+  const sizeClasses = {
+    sm: 'px-4 py-2 text-sm',
+    md: 'px-6 py-3 text-base',
+    lg: 'px-8 py-4 text-lg'
+  };
+  return `${componentPatterns.button.brutal()} ${sizeClasses[size]}`;
+};
+
+export const createBrutalTypography = (variant: 'display' | 'heading' | 'body' = 'body') => {
+  switch (variant) {
+    case 'display':
+      return typography.displayMassive();
+    case 'heading':
+      return typography.displayLarge();
+    default:
+      return typography.technical();
+  }
 };
