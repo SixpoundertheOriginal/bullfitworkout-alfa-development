@@ -32,6 +32,8 @@ export const metricsServiceV2 = {
       const volByDay = new Map<string, number>()
       const setsCountByDay = new Map<string, number>()
       const repsByDay = new Map<string, number>()
+      const workoutsByDay = new Map<string, number>()
+      const durationByDay = new Map<string, number>()
       for (const s of rawSets) {
         const w = rawWorkouts.find(w => w.id === s.workoutId)
         if (!w) continue
@@ -48,6 +50,18 @@ export const metricsServiceV2 = {
         .map(([date, value]) => ({ date, value }))
         .sort((a, b) => a.date.localeCompare(b.date))
       const repoRepsSeries = Array.from(repsByDay.entries())
+        .map(([date, value]) => ({ date, value }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      // Build workouts + duration series
+      for (const w of rawWorkouts) {
+        const day = new Date(w.startedAt).toISOString().split('T')[0]
+        workoutsByDay.set(day, (workoutsByDay.get(day) || 0) + 1)
+        durationByDay.set(day, (durationByDay.get(day) || 0) + (Number(w.duration) || 0))
+      }
+      const repoWorkoutsSeries = Array.from(workoutsByDay.entries())
+        .map(([date, value]) => ({ date, value }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      const repoDurationSeries = Array.from(durationByDay.entries())
         .map(([date, value]) => ({ date, value }))
         .sort((a, b) => a.date.localeCompare(b.date))
 
@@ -103,6 +117,11 @@ export const metricsServiceV2 = {
           volume: repoVolumeSeries,
           sets: repoSetsSeries,
           reps: repoRepsSeries,
+          workouts: repoWorkoutsSeries,
+          density: out.series.density || [],
+          cvr: out.series.cvr || [],
+          // duration series in minutes per day
+          duration: repoDurationSeries,
         },
         perWorkout,
       }
