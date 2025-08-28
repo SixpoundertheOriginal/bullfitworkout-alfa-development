@@ -12,5 +12,9 @@ export interface AnalyticsData {
       date: string;
       value: number;
     }>;
+    sets?: Array<{ date: string; value: number }>;
+    reps?: Array<{ date: string; value: number }>;
+    duration?: Array<{ date: string; value: number }>;
+    workouts?: Array<{ date: string; value: number }>;
   };
 }

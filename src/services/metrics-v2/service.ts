@@ -68,6 +68,14 @@ export const metricsServiceV2 = {
         console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId })
       }
 
+      // Enrich perWorkout with real durations when available
+      const durationById = new Map<string, number>()
+      rawWorkouts.forEach(w => durationById.set(w.id, Number(w.duration) || 0))
+      const perWorkout = (out.perWorkout || []).map(w => ({
+        ...w,
+        durationMin: durationById.get(w.workoutId) ?? w.durationMin ?? 0,
+      }))
+
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       return {
         ...out,
@@ -84,6 +92,7 @@ export const metricsServiceV2 = {
           // Use repo series in UI (select() in Analytics handles both {date,value} and {x,y})
           volume: repoVolumeSeries,
         },
+        perWorkout,
       }
     } catch (error) {
       console.error('Error in getMetricsV2:', error)
