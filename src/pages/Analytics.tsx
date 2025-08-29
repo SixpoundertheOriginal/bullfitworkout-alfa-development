@@ -14,6 +14,7 @@ import { parseKpiTabParams, writeKpiTabParams } from '@/utils/url';
 import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { AnalyticsKpiSelect, kpiLabel } from '@/components/analytics/AnalyticsKpiSelect';
 import { useAuth } from '@/context/AuthContext';
+import ExerciseFeedbackTrends from '@/components/analytics/ExerciseFeedbackTrends';
 // Optional hook for exercises; wire later if needed
 // import { useUserExercises } from '@/hooks/useUserExercises';
 
@@ -252,6 +253,7 @@ const Analytics: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </Card>
+          <ExerciseFeedbackTrends />
         </div>
       ) : null}
     </div>
