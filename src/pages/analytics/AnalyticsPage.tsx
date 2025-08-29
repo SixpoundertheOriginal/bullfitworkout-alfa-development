@@ -10,6 +10,9 @@ export type AnalyticsPageProps = {
 
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] }) => {
   const { flags } = useConfig();
+  React.useEffect(() => {
+    console.debug('[AnalyticsPage] render, derivedKpis=', flags.derivedKpis);
+  }, [flags.derivedKpis]);
   const initOpts = React.useMemo(() => availableMetrics({ derivedKpis: flags.derivedKpis }), [flags.derivedKpis]);
   const [options, setOptions] = React.useState(initOpts);
   const [metric, setMetric] = React.useState<ChartMetric>(initOpts[0].key);
