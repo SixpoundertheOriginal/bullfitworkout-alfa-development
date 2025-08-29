@@ -403,6 +403,44 @@ export type Database = {
         }
         Relationships: []
       }
+      exercise_feedback: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          perceived_difficulty: number
+          satisfaction: number
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          perceived_difficulty: number
+          satisfaction: number
+          user_id?: string
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          perceived_difficulty?: number
+          satisfaction?: number
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_feedback_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exercise_performances: {
         Row: {
           created_at: string
@@ -501,74 +539,53 @@ export type Database = {
         Row: {
           completed: boolean
           created_at: string
+          exercise_id: string | null
           exercise_name: string
+          failure_point: string | null
+          form_quality: number | null
           id: string
           reps: number
           rest_time: number | null
+          rpe: number | null
           set_number: number
+          user_feedback: string | null
+          variant_id: string | null
           weight: number
           workout_id: string
-          estimated_set_duration: number | null
-          actual_start_time: string | null
-          actual_end_time: string | null
-          exercise_id: string | null
-          rpe: number | null
-          variant_id: string | null
-          tempo: string | null
-          range_of_motion: string | null
-          added_weight: number | null
-          assistance_used: number | null
-          notes: string | null
-          failure_point: string | null
-          form_score: number | null
         }
         Insert: {
           completed?: boolean
           created_at?: string
+          exercise_id?: string | null
           exercise_name: string
+          failure_point?: string | null
+          form_quality?: number | null
           id?: string
           reps: number
           rest_time?: number | null
+          rpe?: number | null
           set_number: number
+          user_feedback?: string | null
+          variant_id?: string | null
           weight: number
           workout_id: string
-          estimated_set_duration?: number | null
-          actual_start_time?: string | null
-          actual_end_time?: string | null
-          exercise_id?: string | null
-          rpe?: number | null
-          variant_id?: string | null
-          tempo?: string | null
-          range_of_motion?: string | null
-          added_weight?: number | null
-          assistance_used?: number | null
-          notes?: string | null
-          failure_point?: string | null
-          form_score?: number | null
         }
         Update: {
           completed?: boolean
           created_at?: string
+          exercise_id?: string | null
           exercise_name?: string
+          failure_point?: string | null
+          form_quality?: number | null
           id?: string
           reps?: number
           rest_time?: number | null
+          rpe?: number | null
           set_number?: number
+          user_feedback?: string | null
+          variant_id?: string | null
           weight?: number
           workout_id?: string
-          estimated_set_duration?: number | null
-          actual_start_time?: string | null
-          actual_end_time?: string | null
-          exercise_id?: string | null
-          rpe?: number | null
-          variant_id?: string | null
-          tempo?: string | null
-          range_of_motion?: string | null
-          added_weight?: number | null
-          assistance_used?: number | null
-          notes?: string | null
-          failure_point?: string | null
-          form_score?: number | null
         }
         Relationships: [
           {
@@ -579,48 +596,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "exercise_sets_exercise_id_fkey"
-            columns: ["exercise_id"]
-            isOneToOne: false
-            referencedRelation: "exercises"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      set_duration_patterns: {
-        Row: {
-          id: string
-          user_id: string
-          exercise_name: string
-          exercise_id: string | null
-          avg_duration_seconds: number
-          sample_count: number | null
-          last_updated: string | null
-          metadata: Json | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          exercise_name: string
-          exercise_id?: string | null
-          avg_duration_seconds?: number
-          sample_count?: number | null
-          last_updated?: string | null
-          metadata?: Json | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          exercise_name?: string
-          exercise_id?: string | null
-          avg_duration_seconds?: number
-          sample_count?: number | null
-          last_updated?: string | null
-          metadata?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "set_duration_patterns_exercise_id_fkey"
+            foreignKeyName: "fk_exercise_sets_exercise_id"
             columns: ["exercise_id"]
             isOneToOne: false
             referencedRelation: "exercises"
@@ -644,7 +620,6 @@ export type Database = {
           metadata: Json | null
           movement_pattern: string
           name: string
-          aliases: string[] | null
           primary_muscle_groups: string[]
           secondary_muscle_groups: string[]
           tips: string[] | null
@@ -668,7 +643,6 @@ export type Database = {
           metadata?: Json | null
           movement_pattern: string
           name: string
-          aliases?: string[] | null
           primary_muscle_groups: string[]
           secondary_muscle_groups: string[]
           tips?: string[] | null
@@ -692,7 +666,6 @@ export type Database = {
           metadata?: Json | null
           movement_pattern?: string
           name?: string
-          aliases?: string[] | null
           primary_muscle_groups?: string[]
           secondary_muscle_groups?: string[]
           tips?: string[] | null
@@ -1467,7 +1440,6 @@ export type Database = {
           updated_at: string
           weight: number | null
           weight_unit: string | null
-          rest_timer_preferences: Json | null
         }
         Insert: {
           age?: number | null
@@ -1483,7 +1455,6 @@ export type Database = {
           updated_at?: string
           weight?: number | null
           weight_unit?: string | null
-          rest_timer_preferences?: Json | null
         }
         Update: {
           age?: number | null
@@ -1499,7 +1470,6 @@ export type Database = {
           updated_at?: string
           weight?: number | null
           weight_unit?: string | null
-          rest_timer_preferences?: Json | null
         }
         Relationships: []
       }

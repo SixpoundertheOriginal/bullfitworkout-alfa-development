@@ -110,7 +110,7 @@ export const useAIWorkoutRecommendations = () => {
       const generatedInsights = await insightsEngine.generateWorkoutInsights(
         user.id,
         workouts || [],
-        exerciseSets || [],
+        (exerciseSets as any) as ExerciseSet[],
         userProfile || undefined
       );
 

@@ -20,7 +20,7 @@ export const ExerciseFeedbackTrends: React.FC = () => {
     queryKey: ['exercise-feedback-trends', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     enabled: !!user?.id && !!dateRange.from && !!dateRange.to,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('exercise_feedback')
         .select('perceived_difficulty, satisfaction, workout_sessions!inner(start_time, user_id)')
         .eq('workout_sessions.user_id', user!.id)

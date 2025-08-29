@@ -8,7 +8,7 @@ export interface ExerciseFeedbackInput {
 }
 
 export async function logExerciseFeedback(input: ExerciseFeedbackInput) {
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('exercise_feedback')
     .insert({
       workout_id: input.workoutId,

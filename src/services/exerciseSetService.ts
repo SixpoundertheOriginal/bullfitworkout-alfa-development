@@ -24,12 +24,12 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
   assistance_used?: number | null;
   notes?: string | null;
   failurePoint?: DbExerciseSet["failure_point"];
-  formScore?: DbExerciseSet["form_score"];
+  formScore?: DbExerciseSet["form_quality"];
 }[]): Promise<DbExerciseSet[] | null> {
   // Get existing set IDs for this exercise in this workout
   let query = supabase
     .from('exercise_sets')
-    .select<Pick<DbExerciseSet, 'id'>[]>('id')
+    .select('id')
     .eq('workout_id', workoutId)
     .eq('exercise_name', exerciseName);
   if (exerciseId) {
@@ -59,7 +59,7 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
   assistance_used: set.assistance_used ?? null,
   notes: set.notes ?? null,
   failure_point: set.failurePoint ?? null,
-  form_score: set.formScore ?? null
+  form_quality: set.formScore ?? null
 }));
   
   // Sets to delete - those that exist in the database but not in our updated list
@@ -93,7 +93,7 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
         assistance_used: set.assistance_used ?? null,
         notes: set.notes ?? null,
         failure_point: set.failurePoint ?? null,
-        form_score: set.formScore ?? null
+        form_quality: set.formScore ?? null
       }))); 
     operations.push(updatePromise);
   }
@@ -126,7 +126,7 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
   // Fetch the updated sets
   let finalQuery = supabase
     .from('exercise_sets')
-    .select<DbExerciseSet[]>('*')
+    .select('*')
     .eq('workout_id', workoutId)
     .order('set_number', { ascending: true });
   if (exerciseId) {
@@ -205,7 +205,7 @@ export async function resetWorkoutSets(workoutId: string) {
         assistance_used: null,
         notes: null,
         failure_point: null,
-        form_score: null
+        form_quality: null
       })
       .eq('workout_id', workoutId)
       .select();
@@ -240,7 +240,7 @@ export async function bulkResetWorkoutSets(workoutIds: string[]) {
         assistance_used: null,
         notes: null,
         failure_point: null,
-        form_score: null
+        form_quality: null
       })
       .in('workout_id', workoutIds)
       .select();

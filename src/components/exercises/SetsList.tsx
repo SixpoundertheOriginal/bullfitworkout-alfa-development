@@ -92,7 +92,7 @@ export const SetsList: React.FC<SetsListProps> = ({
               completed={set.completed}
               isEditing={set.isEditing || false}
               exerciseName={exercise}
-              onComplete={(data) => onCompleteSet(index, data)}
+              onComplete={() => onCompleteSet(index)}
               onEdit={() => onEditSet(index)}
               onSave={() => onSaveSet(index)}
               onRemove={() => onRemoveSet(index)}

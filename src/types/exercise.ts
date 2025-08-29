@@ -14,6 +14,14 @@ export interface ExerciseSet {
   metadata?: Record<string, any>; // Add metadata property for RPE and other set-specific data
   failurePoint?: 'none' | 'technical' | 'muscular' | null;
   formScore?: number | null;
+  // Optional extended fields mapped from DB when available
+  rpe?: number | null;
+  variant_id?: string | null;
+  tempo?: string | null;
+  range_of_motion?: string | null;
+  added_weight?: number | null;
+  assistance_used?: number | null;
+  notes?: string | null;
 }
 
 export type MuscleGroup = 

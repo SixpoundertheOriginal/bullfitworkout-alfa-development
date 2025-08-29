@@ -102,7 +102,7 @@ export const useExercises = (initialSortBy: ExerciseSortBy = 'name', initialSort
           is_compound: exercise.is_compound || false,
           tips: exercise.tips || [],
           variations: exercise.variations || [],
-          aliases: exercise.aliases || [],
+          aliases: (exercise as any).aliases || [],
           metadata: metadata,
           type,
           is_bodyweight,

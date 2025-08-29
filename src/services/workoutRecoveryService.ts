@@ -36,7 +36,7 @@ export async function restoreWorkout(workout: any) {
   // Fetch the original exercise sets for this workout
   const { data: sets, error: fetchError } = await supabase
     .from('exercise_sets')
-    .select<DbExerciseSet[]>('*')
+    .select('*')
     .eq('workout_id', workout.id);
     
   if (fetchError) {
@@ -63,7 +63,7 @@ export async function restoreWorkout(workout: any) {
         assistance_used: set.assistance_used ?? null,
         notes: set.notes ?? null,
         failure_point: set.failure_point ?? null,
-        form_score: set.form_score ?? null,
+        form_quality: set.form_quality ?? null,
       })));
       
     if (insertError) {

@@ -53,7 +53,7 @@ export function useWorkoutById(workoutId: string | undefined) {
         // Fetch exercise sets
         const { data: sets, error: setsError } = await supabase
           .from('exercise_sets')
-          .select<DbExerciseSet[]>('*')
+          .select('*')
           .eq('workout_id', workoutId)
           .order('exercise_name', { ascending: true })
           .order('set_number', { ascending: true });
@@ -82,13 +82,13 @@ export function useWorkoutById(workoutId: string | undefined) {
             restTime: set.rest_time ?? undefined,
             rpe: set.rpe ?? undefined,
             variant_id: set.variant_id ?? undefined,
-            tempo: set.tempo ?? undefined,
-            range_of_motion: set.range_of_motion ?? undefined,
-            added_weight: set.added_weight ?? undefined,
-            assistance_used: set.assistance_used ?? undefined,
-            notes: set.notes ?? undefined,
-            failurePoint: set.failure_point ?? null,
-            formScore: set.form_score ?? null,
+            tempo: (set as any).tempo ?? undefined,
+            range_of_motion: (set as any).range_of_motion ?? undefined,
+            added_weight: (set as any).added_weight ?? undefined,
+            assistance_used: (set as any).assistance_used ?? undefined,
+            notes: (set as any).notes ?? undefined,
+            failurePoint: (set.failure_point as any) ?? null,
+            formScore: (set as any).form_quality ?? null,
           });
           return acc;
         }, {}) || {};
