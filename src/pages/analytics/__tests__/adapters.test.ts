@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { toAvgRestSeries, toEfficiencySeries } from '../adapters';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
 

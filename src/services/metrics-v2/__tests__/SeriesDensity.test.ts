@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { rollingWindows } from '../aggregators';
 import type { PerWorkoutMetrics } from '../dto';
 

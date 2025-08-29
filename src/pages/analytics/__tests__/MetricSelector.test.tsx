@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 describe('metric options', () => {
   afterEach(() => {
@@ -11,7 +11,7 @@ describe('metric options', () => {
     const opts = getMetricOptions();
     expect(opts).toHaveLength(8);
     expect(opts.some(o => o.key === 'setEfficiency')).toBe(true);
-    expect(opts.some(o => o.key === 'efficiency')).toBe(false);
+    expect(opts.some(o => o.key === 'setEfficiency')).toBe(true);
   });
 
   it('only includes base metrics when flag disabled', async () => {

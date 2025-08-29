@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
 import { AnalyticsPage } from '../AnalyticsPage';
 
