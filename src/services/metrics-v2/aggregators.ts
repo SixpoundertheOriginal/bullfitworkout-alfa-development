@@ -162,8 +162,8 @@ export function rollingWindows(
     .map(([date, value]) => {
       if (kind === 'density') {
         const { tonnage, duration } = value as { tonnage: number; duration: number };
-        const density = duration > 0 ? tonnage / duration : 0;
-        return { date, value: +density.toFixed(2) };
+        const density = tonnage / Math.max(duration, 1e-9);
+        return { date, value: duration === 0 ? 0 : +density.toFixed(2) };
       }
       return { date, value: value as number };
     })

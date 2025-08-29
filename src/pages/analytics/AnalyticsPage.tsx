@@ -1,44 +1,30 @@
 import React from 'react';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
-import { ANALYTICS_DERIVED_KPIS_ENABLED } from '@/constants/featureFlags';
-import { toDensitySeriesWeighted, toAvgRestSeries, toEfficiencySeries } from './adapters';
+import { getMetricOptions } from './metrics';
+import { metricToSeries } from './adapters';
+import type { ChartMetric } from './types';
+import * as FEATURE_FLAGS from '@/constants/featureFlags';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 
 export type AnalyticsPageProps = {
   perWorkout: PerWorkoutMetrics[];
-  derivedKpisEnabled?: boolean;
 };
 
-const baseMetrics = [
-  { value: 'volume', label: 'Volume (kg)' },
-  { value: 'sets', label: 'Sets' },
-  { value: 'reps', label: 'Reps' },
-];
-
-const derivedMetrics = [
-  { value: 'density', label: 'Workout Density (kg/min)' },
-  { value: 'avgRest', label: 'Avg Rest / Session (sec)' },
-  { value: 'efficiency', label: 'Set Efficiency (×)' },
-];
-
-export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout, derivedKpisEnabled = ANALYTICS_DERIVED_KPIS_ENABLED }) => {
-  const metrics = React.useMemo(() => {
-    return derivedKpisEnabled ? [...baseMetrics, ...derivedMetrics] : baseMetrics;
-  }, [derivedKpisEnabled]);
-
-  const [metric, setMetric] = React.useState(metrics[0].value);
+export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout }) => {
+  const [options, setOptions] = React.useState(getMetricOptions());
+  const [metric, setMetric] = React.useState<ChartMetric>(options[0].key);
+  React.useEffect(() => {
+    const next = getMetricOptions();
+    setOptions(next);
+    if (!next.some(o => o.key === metric)) {
+      setMetric(next[0].key);
+    }
+    console.debug('ANALYTICS_DERIVED_KPIS_ENABLED=', FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED);
+  }, [FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED]);
 
   const series = React.useMemo(() => {
-    switch (metric) {
-      case 'density':
-        return toDensitySeriesWeighted(perWorkout);
-      case 'avgRest':
-        return toAvgRestSeries(perWorkout);
-      case 'efficiency':
-        return toEfficiencySeries(perWorkout);
-      default:
-        return [];
-    }
+    const adapter = metricToSeries[metric];
+    return adapter ? adapter(perWorkout) : [];
   }, [metric, perWorkout]);
 
   // KPI calculations (last 7 days vs previous 7 days)
@@ -107,7 +93,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout, derive
 
   return (
     <div>
-      {derivedKpisEnabled && (
+      {FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED && (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
             <div>Density</div>
@@ -131,10 +117,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout, derive
         </div>
       )}
 
-      <select value={metric} onChange={e => setMetric(e.target.value)} data-testid="metric-select">
-        {metrics.map(m => (
-          <option key={m.value} value={m.value}>
-            {m.label}
+      <select
+        value={metric}
+        onChange={e => setMetric(e.target.value as ChartMetric)}
+        data-testid="metric-select"
+      >
+        {options.map(o => (
+          <option key={o.key} value={o.key}>
+            {o.label}
           </option>
         ))}
       </select>

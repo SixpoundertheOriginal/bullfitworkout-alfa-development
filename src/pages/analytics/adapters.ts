@@ -1,7 +1,65 @@
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
+import type { ChartMetric } from './types';
 
 // Helper to extract ISO day from timestamp
 const dayKey = (iso: string) => iso.split('T')[0];
+
+// --- Base metrics ---------------------------------------------------------
+
+export function toVolumeSeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesPoint[] {
+  const map = new Map<string, number>();
+  for (const w of perWorkout) {
+    const day = dayKey(w.startedAt);
+    map.set(day, (map.get(day) || 0) + (w.totalVolumeKg || 0));
+  }
+  return Array.from(map.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function toSetsSeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesPoint[] {
+  const map = new Map<string, number>();
+  for (const w of perWorkout) {
+    const day = dayKey(w.startedAt);
+    map.set(day, (map.get(day) || 0) + (w.totalSets || 0));
+  }
+  return Array.from(map.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function toWorkoutsSeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesPoint[] {
+  const map = new Map<string, number>();
+  for (const w of perWorkout) {
+    const day = dayKey(w.startedAt);
+    map.set(day, (map.get(day) || 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function toDurationSeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesPoint[] {
+  const map = new Map<string, number>();
+  for (const w of perWorkout) {
+    const day = dayKey(w.startedAt);
+    map.set(day, (map.get(day) || 0) + (w.durationMin || 0));
+  }
+  return Array.from(map.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function toRepsSeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesPoint[] {
+  const map = new Map<string, number>();
+  for (const w of perWorkout) {
+    const day = dayKey(w.startedAt);
+    map.set(day, (map.get(day) || 0) + (w.totalReps || 0));
+  }
+  return Array.from(map.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
 
 /**
  * Compute daily density series using weighted average of tonnage and duration
@@ -66,3 +124,16 @@ export function toEfficiencySeries(perWorkout: PerWorkoutMetrics[]): TimeSeriesP
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// --- Metric Adapter Map ---------------------------------------------------
+
+export const metricToSeries: Record<ChartMetric, (data: PerWorkoutMetrics[]) => TimeSeriesPoint[]> = {
+  volume: toVolumeSeries,
+  sets: toSetsSeries,
+  workouts: toWorkoutsSeries,
+  duration: toDurationSeries,
+  reps: toRepsSeries,
+  density: toDensitySeriesWeighted,
+  avgRest: toAvgRestSeries,
+  setEfficiency: toEfficiencySeries,
+};
