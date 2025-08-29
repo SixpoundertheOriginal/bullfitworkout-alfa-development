@@ -65,6 +65,26 @@ export const metricsServiceV2 = {
         0
       )
 
+      // Convert repository data to aggregator types
+      const setsForAggregator = rawSets.map(s => ({
+        id: s.id,
+        workoutId: s.workoutId,
+        weightKg: Number(s.weightKg) || 0,
+        reps: Number(s.reps) || 0,
+        exerciseId: s.exerciseId,
+        exerciseName: s.exerciseName,
+        failurePoint: s.failurePoint,
+        formScore: s.formScore,
+        restTimeSec: Number(s.restTimeSec) || 0,
+      }));
+
+      const workoutsForAggregator = rawWorkouts.map(w => ({
+        id: w.id,
+        startedAt: w.startedAt,
+        endedAt: w.endedAt,
+        duration: Number(w.duration) || 0,
+      }));
+
       // Build series per day based on repository data
       const volByDay = new Map<string, number>()
       const setsCountByDay = new Map<string, number>()
@@ -133,13 +153,10 @@ export const metricsServiceV2 = {
         console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })
       }
 
-      // Enrich perWorkout with real durations when available
-      const durationById = new Map<string, number>()
-      rawWorkouts.forEach(w => durationById.set(w.id, Number(w.duration) || 0))
-      const perWorkout = (out.perWorkout || []).map(w => ({
-        ...w,
-        durationMin: durationById.get(w.workoutId) ?? w.durationMin ?? 0,
-      }))
+      // Use new aggregators for enhanced metrics including KPIs
+      const { aggregatePerWorkout, aggregateTotals, aggregateTotalsKpis } = await import('./aggregators');
+      const perWorkout = aggregatePerWorkout(workoutsForAggregator, setsForAggregator);
+      const totalsKpis = aggregateTotalsKpis(perWorkout);
 
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       return {
@@ -165,6 +182,7 @@ export const metricsServiceV2 = {
           duration: repoDurationSeries,
         },
         perWorkout,
+        totalsKpis,
       }
     } catch (error) {
       console.error('Error in getMetricsV2:', error)

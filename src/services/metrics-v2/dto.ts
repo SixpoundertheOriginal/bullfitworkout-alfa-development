@@ -1,6 +1,12 @@
 // Canonical, versioned DTOs for Metrics Service v2 (units: kg, min; dates: ISO YYYY-MM-DD)
 export type TimeSeriesPoint = { date: string; value: number };
 
+export type PerWorkoutKpis = {
+  densityKgPerMin: number;
+  avgRestSec: number;           // raw seconds for precision
+  setEfficiency: number | null; // ratio or null if no target
+};
+
 export type PerWorkoutMetrics = {
   workoutId: string;
   startedAt: string;           // ISO timestamp
@@ -8,8 +14,15 @@ export type PerWorkoutMetrics = {
   totalSets: number;
   totalReps: number;
   durationMin: number;
-  activeMin: number;
-  restMin: number;
+  activeMin?: number;
+  restMin?: number;
+  kpis?: PerWorkoutKpis;
+};
+
+export type TotalsKpis = {
+  densityKgPerMin: number; // overall tonnage/overall duration
+  avgRestSec: number;      // weighted by sets
+  setEfficiency: number | null;
 };
 
 export type Totals = {
@@ -40,6 +53,7 @@ export type ServiceOutput = {
     density: TimeSeriesPoint[];
     cvr: TimeSeriesPoint[]; // rule later: if views=0 => 0
   };
+  totalsKpis?: TotalsKpis;
   meta: {
     generatedAt: string;
     version: 'v2';

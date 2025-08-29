@@ -1,20 +1,153 @@
-// Aggregation signatures (implement later). Europe/Warsaw day bucketing to be added later.
-import { PerWorkoutMetrics, Totals, TimeSeriesPoint } from './dto';
+// Aggregation functions for workout metrics
+import { PerWorkoutMetrics, Totals, TimeSeriesPoint, TotalsKpis } from './dto';
+import { WorkoutRaw, SetRaw } from './types';
+import { 
+  calcWorkoutDensityKgPerMin, 
+  calcAvgRestPerSession, 
+  calcSetEfficiency, 
+  getTargetRestSecForWorkout 
+} from './calculators/derivedKpis';
+import { FEATURE_FLAGS } from '@/config/featureFlags';
 
-export function aggregatePerWorkout(/* workouts, sets, calculators */): PerWorkoutMetrics[] {
-  // TODO: implement
-  return [];
+export function aggregatePerWorkout(
+  workouts: WorkoutRaw[], 
+  sets: SetRaw[]
+): PerWorkoutMetrics[] {
+  const setsByWorkout = new Map<string, SetRaw[]>();
+  sets.forEach(set => {
+    if (!setsByWorkout.has(set.workoutId)) {
+      setsByWorkout.set(set.workoutId, []);
+    }
+    setsByWorkout.get(set.workoutId)!.push(set);
+  });
+
+  return workouts.map(workout => {
+    const workoutSets = setsByWorkout.get(workout.id) || [];
+    
+    // Basic metrics
+    const totalSets = workoutSets.length;
+    const totalReps = workoutSets.reduce((sum, set) => sum + (set.reps || 0), 0);
+    const totalVolumeKg = workoutSets.reduce((sum, set) => 
+      sum + (set.weightKg || 0) * (set.reps || 0), 0);
+    const durationMin = workout.duration || 0;
+    
+    // Rest time analysis
+    const restSecTotal = workoutSets.reduce((sum, set) => sum + (set.restTimeSec || 0), 0);
+    const workoutDurationSec = durationMin * 60;
+    const activeSec = Math.max(0, workoutDurationSec - restSecTotal);
+    
+    const activeMin = activeSec / 60;
+    const restMin = restSecTotal / 60;
+    
+    // Derived KPIs
+    let kpis = undefined;
+    if (FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED) {
+      const avgRestSec = calcAvgRestPerSession(restSecTotal, totalSets);
+      const targetRestSec = getTargetRestSecForWorkout({
+        workoutId: workout.id,
+        startedAt: workout.startedAt,
+        totalVolumeKg,
+        totalSets,
+        totalReps,
+        durationMin,
+        activeMin,
+        restMin
+      });
+      
+      kpis = {
+        densityKgPerMin: calcWorkoutDensityKgPerMin(totalVolumeKg, durationMin),
+        avgRestSec,
+        setEfficiency: calcSetEfficiency(avgRestSec, targetRestSec),
+      };
+    }
+
+    return {
+      workoutId: workout.id,
+      startedAt: workout.startedAt,
+      totalVolumeKg,
+      totalSets,
+      totalReps,
+      durationMin,
+      activeMin,
+      restMin,
+      kpis,
+    };
+  });
 }
 
 export function aggregateTotals(perWorkout: PerWorkoutMetrics[]): Totals {
-  // TODO: implement
-  return { totalVolumeKg: 0, totalSets: 0, totalReps: 0, workouts: 0, durationMin: 0 };
+  return {
+    totalVolumeKg: perWorkout.reduce((sum, w) => sum + w.totalVolumeKg, 0),
+    totalSets: perWorkout.reduce((sum, w) => sum + w.totalSets, 0),
+    totalReps: perWorkout.reduce((sum, w) => sum + w.totalReps, 0),
+    workouts: perWorkout.length,
+    durationMin: perWorkout.reduce((sum, w) => sum + w.durationMin, 0),
+  };
+}
+
+export function aggregateTotalsKpis(perWorkout: PerWorkoutMetrics[]): TotalsKpis | undefined {
+  if (!FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED || perWorkout.length === 0) {
+    return undefined;
+  }
+
+  const totals = aggregateTotals(perWorkout);
+  
+  // Overall density
+  const densityKgPerMin = calcWorkoutDensityKgPerMin(totals.totalVolumeKg, totals.durationMin);
+  
+  // Weighted average rest time
+  const totalRestSec = perWorkout.reduce((sum, w) => sum + ((w.restMin || 0) * 60), 0);
+  const avgRestSec = calcAvgRestPerSession(totalRestSec, totals.totalSets);
+  
+  // Weighted set efficiency (average of all workout efficiencies)
+  const efficiencies = perWorkout
+    .map(w => w.kpis?.setEfficiency)
+    .filter((eff): eff is number => eff !== null && eff !== undefined);
+  const setEfficiency = efficiencies.length > 0 
+    ? efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length 
+    : null;
+
+  return {
+    densityKgPerMin,
+    avgRestSec,
+    setEfficiency,
+  };
 }
 
 export function rollingWindows(
   perWorkout: PerWorkoutMetrics[],
   kind: 'volume'|'sets'|'reps'|'density'|'cvr'
 ): TimeSeriesPoint[] {
-  // TODO: implement
-  return [];
+  // Group by date and sum values
+  const byDate = new Map<string, number>();
+  
+  perWorkout.forEach(workout => {
+    const date = new Date(workout.startedAt).toISOString().split('T')[0];
+    let value = 0;
+    
+    switch (kind) {
+      case 'volume':
+        value = workout.totalVolumeKg;
+        break;
+      case 'sets':
+        value = workout.totalSets;
+        break;
+      case 'reps':
+        value = workout.totalReps;
+        break;
+      case 'density':
+        value = workout.kpis?.densityKgPerMin || 0;
+        break;
+      case 'cvr':
+        // Placeholder for completion rate
+        value = 1;
+        break;
+    }
+    
+    byDate.set(date, (byDate.get(date) || 0) + value);
+  });
+  
+  return Array.from(byDate.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }

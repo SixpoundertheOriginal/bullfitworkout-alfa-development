@@ -20,6 +20,7 @@ export interface SetRaw {
   exerciseName?: string;
   failurePoint?: 'none'|'technical'|'muscular' | null;
   formScore?: number | null;
+  restTimeSec?: number;
 }
 
 export interface MetricsRepository {

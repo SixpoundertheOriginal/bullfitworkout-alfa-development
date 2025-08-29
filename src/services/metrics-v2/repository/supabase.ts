@@ -89,7 +89,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       // Primary RLS-safe join query
       let { data: sets, error } = await this.client
         .from('exercise_sets')
-        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, workout_sessions!inner(id,user_id)')
         .in('workout_id', ownedIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
@@ -99,7 +99,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         // Fallback: non-join query (still constrained to ownedIds)
         const alt = await this.client
           .from('exercise_sets')
-          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality')
+          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time')
           .in('workout_id', ownedIds)
         if (alt.error || !alt.data) {
           console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
@@ -122,6 +122,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         exerciseName: s.exercise_name ?? s.exercise_id,
         failurePoint: s.failure_point ?? null,
         formScore: s.form_quality ?? null,
+        restTimeSec: s.rest_time ?? null,
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)
@@ -146,9 +147,9 @@ export class SupabaseMetricsRepository implements MetricsRepository {
     // Map provided ids if available; otherwise default to mock-1/mock-2
     const [w1, w2] = [workoutIds[0] || 'mock-1', workoutIds[1] || 'mock-2']
     return [
-      { id: 'set-1', workoutId: w1, weightKg: 80, reps: 8, exerciseId: 'bench-press', failurePoint: 'none', formScore: 3 },
-      { id: 'set-2', workoutId: w1, weightKg: 100, reps: 5, exerciseId: 'deadlift', failurePoint: 'muscular', formScore: 4 },
-      { id: 'set-3', workoutId: w2, weightKg: 60, reps: 12, exerciseId: 'squat', failurePoint: 'technical', formScore: 2 },
+      { id: 'set-1', workoutId: w1, weightKg: 80, reps: 8, exerciseId: 'bench-press', failurePoint: 'none', formScore: 3, restTimeSec: 120 },
+      { id: 'set-2', workoutId: w1, weightKg: 100, reps: 5, exerciseId: 'deadlift', failurePoint: 'muscular', formScore: 4, restTimeSec: 180 },
+      { id: 'set-3', workoutId: w2, weightKg: 60, reps: 12, exerciseId: 'squat', failurePoint: 'technical', formScore: 2, restTimeSec: 90 },
     ]
   }
 
