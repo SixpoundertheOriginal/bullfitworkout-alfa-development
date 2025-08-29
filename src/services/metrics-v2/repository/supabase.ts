@@ -62,40 +62,17 @@ export class SupabaseMetricsRepository implements MetricsRepository {
   }
 
   async getSets(workoutIds: string[], userId: string, exerciseId?: string): Promise<SetRaw[]> {
+
     if (!this.isInitialized || !this.client || !workoutIds.length) {
       return this.getMockSets(workoutIds)
     }
 
     try {
-
-      // Direct query relying on RLS policies; include completed sets or those pending completion
-      const query = this.client
-        .from('exercise_sets')
-        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
-        .in('workout_id', workoutIds)
-        .or('completed.is.null,completed.eq.true')
-
-      if (exerciseId) {
-        query.eq('exercise_id', exerciseId)
-      }
-
-      const { data: sets, error } = await query
-
-      if (error || !sets) {
-        console.error('[MetricsV2] Error fetching sets:', error)
-        return this.getMockSets(workoutIds)
-
-      // Diagnostics + auth
       console.log('[MetricsV2] getSets called', {
         workoutIdsCount: workoutIds.length,
         sample: workoutIds.slice(0, 5),
         t: new Date().toISOString(),
       })
-      const auth = await this.client.auth.getUser();
-      const authedUser = auth?.data?.user?.id;
-      if (!authedUser) {
-        console.error('[MetricsV2] getSets: no authenticated user in client context')
-      }
 
       // Sanitize ids and verify ownership to satisfy RLS before sets fetch
       const validIds = workoutIds.filter(id => typeof id === 'string' && id.trim().length > 0)
@@ -105,83 +82,51 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         .select('id')
         .in('id', validIds)
         .eq('user_id', userId)
-      if (ownErr) {
-        console.warn('[MetricsV2] Ownership precheck failed', ownErr)
-      }
+      if (ownErr) console.warn('[MetricsV2] Ownership precheck failed', ownErr)
       const ownedIds = (ownedW || []).map(w => w.id)
-      if (ownedIds.length === 0) {
-        console.warn('[MetricsV2] No owned workouts among requested ids')
-        return []
-      }
+      if (ownedIds.length === 0) return []
 
-      // Primary query: RLS-safe inner join to user's workouts; include completed or null
-      const { data: sets, error } = await this.client
+      // Primary RLS-safe join query
+      let { data: sets, error } = await this.client
         .from('exercise_sets')
-        .select('id, workout_id, weight, reps, completed, workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, workout_sessions!inner(id,user_id)')
         .in('workout_id', ownedIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
 
       if (error) {
-        console.error('[MetricsV2] Error fetching sets (joined):', {
-          code: (error as any)?.code,
-          msg: (error as any)?.message,
-          details: (error as any)?.details,
-          hint: (error as any)?.hint,
-        })
-        // Fallback: try without join (in case RLS allows)
+        console.error('[MetricsV2] Error fetching sets (joined):', error)
+        // Fallback: non-join query (still constrained to ownedIds)
         const alt = await this.client
           .from('exercise_sets')
-          .select('id, workout_id, weight, reps, completed')
+          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
           .in('workout_id', ownedIds)
         if (alt.error || !alt.data) {
           console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
           return this.getMockSets(workoutIds)
         }
-        return alt.data.map((s: any) => ({
-          id: s.id,
-          workoutId: s.workout_id,
-          weightKg: s.weight,
-          reps: s.reps,
-          exerciseId: undefined
-        }))
+        sets = alt.data as any
       }
 
-      if (!sets || sets.length === 0) {
-        console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
-        const alt = await this.client
-          .from('exercise_sets')
-          .select('id, workout_id, weight, reps, completed')
-          .in('workout_id', ownedIds)
-        if (alt.error) {
-          console.error('[MetricsV2] Fallback sets query failed:', alt.error)
-          return []
-        }
-        const mapped = (alt.data || []).map((s: any) => ({
-          id: s.id,
-          workoutId: s.workout_id,
-          weightKg: s.weight,
-          reps: s.reps,
-          exerciseId: undefined
-        }))
-        console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
-        return mapped
+      // Optional exerciseId filter
+      if (exerciseId) sets = (sets || []).filter((s: any) => s.exercise_id === exerciseId)
 
-      }
+      if (!sets || sets.length === 0) return []
 
-      return sets.map((s: any) => ({
+      return (sets as any[]).map((s: any) => ({
         id: s.id,
         workoutId: s.workout_id,
         weightKg: s.weight,
         reps: s.reps,
         exerciseId: s.exercise_id,
-        exerciseName: s.exercise_name ?? s.exercise_id
+        exerciseName: s.exercise_name ?? s.exercise_id,
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)
       return this.getMockSets(workoutIds)
     }
   }
+
 
   private getMockWorkouts(range: DateRange): WorkoutRaw[] {
     const end = new Date(range.end)
