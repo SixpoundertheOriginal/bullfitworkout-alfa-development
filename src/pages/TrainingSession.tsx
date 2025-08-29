@@ -24,6 +24,7 @@ import { useWorkoutSave } from "@/hooks/useWorkoutSave";
 import { TimingDebugPanel } from '@/components/TimingDebugPanel';
 import { AppBackground } from '@/components/ui/AppBackground';
 import { UniversalCard } from '@/components/ui/UniversalCard';
+import { logExerciseFeedback } from "@/services/exerciseFeedbackService";
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -311,6 +312,35 @@ const TrainingSessionPage = () => {
 
     // Call original completion handler
     handleCompleteSet(exerciseName, setIndex, { failurePoint: timingData?.failurePoint, formScore: timingData?.formScore });
+
+    const state = useWorkoutStore.getState();
+    const exerciseDataAfter = state.exercises[exerciseName];
+    const setsAfter = Array.isArray(exerciseDataAfter) ? exerciseDataAfter : exerciseDataAfter.sets;
+    const allCompleted = setsAfter.every(s => s.completed);
+
+    if (allCompleted) {
+      const difficultyStr = window.prompt(`Rate difficulty for ${getExerciseDisplayName(exerciseName)} (1-10)`);
+      const satisfactionStr = window.prompt(`Rate satisfaction for ${getExerciseDisplayName(exerciseName)} (1-10)`);
+      const perceivedDifficulty = Number(difficultyStr);
+      const satisfaction = Number(satisfactionStr);
+      const workoutId = state.workoutId;
+      const exerciseId = Array.isArray(exerciseDataAfter)
+        ? (exerciseDataAfter[0] as any)?.exercise_id
+        : (exerciseDataAfter.exercise?.id || (exerciseDataAfter.sets[0] as any)?.exercise_id);
+      if (
+        workoutId &&
+        exerciseId &&
+        !Number.isNaN(perceivedDifficulty) &&
+        !Number.isNaN(satisfaction)
+      ) {
+        logExerciseFeedback({
+          workoutId,
+          exerciseId,
+          perceivedDifficulty,
+          satisfaction,
+        }).catch((err) => console.error('Failed to log exercise feedback', err));
+      }
+    }
   };
 
   // Enhanced exercise addition with full Exercise object support
