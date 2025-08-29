@@ -1,5 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type DbExerciseSet = Database["public"]["Tables"]["exercise_sets"]["Row"];
 
 /**
  * Restores a deleted workout with its exercise sets
@@ -33,7 +36,7 @@ export async function restoreWorkout(workout: any) {
   // Fetch the original exercise sets for this workout
   const { data: sets, error: fetchError } = await supabase
     .from('exercise_sets')
-    .select('*')
+    .select<DbExerciseSet[]>('*')
     .eq('workout_id', workout.id);
     
   if (fetchError) {
@@ -50,7 +53,17 @@ export async function restoreWorkout(workout: any) {
         weight: set.weight,
         reps: set.reps,
         set_number: set.set_number,
-        completed: set.completed
+        completed: set.completed,
+        rest_time: set.rest_time ?? null,
+        rpe: set.rpe ?? null,
+        variant_id: set.variant_id ?? null,
+        tempo: set.tempo ?? null,
+        range_of_motion: set.range_of_motion ?? null,
+        added_weight: set.added_weight ?? null,
+        assistance_used: set.assistance_used ?? null,
+        notes: set.notes ?? null,
+        failure_point: set.failure_point ?? null,
+        form_score: set.form_score ?? null,
       })));
       
     if (insertError) {

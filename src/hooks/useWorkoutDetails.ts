@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ExerciseSet } from "@/types/exercise";
+import type { Database } from "@/integrations/supabase/types";
+
+type DbExerciseSet = Database["public"]["Tables"]["exercise_sets"]["Row"];
 import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 
 export function useWorkoutDetails(workoutId: string | undefined) {
@@ -33,7 +36,7 @@ export function useWorkoutDetails(workoutId: string | undefined) {
         
         const { data: sets, error: setsError } = await supabase
           .from('exercise_sets')
-          .select('*')
+          .select<DbExerciseSet[]>('*')
           .eq('workout_id', workoutId)
           .order('exercise_name', { ascending: true })
           .order('set_number', { ascending: true });
@@ -58,12 +61,26 @@ export function useWorkoutDetails(workoutId: string | undefined) {
         }
 
         const groupedSets = sets?.reduce<Record<string, ExerciseSet[]>>((acc, raw) => {
-          const set = raw as any;
+          const set = raw as DbExerciseSet;
           const exerciseName = set.exercise_name;
-          const mapped = {
-            ...(set as ExerciseSet),
-            exercise_id: set.exercise_id,
-            restTime: (set.rest_time ?? null) as number | null,
+          const mapped: ExerciseSet = {
+            id: set.id,
+            exercise_name: set.exercise_name,
+            workout_id: set.workout_id,
+            weight: set.weight,
+            reps: set.reps,
+            set_number: set.set_number,
+            completed: set.completed,
+            restTime: set.rest_time ?? undefined,
+            rpe: set.rpe ?? undefined,
+            variant_id: set.variant_id ?? undefined,
+            tempo: set.tempo ?? undefined,
+            range_of_motion: set.range_of_motion ?? undefined,
+            added_weight: set.added_weight ?? undefined,
+            assistance_used: set.assistance_used ?? undefined,
+            notes: set.notes ?? undefined,
+            failurePoint: set.failure_point ?? null,
+            formScore: set.form_score ?? null,
           } as ExerciseSet;
           if (!acc[exerciseName]) {
             acc[exerciseName] = [];

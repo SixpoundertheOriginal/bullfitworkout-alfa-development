@@ -1,5 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type DbExerciseSet = Database["public"]["Tables"]["exercise_sets"]["Row"];
 
 /**
  * Updates or creates sets for an exercise in a workout
@@ -20,11 +23,13 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
   added_weight?: number | null;
   assistance_used?: number | null;
   notes?: string | null;
-}[]) {
+  failurePoint?: DbExerciseSet["failure_point"];
+  formScore?: DbExerciseSet["form_score"];
+}[]): Promise<DbExerciseSet[] | null> {
   // Get existing set IDs for this exercise in this workout
   let query = supabase
     .from('exercise_sets')
-    .select('id')
+    .select<Pick<DbExerciseSet, 'id'>[]>('id')
     .eq('workout_id', workoutId)
     .eq('exercise_name', exerciseName);
   if (exerciseId) {
@@ -121,7 +126,7 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
   // Fetch the updated sets
   let finalQuery = supabase
     .from('exercise_sets')
-    .select('*')
+    .select<DbExerciseSet[]>('*')
     .eq('workout_id', workoutId)
     .order('set_number', { ascending: true });
   if (exerciseId) {
