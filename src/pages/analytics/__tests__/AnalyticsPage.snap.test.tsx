@@ -35,14 +35,14 @@ const makeWorkouts = (): PerWorkoutMetrics[] => {
 describe('AnalyticsPage KPI cards', () => {
   it('renders KPI cards when enabled', () => {
     const workouts = makeWorkouts();
-    const { container, getByTestId } = render(<AnalyticsPage perWorkout={workouts} derivedKpisEnabled />);
+    const { container, getByTestId } = render(<AnalyticsPage perWorkout={workouts} />);
     expect(getByTestId('kpi-density')).toBeTruthy();
     expect(container).toMatchSnapshot();
   });
 
   it('hides KPI cards when disabled', () => {
     const workouts = makeWorkouts();
-    const { queryByTestId } = render(<AnalyticsPage perWorkout={workouts} derivedKpisEnabled={false} />);
+    const { queryByTestId } = render(<AnalyticsPage perWorkout={workouts} />);
     expect(queryByTestId('kpi-density')).toBeNull();
   });
 });

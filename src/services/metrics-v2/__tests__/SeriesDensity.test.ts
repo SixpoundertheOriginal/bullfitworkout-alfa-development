@@ -1,5 +1,5 @@
 import { rollingWindows } from '../aggregators';
-import type { PerWorkoutMetrics } from '../../dto';
+import type { PerWorkoutMetrics } from '../dto';
 
 describe('density series weighted average', () => {
   it('computes weighted density per day', () => {
