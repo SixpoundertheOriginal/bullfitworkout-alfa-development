@@ -12,8 +12,10 @@ import { metricsServiceV2 } from '@/services/metrics-v2/service';
 import type { AnalyticsData } from '@/types/analytics';
 import { parseKpiTabParams, writeKpiTabParams } from '@/utils/url';
 import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
+import { AnalyticsKpiSelect, kpiLabel } from '@/components/analytics/AnalyticsKpiSelect';
 import { useAuth } from '@/context/AuthContext';
-import { useExerciseOptions } from '@/hooks/useExerciseOptions';
+// Optional hook for exercises; wire later if needed
+// import { useUserExercises } from '@/hooks/useUserExercises';
 
 const Analytics: React.FC = () => {
   const { dateRange } = useDateRange();
@@ -28,10 +30,7 @@ const Analytics: React.FC = () => {
   React.useEffect(() => {
     setExerciseId(exerciseParam || undefined);
   }, [exerciseParam]);
-  const {
-    data: exerciseOptions = [],
-    isLoading: isExerciseOptionsLoading,
-  } = useExerciseOptions();
+  // const { data: exerciseOptions = [], isLoading: isExerciseOptionsLoading } = useUserExercises();
   const selectedKpi = (kpiParam as 'tonnage' | 'sets' | 'reps' | 'duration' | 'workouts') || 'tonnage';
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['metrics-v2', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString(), exerciseId],
@@ -187,6 +186,7 @@ const Analytics: React.FC = () => {
         </Card>
       ) : data ? (
         <div className="space-y-6">
+<<<<<<< HEAD
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card onClick={() => onSelectKpi('tonnage')} className={`bg-gray-800/50 border ${selectedKpi==='tonnage'?'border-purple-500':'border-gray-700'} p-4 cursor-pointer`}>
               <div className="flex items-center text-gray-400 mb-2">
@@ -238,16 +238,29 @@ const Analytics: React.FC = () => {
               onGroupByChange={onGroupChange}
               onExerciseChange={onExerciseChange}
             />
+=======
+          {/* KPI + Filters toolbar */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <AnalyticsKpiSelect value={selectedKpi} onChange={onSelectKpi} />
+              <AnalyticsFilterBar groupBy={groupParam} onGroupByChange={onGroupChange} />
+            </div>
+            {/* Placeholder for Saved Views / Add Filter */}
+            {/* <Button variant="outline" className="border-white/10 text-gray-300 hover:bg-white/10">Saved Views</Button> */}
+>>>>>>> 83e7020 (feat(analytics): KPI dropdown selector; toolbar integration; ensure workouts/duration fallback mapping)
           </div>
 
           <Card className="bg-gray-800/50 border-gray-700 p-6">
-            <h3 className="text-lg font-medium text-white mb-4">
-              {selectedKpi === 'tonnage' && 'Volume Over Time'}
-              {selectedKpi === 'sets' && 'Sets Over Time'}
-              {selectedKpi === 'reps' && 'Reps Over Time'}
-              {selectedKpi === 'duration' && 'Duration Over Time'}
-              {selectedKpi === 'workouts' && 'Workouts Over Time'}
-            </h3>
+            <div className="flex items-end justify-between mb-2">
+              <h3 className="text-lg font-medium text-white">{kpiLabel(selectedKpi)} Over Time</h3>
+              <div className="text-3xl font-bold text-white">
+                {selectedKpi === 'tonnage' && `${data.totals.totalVolumeKg.toLocaleString()} kg`}
+                {selectedKpi === 'sets' && data.totals.totalSets.toLocaleString()}
+                {selectedKpi === 'workouts' && data.totals.workouts.toLocaleString()}
+                {selectedKpi === 'duration' && `${data.totals.durationMin.toLocaleString()} min`}
+                {selectedKpi === 'reps' && data.totals.totalReps.toLocaleString()}
+              </div>
+            </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
