@@ -25,7 +25,7 @@ interface SetRowProps {
   isEditing: boolean;
   isWarmup?: boolean;
   exerciseName: string;
-  onComplete: () => void;
+  onComplete: (data?: { failurePoint?: 'none'|'technical'|'muscular'; formScore?: number }) => void;
   onEdit: () => void;
   onSave: () => void;
   onRemove: () => void;
@@ -45,6 +45,10 @@ interface SetRowProps {
   onAutoAdvanceNext?: () => void;
   showRestTimer?: boolean;
   onRestTimerComplete?: () => void;
+  failurePoint?: 'none'|'technical'|'muscular';
+  formScore?: number;
+  onFailurePointChange?: (value: 'none'|'technical'|'muscular') => void;
+  onFormScoreChange?: (value: number) => void;
 }
 
 export const SetRow = ({
@@ -76,7 +80,11 @@ export const SetRow = ({
   userWeight,
   onAutoAdvanceNext,
   showRestTimer = false,
-  onRestTimerComplete
+  onRestTimerComplete,
+  failurePoint = 'none',
+  formScore,
+  onFailurePointChange,
+  onFormScoreChange
 }: SetRowProps) => {
   const { weightUnit: globalWeightUnit } = useWeightUnit();
   const isMobile = useIsMobile();
@@ -161,7 +169,7 @@ export const SetRow = ({
     setSetEndTime(exerciseName, setNumber);
     setTimeout(() => {
       setJustCompleted(false);
-      onComplete();
+      onComplete({ failurePoint, formScore });
       if (onAutoAdvanceNext) setTimeout(onAutoAdvanceNext, 300);
     }, 400);
   };
@@ -396,6 +404,26 @@ export const SetRow = ({
             )}
           </div>
           <div className="col-span-12 flex justify-end gap-2 mt-2">
+            <div className="flex items-center gap-2 mr-auto">
+              <select
+                value={failurePoint}
+                onChange={(e) => onFailurePointChange?.(e.target.value as 'none'|'technical'|'muscular')}
+                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100"
+              >
+                <option value="none">No Failure</option>
+                <option value="technical">Technical</option>
+                <option value="muscular">Muscular</option>
+              </select>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={formScore ?? ''}
+                onChange={(e) => onFormScoreChange?.(e.target.value ? parseInt(e.target.value) : undefined as any)}
+                placeholder="Form"
+                className="w-16 h-9 bg-gray-800 border-gray-700 text-sm"
+              />
+            </div>
             <Button
               size="icon"
               onClick={onSave}

@@ -67,6 +67,8 @@ export interface EnhancedExerciseSet {
   rpe?: number;
   notes?: string;
   created_at: string;
+  failure_point?: 'none' | 'technical' | 'muscular' | null;
+  form_score?: number | null;
 }
 
 export interface VariantSelectionData {

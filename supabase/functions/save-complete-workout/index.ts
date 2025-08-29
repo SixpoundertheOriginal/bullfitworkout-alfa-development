@@ -20,6 +20,8 @@ interface WorkoutSet {
   added_weight?: number | null;
   assistance_used?: number | null;
   notes?: string | null;
+  failure_point?: string | null;
+  form_score?: number | null;
   [key: string]: unknown;
 }
 

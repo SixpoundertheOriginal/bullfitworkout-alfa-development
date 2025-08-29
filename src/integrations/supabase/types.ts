@@ -519,6 +519,8 @@ export type Database = {
           added_weight: number | null
           assistance_used: number | null
           notes: string | null
+          failure_point: string | null
+          form_score: number | null
         }
         Insert: {
           completed?: boolean
@@ -541,6 +543,8 @@ export type Database = {
           added_weight?: number | null
           assistance_used?: number | null
           notes?: string | null
+          failure_point?: string | null
+          form_score?: number | null
         }
         Update: {
           completed?: boolean
@@ -563,6 +567,8 @@ export type Database = {
           added_weight?: number | null
           assistance_used?: number | null
           notes?: string | null
+          failure_point?: string | null
+          form_score?: number | null
         }
         Relationships: [
           {

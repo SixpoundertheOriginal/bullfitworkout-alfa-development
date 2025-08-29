@@ -12,6 +12,8 @@ export interface ExerciseSet {
   exercise_id?: string;
   weightCalculation?: WeightCalculation;
   metadata?: Record<string, any>; // Add metadata property for RPE and other set-specific data
+  failurePoint?: 'none' | 'technical' | 'muscular' | null;
+  formScore?: number | null;
 }
 
 export type MuscleGroup = 

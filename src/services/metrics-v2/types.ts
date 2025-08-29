@@ -18,6 +18,8 @@ export interface SetRaw {
   reps: number;
   exerciseId: string;
   exerciseName?: string;
+  failurePoint?: 'none'|'technical'|'muscular' | null;
+  formScore?: number | null;
 }
 
 export interface MetricsRepository {

@@ -14,6 +14,8 @@ export interface ExerciseSet {
   completed: boolean;
   isEditing: boolean;
   isWarmup?: boolean;
+  failurePoint?: 'none' | 'technical' | 'muscular';
+  formScore?: number;
   // Enhanced timing metadata
   metadata?: {
     startTime?: string;

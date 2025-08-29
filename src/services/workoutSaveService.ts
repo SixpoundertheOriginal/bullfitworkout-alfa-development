@@ -109,7 +109,9 @@ export const saveWorkout = async ({
           range_of_motion: anySet.range_of_motion ?? null,
           added_weight: anySet.added_weight ?? null,
           assistance_used: anySet.assistance_used ?? null,
-          notes: anySet.notes ?? null
+          notes: anySet.notes ?? null,
+          failure_point: anySet.failurePoint ?? null,
+          form_score: anySet.formScore ?? null
         };
       });
     });
@@ -400,7 +402,9 @@ async function saveExerciseSetsWithRetry(
               range_of_motion: anySet.range_of_motion ?? null,
               added_weight: anySet.added_weight ?? null,
               assistance_used: anySet.assistance_used ?? null,
-              notes: anySet.notes ?? null
+              notes: anySet.notes ?? null,
+              failure_point: anySet.failurePoint ?? null,
+              form_score: anySet.formScore ?? null
             };
           }));
           
@@ -431,7 +435,9 @@ async function saveExerciseSetsWithRetry(
                     range_of_motion: anySet.range_of_motion ?? null,
                     added_weight: anySet.added_weight ?? null,
                     assistance_used: anySet.assistance_used ?? null,
-                    notes: anySet.notes ?? null
+                    notes: anySet.notes ?? null,
+                    failure_point: anySet.failurePoint ?? null,
+                    form_score: anySet.formScore ?? null
                   });
                   
                 if (!setError) {

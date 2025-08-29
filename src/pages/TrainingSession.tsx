@@ -223,9 +223,11 @@ const TrainingSessionPage = () => {
 
   // Enhanced exercise completion with timing data
   const handleCompleteSetWithTiming = (exerciseName: string, setIndex: number, timingData?: {
-    startTime: string;
-    endTime: string;
+    startTime?: string;
+    endTime?: string;
     actualRestTime?: number;
+    failurePoint?: 'none'|'technical'|'muscular';
+    formScore?: number;
   }) => {
     // Update the exercise with timing metadata
     if (timingData) {
@@ -244,7 +246,9 @@ const TrainingSessionPage = () => {
                 startTime: timingData.startTime,
                 endTime: timingData.endTime,
                 actualRestTime: timingData.actualRestTime,
-              }
+              },
+              failurePoint: timingData.failurePoint ?? set.failurePoint,
+              formScore: timingData.formScore ?? set.formScore,
             } : set
           );
           newExercises[exerciseName] = updatedSets;
@@ -259,7 +263,9 @@ const TrainingSessionPage = () => {
                 startTime: timingData.startTime,
                 endTime: timingData.endTime,
                 actualRestTime: timingData.actualRestTime,
-              }
+              },
+              failurePoint: timingData.failurePoint ?? set.failurePoint,
+              formScore: timingData.formScore ?? set.formScore,
             } : set
           );
           newExercises[exerciseName] = {
@@ -304,7 +310,7 @@ const TrainingSessionPage = () => {
     }
 
     // Call original completion handler
-    handleCompleteSet(exerciseName, setIndex);
+    handleCompleteSet(exerciseName, setIndex, { failurePoint: timingData?.failurePoint, formScore: timingData?.formScore });
   };
 
   // Enhanced exercise addition with full Exercise object support
@@ -706,19 +712,67 @@ const TrainingSessionPage = () => {
               setStoreExercises(prev => {
                 const exerciseData = prev[name];
                 if (Array.isArray(exerciseData)) {
-                  return { 
-                    ...prev, 
-                    [name]: exerciseData.map((s, idx) => 
+                  return {
+                    ...prev,
+                    [name]: exerciseData.map((s, idx) =>
                       idx === setIndex ? { ...s, restTime: Math.max(0, (s.restTime || 60) + increment) } : s
-                    ) 
+                    )
                   };
                 } else if (exerciseData) {
                   return {
                     ...prev,
                     [name]: {
                       ...exerciseData,
-                      sets: exerciseData.sets.map((s, idx) => 
+                      sets: exerciseData.sets.map((s, idx) =>
                         idx === setIndex ? { ...s, restTime: Math.max(0, (s.restTime || 60) + increment) } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onFailurePointChange={(name, setIndex, value) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return {
+                    ...prev,
+                    [name]: exerciseData.map((s, idx) =>
+                      idx === setIndex ? { ...s, failurePoint: value } : s
+                    )
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) =>
+                        idx === setIndex ? { ...s, failurePoint: value } : s
+                      )
+                    }
+                  };
+                }
+                return prev;
+              });
+            }}
+            onFormScoreChange={(name, setIndex, value) => {
+              setStoreExercises(prev => {
+                const exerciseData = prev[name];
+                if (Array.isArray(exerciseData)) {
+                  return {
+                    ...prev,
+                    [name]: exerciseData.map((s, idx) =>
+                      idx === setIndex ? { ...s, formScore: value } : s
+                    )
+                  };
+                } else if (exerciseData) {
+                  return {
+                    ...prev,
+                    [name]: {
+                      ...exerciseData,
+                      sets: exerciseData.sets.map((s, idx) =>
+                        idx === setIndex ? { ...s, formScore: value } : s
                       )
                     }
                   };
