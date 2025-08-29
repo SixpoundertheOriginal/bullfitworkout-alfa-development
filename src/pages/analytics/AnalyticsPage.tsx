@@ -1,25 +1,38 @@
 import React from 'react';
-import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
-import { METRICS, availableMetrics, type ChartMetric } from './registry';
+import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 import { useConfig } from '@/config/runtimeConfig';
+import { buildMetricOptions } from './metricOptions';
 
-export type AnalyticsPageProps = {
+export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
+  series?: Record<string, TimeSeriesPoint[]>;
+  metricKeys?: string[];
 };
 
-export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] }) => {
+export type AnalyticsPageProps = { data?: AnalyticsServiceData };
+
+export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
+  const perWorkout = data?.perWorkout ?? [];
+  const seriesData = data?.series ?? {};
+  const metricKeys = data?.metricKeys ?? [];
   const { flags } = useConfig();
+
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', flags.derivedKpis);
   }, [flags.derivedKpis]);
-  const initOpts = React.useMemo(() => availableMetrics({ derivedKpis: flags.derivedKpis }), [flags.derivedKpis]);
+
+  const initOpts = React.useMemo(
+    () => buildMetricOptions(metricKeys, flags.derivedKpis),
+    [metricKeys, flags.derivedKpis]
+  );
   const [options, setOptions] = React.useState(initOpts);
-  const [metric, setMetric] = React.useState<ChartMetric>(initOpts[0].key);
+  const [metric, setMetric] = React.useState<string>(initOpts[0]?.key || '');
+
   React.useEffect(() => {
-    const next = availableMetrics({ derivedKpis: flags.derivedKpis });
+    const next = buildMetricOptions(metricKeys, flags.derivedKpis);
     setOptions(next);
-    if (!next.some(o => o.key === metric)) {
+    if (!next.some(o => o.key === metric) && next[0]) {
       setMetric(next[0].key);
     }
     if (import.meta.env.DEV && typeof window !== 'undefined') {
@@ -28,14 +41,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] })
         metricOptions: next,
       };
     }
-  }, [flags.derivedKpis]);
+  }, [metricKeys, flags.derivedKpis]);
 
   const series = React.useMemo(() => {
-    const adapter = METRICS[metric].toSeries;
-    return adapter ? adapter(perWorkout ?? []) : [];
-  }, [metric, perWorkout]);
+    return seriesData[metric] ?? [];
+  }, [metric, seriesData]);
 
-  // KPI calculations (last 7 days vs previous 7 days)
+  // KPI calculations (last 7 days vs previous 7 days) using server-provided KPIs
   const kpis = React.useMemo(() => {
     const now = new Date('2023-01-15'); // deterministic for tests; replace in real app
     const dayMs = 86400000;
@@ -51,45 +63,22 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] })
       return d >= startPrev && d < startCurr;
     });
 
-    // Helper functions
-    const densityVal = (wps: PerWorkoutMetrics[]) => {
-      const { tonnage, duration } = wps.reduce(
-        (acc, w) => ({
-          tonnage: acc.tonnage + (w.totalVolumeKg || 0),
-          duration: acc.duration + (w.durationMin || 0),
-        }),
-        { tonnage: 0, duration: 0 }
-      );
-      return tonnage / Math.max(duration, 1e-9);
-    };
-
-    const avgRestVal = (wps: PerWorkoutMetrics[]) => {
-      const { rest, sets } = wps.reduce(
-        (acc, w) => ({
-          rest: acc.rest + ((w.restMin || 0) * 60),
-          sets: acc.sets + (w.totalSets || 0),
-        }),
-        { rest: 0, sets: 0 }
-      );
-      return rest / Math.max(sets, 1);
-    };
-
-    const efficiencyVal = (wps: PerWorkoutMetrics[]) => {
+    const avgKpi = (wps: PerWorkoutMetrics[], key: keyof NonNullable<PerWorkoutMetrics['kpis']>) => {
       const arr = wps
-        .map(w => w.kpis?.setEfficiency)
+        .map(w => w.kpis?.[key] as number | null | undefined)
         .filter((n): n is number => n !== null && n !== undefined);
-      return arr.length > 0 ? arr.reduce((s, n) => s + n, 0) / arr.length : null;
+      return arr.length > 0 ? arr.reduce((s, n) => s + n, 0) / arr.length : key === 'setEfficiency' ? null : 0;
     };
 
     const curr = {
-      density: densityVal(currWorkouts),
-      avgRest: avgRestVal(currWorkouts),
-      efficiency: efficiencyVal(currWorkouts),
+      density: avgKpi(currWorkouts, 'density'),
+      avgRest: avgKpi(currWorkouts, 'avgRest'),
+      efficiency: avgKpi(currWorkouts, 'setEfficiency'),
     };
     const prev = {
-      density: densityVal(prevWorkouts),
-      avgRest: avgRestVal(prevWorkouts),
-      efficiency: efficiencyVal(prevWorkouts),
+      density: avgKpi(prevWorkouts, 'density'),
+      avgRest: avgKpi(prevWorkouts, 'avgRest'),
+      efficiency: avgKpi(prevWorkouts, 'setEfficiency'),
     };
     return { curr, prev };
   }, [perWorkout]);
@@ -125,11 +114,11 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] })
         </div>
       )}
 
-      <select
-        value={metric}
-        onChange={e => setMetric(e.target.value as ChartMetric)}
-        data-testid="metric-select"
-      >
+        <select
+          value={metric}
+          onChange={e => setMetric(e.target.value)}
+          data-testid="metric-select"
+        >
         {options.map(o => (
           <option key={o.key} value={o.key}>
             {o.label}

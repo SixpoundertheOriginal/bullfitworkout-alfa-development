@@ -54,14 +54,14 @@ describe('metrics-v2 integration', () => {
 
       // When flag is on, should have KPIs
       expect(result.perWorkout[0]).toHaveProperty('kpis');
-      expect(result.perWorkout[0].kpis).toHaveProperty('densityKgPerMin');
-      expect(result.perWorkout[0].kpis).toHaveProperty('avgRestSec');
+      expect(result.perWorkout[0].kpis).toHaveProperty('density');
+      expect(result.perWorkout[0].kpis).toHaveProperty('avgRest');
       expect(result.perWorkout[0].kpis).toHaveProperty('setEfficiency');
 
       // Should have totals KPIs
       expect(result.totalsKpis).toBeDefined();
-      expect(result.totalsKpis).toHaveProperty('densityKgPerMin');
-      expect(result.totalsKpis).toHaveProperty('avgRestSec');
+      expect(result.totalsKpis).toHaveProperty('density');
+      expect(result.totalsKpis).toHaveProperty('avgRest');
       expect(result.totalsKpis).toHaveProperty('setEfficiency');
     });
 
@@ -122,11 +122,11 @@ describe('metrics-v2 integration', () => {
 
       // Workout 1: (80*8 + 100*5) = 1140kg in 60min = 19kg/min
       const workout1 = result.perWorkout.find(w => w.totalSets === 2);
-      expect(workout1!.kpis!.densityKgPerMin).toBeCloseTo(19);
+      expect(workout1!.kpis!.density).toBeCloseTo(19);
 
       // Workout 2: (60*12) = 720kg in 45min = 16kg/min
       const workout2 = result.perWorkout.find(w => w.totalSets === 1);
-      expect(workout2!.kpis!.densityKgPerMin).toBeCloseTo(16);
+      expect(workout2!.kpis!.density).toBeCloseTo(16);
     });
 
     it('should calculate set efficiency correctly', async () => {
@@ -142,12 +142,12 @@ describe('metrics-v2 integration', () => {
 
       // Workout 1: avgRest = 150s, target = 90s, efficiency = 150/90 = 1.67
       const workout1 = result.perWorkout.find(w => w.totalSets === 2);
-      expect(workout1!.kpis!.avgRestSec).toBe(150); // (120+180)/2
+      expect(workout1!.kpis!.avgRest).toBe(150); // (120+180)/2
       expect(workout1!.kpis!.setEfficiency).toBeCloseTo(1.67);
 
       // Workout 2: avgRest = 90s, target = 90s, efficiency = 90/90 = 1.0
       const workout2 = result.perWorkout.find(w => w.totalSets === 1);
-      expect(workout2!.kpis!.avgRestSec).toBe(90);
+      expect(workout2!.kpis!.avgRest).toBe(90);
       expect(workout2!.kpis!.setEfficiency).toBeCloseTo(1.0);
     });
 

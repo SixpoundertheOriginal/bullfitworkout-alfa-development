@@ -1,8 +1,9 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
+import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { AnalyticsPage } from '../AnalyticsPage';
+import { ConfigProvider } from '@/config/runtimeConfig';
 
 const makeWorkouts = (): PerWorkoutMetrics[] => {
   const workouts: PerWorkoutMetrics[] = [];
@@ -15,7 +16,7 @@ const makeWorkouts = (): PerWorkoutMetrics[] => {
       totalReps: 0,
       durationMin: 10,
       restMin: 10,
-      kpis: { densityKgPerMin: 10, avgRestSec: 60, setEfficiency: 1.0 },
+      kpis: { density: 10, avgRest: 60, setEfficiency: 1.0 },
     });
   }
   for (let i = 8; i <= 14; i++) {
@@ -27,7 +28,7 @@ const makeWorkouts = (): PerWorkoutMetrics[] => {
       totalReps: 0,
       durationMin: 10,
       restMin: 5,
-      kpis: { densityKgPerMin: 20, avgRestSec: 30, setEfficiency: 0.8 },
+      kpis: { density: 20, avgRest: 30, setEfficiency: 0.8 },
     });
   }
   return workouts;
@@ -36,14 +37,32 @@ const makeWorkouts = (): PerWorkoutMetrics[] => {
 describe('AnalyticsPage KPI cards', () => {
   it('renders KPI cards when enabled', () => {
     const workouts = makeWorkouts();
-    const { container, getByTestId } = render(<AnalyticsPage perWorkout={workouts} />);
+    const data = {
+      perWorkout: workouts,
+      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
+      metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
+    };
+    const { container, getByTestId } = render(
+      <ConfigProvider initialFlags={{ derivedKpis: true }}>
+        <AnalyticsPage data={data} />
+      </ConfigProvider>
+    );
     expect(getByTestId('kpi-density')).toBeTruthy();
     expect(container).toMatchSnapshot();
   });
 
   it('hides KPI cards when disabled', () => {
     const workouts = makeWorkouts();
-    const { queryByTestId } = render(<AnalyticsPage perWorkout={workouts} />);
+    const data = {
+      perWorkout: workouts,
+      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
+      metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
+    };
+    const { queryByTestId } = render(
+      <ConfigProvider initialFlags={{ derivedKpis: false }}>
+        <AnalyticsPage data={data} />
+      </ConfigProvider>
+    );
     expect(queryByTestId('kpi-density')).toBeNull();
   });
 });

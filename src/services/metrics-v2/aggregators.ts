@@ -42,7 +42,7 @@ export function aggregatePerWorkout(
     // Derived KPIs
     let kpis = undefined;
     if (FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED) {
-      const avgRestSec = calcAvgRestPerSession(restSecTotal, totalSets);
+      const avgRest = calcAvgRestPerSession(restSecTotal, totalSets);
       const targetRestSec = getTargetRestSecForWorkout({
         workoutId: workout.id,
         startedAt: workout.startedAt,
@@ -55,9 +55,9 @@ export function aggregatePerWorkout(
       });
       
       kpis = {
-        densityKgPerMin: calcWorkoutDensityKgPerMin(totalVolumeKg, durationMin),
-        avgRestSec,
-        setEfficiency: calcSetEfficiency(avgRestSec, targetRestSec),
+        density: calcWorkoutDensityKgPerMin(totalVolumeKg, durationMin),
+        avgRest,
+        setEfficiency: calcSetEfficiency(avgRest, targetRestSec),
       };
     }
 
@@ -93,23 +93,23 @@ export function aggregateTotalsKpis(perWorkout: PerWorkoutMetrics[]): TotalsKpis
   const totals = aggregateTotals(perWorkout);
   
   // Overall density
-  const densityKgPerMin = calcWorkoutDensityKgPerMin(totals.totalVolumeKg, totals.durationMin);
+  const density = calcWorkoutDensityKgPerMin(totals.totalVolumeKg, totals.durationMin);
   
   // Weighted average rest time
   const totalRestSec = perWorkout.reduce((sum, w) => sum + ((w.restMin || 0) * 60), 0);
-  const avgRestSec = calcAvgRestPerSession(totalRestSec, totals.totalSets);
+  const avgRest = calcAvgRestPerSession(totalRestSec, totals.totalSets);
   
   // Weighted set efficiency (average of all workout efficiencies)
   const efficiencies = perWorkout
     .map(w => w.kpis?.setEfficiency)
     .filter((eff): eff is number => eff !== null && eff !== undefined);
-  const setEfficiency = efficiencies.length > 0 
-    ? efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length 
+  const setEfficiency = efficiencies.length > 0
+    ? efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length
     : null;
 
   return {
-    densityKgPerMin,
-    avgRestSec,
+    density,
+    avgRest,
     setEfficiency,
   };
 }

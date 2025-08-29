@@ -1,5 +1,10 @@
+/** @deprecated Use server-provided series instead */
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import type { ChartMetric } from './types';
+
+if (process.env.NODE_ENV === 'development') {
+  console.warn('Analytics adapters are deprecated; use service series directly');
+}
 
 // Helper to extract ISO day from timestamp
 const dayKey = (iso: string) => iso.split('T')[0];
