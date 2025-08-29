@@ -3,6 +3,7 @@ import { InMemoryMetricsRepository } from './types'
 import type { DateRange } from './types'
 import { getMetricsV2 as computeV2 } from './index'
 import type { MetricsRepository as ComputeRepo, DateRange as ComputeRange } from './repository'
+import { supabase } from '@/integrations/supabase/client'
 
 // Try to initialize Supabase repository, fallback to in-memory if it fails
 let repository
@@ -24,10 +25,32 @@ export const metricsServiceV2 = {
     exerciseId?: string;
   }) => {
     try {
+      const {
+        data: sessionData,
+        error: sessionError,
+      } = await supabase.auth.getSession()
+      const sessionUserId = sessionData?.session?.user?.id
+
+      if (sessionError || !sessionUserId) {
+        console.error('[MetricsV2] Missing or invalid session when fetching metrics', {
+          error: sessionError,
+        })
+        throw new Error('No active user session')
+      }
+
+      if (userId !== sessionUserId) {
+        console.warn('[MetricsV2] Provided userId does not match session user; using session user', {
+          provided: userId,
+          sessionUserId,
+        })
+      }
+
+      const effectiveUserId = sessionUserId
+
       // Fetch raw data first via repository (with built-in fallbacks)
-      const rawWorkouts = await repository.getWorkouts(dateRange, userId)
+      const rawWorkouts = await repository.getWorkouts(dateRange, effectiveUserId)
       const workoutIds = rawWorkouts.map(w => w.id)
-      const rawSets = await repository.getSets(workoutIds, userId, exerciseId)
+      const rawSets = await repository.getSets(workoutIds, effectiveUserId, exerciseId)
       const sets = exerciseId
         ? rawSets.filter(s => s.exerciseId === exerciseId)
         : rawSets
@@ -89,7 +112,7 @@ export const metricsServiceV2 = {
         getSets: async (workoutIds: string[], exId?: string) => {
           const sets = await repository.getSets(
             workoutIds,
-            userId,
+            effectiveUserId,
             exId ?? exerciseId
           )
           return sets.map(s => ({
@@ -104,10 +127,10 @@ export const metricsServiceV2 = {
       }
 
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
-      const out = await computeV2(adapter, userId, range)
+      const out = await computeV2(adapter, effectiveUserId, range)
       console.log('[MetricsV2][debug] repoTotals -> workouts:', totalWorkouts, 'totalVolumeKg:', totalVolumeKg, 'totalSets:', totalSets)
       if (Array.isArray(out.series.volume) && out.series.volume.length === 0 && repoVolumeSeries.length > 0) {
-        console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId })
+        console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })
       }
 
       // Enrich perWorkout with real durations when available
