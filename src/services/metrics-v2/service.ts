@@ -159,6 +159,17 @@ export const metricsServiceV2 = {
       const totalsKpis = aggregateTotalsKpis(perWorkout);
 
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
+      const metricKeys = [
+        'volume',
+        'sets',
+        'reps',
+        'workouts',
+        'duration',
+        'density',
+        'avgRest',
+        'setEfficiency',
+      ]
+
       return {
         ...out,
         totals: {
@@ -171,16 +182,17 @@ export const metricsServiceV2 = {
         },
         series: {
           ...out.series,
-          // Use repo series in UI (select() in Analytics handles both {date,value} and {x,y})
           volume: repoVolumeSeries,
           sets: repoSetsSeries,
           reps: repoRepsSeries,
           workouts: repoWorkoutsSeries,
           density: out.series.density || [],
           cvr: out.series.cvr || [],
-          // duration series in minutes per day
           duration: repoDurationSeries,
+          avgRest: [],
+          setEfficiency: [],
         },
+        metricKeys,
         perWorkout,
         totalsKpis,
       }

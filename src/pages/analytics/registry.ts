@@ -10,6 +10,7 @@ import {
   toEfficiencySeries,
 } from './adapters';
 
+/** @deprecated Use metricKeys and server-provided series instead */
 export type ChartMetric =
   | 'volume'
   | 'sets'
@@ -20,6 +21,7 @@ export type ChartMetric =
   | 'avgRest'
   | 'setEfficiency';
 
+/** @deprecated Use buildMetricOptions and service.series instead */
 export const METRICS: Record<ChartMetric, { label: string; gated?: boolean; toSeries: (data: PerWorkoutMetrics[]) => TimeSeriesPoint[] }> = {
   volume: { label: 'Total Volume', toSeries: toVolumeSeries },
   sets: { label: 'Total Sets', toSeries: toSetsSeries },
@@ -31,7 +33,11 @@ export const METRICS: Record<ChartMetric, { label: string; gated?: boolean; toSe
   setEfficiency: { label: 'Set Efficiency (×)', gated: true, toSeries: toEfficiencySeries },
 };
 
+/** @deprecated Use buildMetricOptions(metricKeys) instead */
 export function availableMetrics(flags: { derivedKpis: boolean }): { key: ChartMetric; label: string }[] {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn('Using deprecated availableMetrics - migrate to service metricKeys');
+  }
   return (Object.entries(METRICS) as [ChartMetric, typeof METRICS[ChartMetric]][])
     .filter(([_, m]) => !m.gated || flags.derivedKpis)
     .map(([key, m]) => ({ key, label: m.label }));

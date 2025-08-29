@@ -52,17 +52,27 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
       <option
         value="volume"
       >
-        Volume (kg)
+        Total Volume
       </option>
       <option
         value="sets"
       >
-        Sets
+        Total Sets
+      </option>
+      <option
+        value="workouts"
+      >
+        Workouts
+      </option>
+      <option
+        value="duration"
+      >
+        Total Duration
       </option>
       <option
         value="reps"
       >
-        Reps
+        Total Reps
       </option>
       <option
         value="density"
@@ -75,7 +85,7 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
         Avg Rest / Session (sec)
       </option>
       <option
-        value="efficiency"
+        value="setEfficiency"
       >
         Set Efficiency (×)
       </option>

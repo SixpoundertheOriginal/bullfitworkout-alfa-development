@@ -2,8 +2,8 @@
 export type TimeSeriesPoint = { date: string; value: number };
 
 export type PerWorkoutKpis = {
-  densityKgPerMin: number;
-  avgRestSec: number;           // raw seconds for precision
+  density: number;
+  avgRest: number;           // seconds
   setEfficiency: number | null; // ratio or null if no target
 };
 
@@ -20,8 +20,8 @@ export type PerWorkoutMetrics = {
 };
 
 export type TotalsKpis = {
-  densityKgPerMin: number; // overall tonnage/overall duration
-  avgRestSec: number;      // weighted by sets
+  density: number; // overall tonnage/overall duration
+  avgRest: number;      // weighted by sets
   setEfficiency: number | null;
 };
 
@@ -46,13 +46,8 @@ export type ServiceOutput = {
   totals: Totals;
   perWorkout: PerWorkoutMetrics[];
   prs: PersonalRecord[];
-  series: {
-    volume: TimeSeriesPoint[];
-    sets: TimeSeriesPoint[];
-    reps: TimeSeriesPoint[];
-    density: TimeSeriesPoint[];
-    cvr: TimeSeriesPoint[]; // rule later: if views=0 => 0
-  };
+  series: Record<string, TimeSeriesPoint[]>;
+  metricKeys: string[];
   totalsKpis?: TotalsKpis;
   meta: {
     generatedAt: string;
