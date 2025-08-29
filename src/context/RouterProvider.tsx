@@ -13,7 +13,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import Auth from "@/pages/Auth";
 import AllExercisesPage from "@/pages/AllExercisesPage";
 import Overview from "@/pages/Overview";
-import Analytics from "@/pages/Analytics";
+import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
 import { FEATURE_FLAGS } from "@/config/flags";
 import { WorkoutManagementPage } from "@/pages/WorkoutManagementPage";
 import EnhancedTrainingCoachPage from "@/pages/EnhancedTrainingCoachPage";
@@ -35,6 +35,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 export const RouterProvider = () => {
   const location = useLocation();
   const isAuthPage = location.pathname === "/auth";
+  console.debug('[RouterProvider] KPI_ANALYTICS_ENABLED=', FEATURE_FLAGS.KPI_ANALYTICS_ENABLED);
 
   return (
     <WorkoutNavigationContextProvider>
@@ -66,7 +67,8 @@ export const RouterProvider = () => {
                 element={
                   <ProtectedRoute>
                     <MainLayout>
-                      <Analytics />
+                      {console.debug('[RouterProvider] rendering AnalyticsPage')}
+                      <AnalyticsPage />
                     </MainLayout>
                   </ProtectedRoute>
                 }
