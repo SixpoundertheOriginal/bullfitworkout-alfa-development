@@ -13,6 +13,13 @@ interface WorkoutSet {
   exercise_name: string;
   exercise_id?: string;
   rest_time?: number | null;
+  rpe?: number | null;
+  variant_id?: string | null;
+  tempo?: string | null;
+  range_of_motion?: string | null;
+  added_weight?: number | null;
+  assistance_used?: number | null;
+  notes?: string | null;
   [key: string]: unknown;
 }
 

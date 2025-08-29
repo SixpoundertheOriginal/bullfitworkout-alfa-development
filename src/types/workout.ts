@@ -35,6 +35,13 @@ export type ExerciseSet = {
   set_number: number;
   rest_time?: number | null;
   is_warmup?: boolean | null;
+  rpe?: number | null;
+  variant_id?: string | null;
+  tempo?: string | null;
+  range_of_motion?: string | null;
+  added_weight?: number | null;
+  assistance_used?: number | null;
+  notes?: string | null;
   created_at: string;
 };
 
@@ -64,6 +71,13 @@ export interface EnhancedExerciseSet {
   isWarmup?: boolean;
   saveStatus?: 'pending' | 'saving' | 'saved' | 'failed';
   retryCount?: number;
+  rpe?: number | null;
+  variant_id?: string | null;
+  tempo?: string | null;
+  range_of_motion?: string | null;
+  added_weight?: number | null;
+  assistance_used?: number | null;
+  notes?: string | null;
 }
 
 export interface WorkoutState {
