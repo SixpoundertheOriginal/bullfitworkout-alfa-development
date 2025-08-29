@@ -7,10 +7,10 @@ import * as FEATURE_FLAGS from '@/constants/featureFlags';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 
 export type AnalyticsPageProps = {
-  perWorkout: PerWorkoutMetrics[];
+  perWorkout?: PerWorkoutMetrics[];
 };
 
-export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout }) => {
+export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] }) => {
   const [options, setOptions] = React.useState(getMetricOptions());
   const [metric, setMetric] = React.useState<ChartMetric>(options[0].key);
   React.useEffect(() => {
@@ -24,7 +24,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout }) => {
 
   const series = React.useMemo(() => {
     const adapter = metricToSeries[metric];
-    return adapter ? adapter(perWorkout) : [];
+    return adapter ? adapter(perWorkout ?? []) : [];
   }, [metric, perWorkout]);
 
   // KPI calculations (last 7 days vs previous 7 days)
