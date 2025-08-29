@@ -39,6 +39,8 @@ interface ExerciseCardProps {
   onShowRestTimer: () => void;
   onResetRestTimer: () => void;
   onDeleteExercise: () => void;
+  onFailurePointChange?: (setIndex: number, value: 'none'|'technical'|'muscular') => void;
+  onFormScoreChange?: (setIndex: number, value: number | undefined) => void;
 }
 
 // Sample exercise history data with exercise groups
@@ -92,7 +94,9 @@ const ExerciseCard = ({
   isActive,
   onShowRestTimer,
   onResetRestTimer,
-  onDeleteExercise
+  onDeleteExercise,
+  onFailurePointChange,
+  onFormScoreChange
 }) => {
   const { weightUnit } = useWeightUnit();
   const { exercises: dbExercises } = useExercises();
@@ -170,7 +174,7 @@ const ExerciseCard = ({
                 isEditing={set.isEditing || false}
                 isWarmup={set.isWarmup || false}
                 exerciseName={exercise}
-                onComplete={() => onCompleteSet(index)}
+                onComplete={(data) => onCompleteSet(index, data)}
                 onEdit={() => onEditSet(index)}
                 onSave={() => onSaveSet(index)}
                 onRemove={() => onRemoveSet(index)}
@@ -183,6 +187,10 @@ const ExerciseCard = ({
                 onWarmupToggle={() => onWarmupToggle?.(index)}
                 weightUnit={weightUnit}
                 currentVolume={set.weight * set.reps}
+                failurePoint={set.failurePoint}
+                formScore={set.formScore}
+                onFailurePointChange={onFailurePointChange ? (value) => onFailurePointChange(index, value) : undefined}
+                onFormScoreChange={onFormScoreChange ? (value) => onFormScoreChange(index, value) : undefined}
               />
             ))}
           </div>

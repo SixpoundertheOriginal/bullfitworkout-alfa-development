@@ -14,7 +14,7 @@ interface WorkoutExerciseCardProps {
   exercise: string;
   sets: ExerciseSet[];
   onAddSet: () => void;
-  onCompleteSet: (setIndex: number) => void;
+  onCompleteSet: (setIndex: number, data?: { failurePoint?: 'none'|'technical'|'muscular'; formScore?: number }) => void;
   onRemoveSet: (setIndex: number) => void;
   onEditSet: (setIndex: number) => void;
   onSaveSet: (setIndex: number) => void;
@@ -28,6 +28,8 @@ interface WorkoutExerciseCardProps {
   onShowRestTimer: () => void;
   onResetRestTimer: () => void;
   onDeleteExercise: () => void;
+  onFailurePointChange?: (setIndex: number, value: 'none'|'technical'|'muscular') => void;
+  onFormScoreChange?: (setIndex: number, value: number | undefined) => void;
 }
 
 // Convert workout state ExerciseSet to database ExerciseSet format

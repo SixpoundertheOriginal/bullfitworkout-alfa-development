@@ -44,6 +44,8 @@ export type ExerciseSet = {
   assistance_used?: number | null;
   notes?: string | null;
   created_at: string;
+  failure_point?: 'none' | 'technical' | 'muscular' | null;
+  form_score?: number | null;
 };
 
 export interface WorkoutError {
@@ -79,6 +81,8 @@ export interface EnhancedExerciseSet {
   added_weight?: number | null;
   assistance_used?: number | null;
   notes?: string | null;
+  failurePoint?: 'none' | 'technical' | 'muscular' | null;
+  formScore?: number | null;
 }
 
 export interface WorkoutState {

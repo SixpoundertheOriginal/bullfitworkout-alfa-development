@@ -113,7 +113,7 @@ export interface WorkoutState {
   markAsFailed: (error: WorkoutError) => void;
   
   // Exercise management
-  handleCompleteSet: (exerciseName: string, setIndex: number) => void;
+  handleCompleteSet: (exerciseName: string, setIndex: number, data?: { failurePoint?: 'none'|'technical'|'muscular'; formScore?: number }) => void;
   toggleWarmupSet: (exerciseName: string, setIndex: number) => void;
   deleteExercise: (exerciseName: string) => void;
   
@@ -659,22 +659,22 @@ resetSession: () => {
         lastTabActivity: Date.now(),
       })),
       
-      handleCompleteSet: (exerciseName, setIndex) => set((state) => {
+      handleCompleteSet: (exerciseName, setIndex, data) => set((state) => {
         const newExercises = { ...state.exercises };
         const exerciseData = newExercises[exerciseName];
         
         if (Array.isArray(exerciseData)) {
           // Legacy format
           newExercises[exerciseName] = exerciseData.map((set, i) => 
-            i === setIndex ? { ...set, completed: true } : set
+            i === setIndex ? { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore } : set
           );
         } else if (exerciseData) {
           // New format
           const config = exerciseData as WorkoutExerciseConfig;
           newExercises[exerciseName] = {
             ...config,
-            sets: config.sets.map((set, i) => 
-              i === setIndex ? { ...set, completed: true } : set
+            sets: config.sets.map((set, i) =>
+              i === setIndex ? { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore } : set
             )
           };
         }

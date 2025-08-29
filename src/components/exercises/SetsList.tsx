@@ -18,6 +18,8 @@ interface SetsListProps {
   onRestTimeIncrement?: (setIndex: number, increment: number) => void;
   onShowRestTimer: () => void;
   onResetRestTimer: () => void;
+  onFailurePointChange?: (setIndex: number, value: 'none'|'technical'|'muscular') => void;
+  onFormScoreChange?: (setIndex: number, value: number | undefined) => void;
 }
 
 export const SetsList: React.FC<SetsListProps> = ({
@@ -35,6 +37,8 @@ export const SetsList: React.FC<SetsListProps> = ({
   onRestTimeIncrement,
   onShowRestTimer,
   onResetRestTimer,
+  onFailurePointChange,
+  onFormScoreChange,
 }) => {
   const { weightUnit } = useWeightUnit();
 
@@ -88,7 +92,7 @@ export const SetsList: React.FC<SetsListProps> = ({
               completed={set.completed}
               isEditing={set.isEditing || false}
               exerciseName={exercise}
-              onComplete={() => onCompleteSet(index)}
+              onComplete={(data) => onCompleteSet(index, data)}
               onEdit={() => onEditSet(index)}
               onSave={() => onSaveSet(index)}
               onRemove={() => onRemoveSet(index)}
@@ -102,6 +106,10 @@ export const SetsList: React.FC<SetsListProps> = ({
               currentVolume={set.weight * set.reps}
               showRestTimer={true}
               onRestTimerComplete={() => onResetRestTimer()}
+              failurePoint={set.failurePoint}
+              formScore={set.formScore}
+              onFailurePointChange={onFailurePointChange ? (value) => onFailurePointChange(index, value) : undefined}
+              onFormScoreChange={onFormScoreChange ? (value) => onFormScoreChange(index, value) : undefined}
             />
           </div>
         ))}

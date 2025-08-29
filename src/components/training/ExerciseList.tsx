@@ -10,7 +10,7 @@ interface ExerciseListProps {
   exercises: WorkoutExercises;
   activeExercise: string | null;
   onAddSet: (exerciseName: string) => void;
-  onCompleteSet: (exerciseName: string, setIndex: number) => void;
+  onCompleteSet: (exerciseName: string, setIndex: number, data?: { failurePoint?: 'none'|'technical'|'muscular'; formScore?: number }) => void;
   onDeleteExercise: (exerciseName: string) => void;
   onRemoveSet: (exerciseName: string, setIndex: number) => void;
   onEditSet: (exerciseName: string, setIndex: number) => void;
@@ -25,6 +25,8 @@ interface ExerciseListProps {
   onResetRestTimer: () => void;
   onOpenAddExercise: () => void;
   setExercises: (exercises: WorkoutExercises | ((prev: WorkoutExercises) => WorkoutExercises)) => void;
+  onFailurePointChange?: (exerciseName: string, setIndex: number, value: 'none'|'technical'|'muscular') => void;
+  onFormScoreChange?: (exerciseName: string, setIndex: number, value: number | undefined) => void;
 }
 
 export const ExerciseList: React.FC<ExerciseListProps> = ({
@@ -45,6 +47,8 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
   onShowRestTimer,
   onResetRestTimer,
   setExercises
+  ,onFailurePointChange
+  ,onFormScoreChange
 }) => {
   const { getSuggestionForExercise } = useSmartRestSuggestions();
   const { 
@@ -185,9 +189,9 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
             sets={sets}
             isActive={activeExercise === exerciseName}
             onAddSet={() => handleAddSet(exerciseName)}
-            onCompleteSet={(setIndex) => {
+            onCompleteSet={(setIndex, data) => {
               // Call the original completion handler
-              onCompleteSet(exerciseName, setIndex);
+              onCompleteSet(exerciseName, setIndex, data);
               
               // Set this exercise as active and start smart rest timer
               setActiveExerciseName(exerciseName);
@@ -210,6 +214,8 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
             onRestTimeIncrement={(setIndex, increment) => onRestTimeIncrement(exerciseName, setIndex, increment)}
             onShowRestTimer={onShowRestTimer}
             onResetRestTimer={onResetRestTimer}
+            onFailurePointChange={onFailurePointChange ? (setIndex, value) => onFailurePointChange(exerciseName, setIndex, value) : undefined}
+            onFormScoreChange={onFormScoreChange ? (setIndex, value) => onFormScoreChange(exerciseName, setIndex, value) : undefined}
           />
         );
       })}

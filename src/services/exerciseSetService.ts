@@ -50,10 +50,12 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
       variant_id: set.variant_id ?? null,
       tempo: set.tempo ?? null,
       range_of_motion: set.range_of_motion ?? null,
-      added_weight: set.added_weight ?? null,
-      assistance_used: set.assistance_used ?? null,
-      notes: set.notes ?? null
-    }));
+  added_weight: set.added_weight ?? null,
+  assistance_used: set.assistance_used ?? null,
+  notes: set.notes ?? null,
+  failure_point: set.failurePoint ?? null,
+  form_score: set.formScore ?? null
+}));
   
   // Sets to delete - those that exist in the database but not in our updated list
   const setIdsToKeep = new Set(setsToUpdate.map(set => set.id));
@@ -84,8 +86,10 @@ export async function updateExerciseSets(workoutId: string, exerciseId: string |
         range_of_motion: set.range_of_motion ?? null,
         added_weight: set.added_weight ?? null,
         assistance_used: set.assistance_used ?? null,
-        notes: set.notes ?? null
-      })));
+        notes: set.notes ?? null,
+        failure_point: set.failurePoint ?? null,
+        form_score: set.formScore ?? null
+      }))); 
     operations.push(updatePromise);
   }
   
@@ -149,7 +153,9 @@ export async function addExerciseToWorkout(workoutId: string, exerciseId: string
     range_of_motion: null,
     added_weight: null,
     assistance_used: null,
-    notes: null
+    notes: null,
+    failure_point: null,
+    form_score: null
   }));
   
   const { data, error } = await supabase
@@ -192,7 +198,9 @@ export async function resetWorkoutSets(workoutId: string) {
         range_of_motion: null,
         added_weight: null,
         assistance_used: null,
-        notes: null
+        notes: null,
+        failure_point: null,
+        form_score: null
       })
       .eq('workout_id', workoutId)
       .select();
@@ -225,7 +233,9 @@ export async function bulkResetWorkoutSets(workoutIds: string[]) {
         range_of_motion: null,
         added_weight: null,
         assistance_used: null,
-        notes: null
+        notes: null,
+        failure_point: null,
+        form_score: null
       })
       .in('workout_id', workoutIds)
       .select();
