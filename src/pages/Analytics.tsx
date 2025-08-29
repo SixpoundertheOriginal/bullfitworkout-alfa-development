@@ -19,6 +19,9 @@ import ExerciseFeedbackTrends from '@/components/analytics/ExerciseFeedbackTrend
 // import { useUserExercises } from '@/hooks/useUserExercises';
 
 const Analytics: React.FC = () => {
+  React.useEffect(() => {
+    console.debug('[LegacyAnalytics] render');
+  }, []);
   const { dateRange } = useDateRange();
   const { user } = useAuth();
   const location = useLocation();

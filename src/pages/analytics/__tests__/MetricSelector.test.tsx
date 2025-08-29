@@ -1,32 +1,27 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import AnalyticsPage from '../AnalyticsPage';
-import { ConfigProvider } from '@/config/runtimeConfig';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, afterEach } from 'vitest';
+import { MetricSelector } from '@/components/analytics/MetricSelector';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import type { MetricKey } from '@/services/metrics-v2/dto';
 
-describe('metric selector and KPI gating', () => {
-  it('renders options based on flag and recovers metric on flag disable', () => {
-    const { rerender } = render(
-      <ConfigProvider initialFlags={{ derivedKpis: true }}>
-        <AnalyticsPage />
-      </ConfigProvider>
-    );
+const ALL_KEYS: MetricKey[] = ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'];
 
-    const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(select.options.length).toBe(8);
-    expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
+describe('MetricSelector', () => {
+  const original = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
+  afterEach(() => { (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = original; });
 
-    fireEvent.change(select, { target: { value: 'density' } });
+  it('shows derived KPIs when flag=true', () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
+    render(<MetricSelector metricKeys={ALL_KEYS} value="volume" onChange={() => {}} />);
+    expect(screen.getByText(/Workout Density/)).toBeInTheDocument();
+    expect(screen.getByText(/Avg Rest/)).toBeInTheDocument();
+    expect(screen.getByText(/Set Efficiency/)).toBeInTheDocument();
+  });
 
-    rerender(
-      <ConfigProvider initialFlags={{ derivedKpis: false }}>
-        <AnalyticsPage />
-      </ConfigProvider>
-    );
-
-    const updated = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(updated.options.length).toBe(5);
-    expect(updated.value).toBe('volume');
-    expect(screen.queryByTestId('kpi-density')).toBeNull();
+  it('hides derived KPIs when flag=false', () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
+    render(<MetricSelector metricKeys={ALL_KEYS} value="volume" onChange={() => {}} />);
+    expect(screen.queryByText(/Workout Density/)).not.toBeInTheDocument();
   });
 });

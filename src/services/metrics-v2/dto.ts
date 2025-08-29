@@ -1,6 +1,36 @@
 // Canonical, versioned DTOs for Metrics Service v2 (units: kg, min; dates: ISO YYYY-MM-DD)
 export type TimeSeriesPoint = { date: string; value: number };
 
+export type DayAgg = {
+  date: string;
+  volumeKg: number;
+  sets: number;
+  reps: number;
+  durationMin: number;
+  restSec: number;
+  workouts: number;
+};
+
+export type DayDerived = {
+  date: string;
+  densityKgPerMin: number;
+  avgRestSec: number;
+  setEfficiency: number | null;
+};
+
+export const METRIC_KEYS = [
+  'volume',
+  'sets',
+  'workouts',
+  'duration',
+  'reps',
+  'density',
+  'avgRest',
+  'setEfficiency',
+] as const;
+
+export type MetricKey = typeof METRIC_KEYS[number];
+
 export type PerWorkoutKpis = {
   densityKgPerMin: number;
   avgRestSec: number;           // raw seconds for precision
@@ -42,16 +72,13 @@ export type PersonalRecord = {
   date: string; // ISO day (YYYY-MM-DD)
 };
 
-export type ServiceOutput = {
+export interface ServiceOutputV2 {
   totals: Totals;
   perWorkout: PerWorkoutMetrics[];
   prs: PersonalRecord[];
   series: {
-    volume: TimeSeriesPoint[];
-    sets: TimeSeriesPoint[];
-    reps: TimeSeriesPoint[];
-    density: TimeSeriesPoint[];
-    cvr: TimeSeriesPoint[]; // rule later: if views=0 => 0
+    base: DayAgg[];
+    derived: DayDerived[];
   };
   totalsKpis?: TotalsKpis;
   meta: {
@@ -60,4 +87,7 @@ export type ServiceOutput = {
     inputs: { tz: 'Europe/Warsaw'; units: 'kg|min' };
     BW_ASSUMED?: boolean;
   };
-};
+  metricKeys: MetricKey[];
+}
+
+export type ServiceOutput = ServiceOutputV2;

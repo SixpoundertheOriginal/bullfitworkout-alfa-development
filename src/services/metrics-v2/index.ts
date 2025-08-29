@@ -1,5 +1,5 @@
 // Public surface for v2 + DI-friendly façade
-import type { ServiceOutput } from './dto';
+import { METRIC_KEYS, type ServiceOutput } from './dto';
 import type { MetricsRepository, DateRange } from './repository';
 
 export type MetricsConfig = {
@@ -19,13 +19,14 @@ export async function getMetricsV2(
     totals: { totalVolumeKg: 0, totalSets: 0, totalReps: 0, workouts: 0, durationMin: 0 },
     perWorkout: [],
     prs: [],
-    series: { volume: [], sets: [], reps: [], density: [], cvr: [] },
+    series: { base: [], derived: [] },
+    metricKeys: [...METRIC_KEYS],
     meta: {
       generatedAt: new Date().toISOString(),
       version: 'v2',
       inputs: { tz: 'Europe/Warsaw', units: 'kg|min' },
     },
-  };
+  } as ServiceOutput;
 }
 
 export * from './dto';

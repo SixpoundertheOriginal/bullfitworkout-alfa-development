@@ -10,21 +10,28 @@ exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`]
     },
     "version": "v2",
   },
-  "perWorkout": [],
-  "prs": [],
-  "series": {
-    "cvr": [],
-    "density": [],
-    "reps": [],
-    "sets": [],
-    "volume": [],
-  },
-  "totals": {
-    "durationMin": 0,
-    "totalReps": 0,
-    "totalSets": 0,
-    "totalVolumeKg": 0,
-    "workouts": 0,
-  },
-}
-`;
+    "metricKeys": [
+      "volume",
+      "sets",
+      "workouts",
+      "duration",
+      "reps",
+      "density",
+      "avgRest",
+      "setEfficiency",
+    ],
+    "perWorkout": [],
+    "prs": [],
+    "series": {
+      "base": [],
+      "derived": [],
+    },
+    "totals": {
+      "durationMin": 0,
+      "totalReps": 0,
+      "totalSets": 0,
+      "totalVolumeKg": 0,
+      "workouts": 0,
+    },
+  }
+  `;
