@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ExerciseSet } from "@/types/exercise";
+import type { Database } from "@/integrations/supabase/types";
+
+type DbExerciseSet = Database["public"]["Tables"]["exercise_sets"]["Row"];
 
 export interface SavedWorkout {
   id: string;
@@ -50,7 +53,7 @@ export function useWorkoutById(workoutId: string | undefined) {
         // Fetch exercise sets
         const { data: sets, error: setsError } = await supabase
           .from('exercise_sets')
-          .select('*')
+          .select<DbExerciseSet[]>('*')
           .eq('workout_id', workoutId)
           .order('exercise_name', { ascending: true })
           .order('set_number', { ascending: true });
@@ -62,11 +65,31 @@ export function useWorkoutById(workoutId: string | undefined) {
         }
         
         // Group sets by exercise name
-        const groupedSets = sets?.reduce<Record<string, ExerciseSet[]>>((acc, set) => {
+        const groupedSets = sets?.reduce<Record<string, ExerciseSet[]>>((acc, raw) => {
+          const set = raw as DbExerciseSet;
           if (!acc[set.exercise_name]) {
             acc[set.exercise_name] = [];
           }
-          acc[set.exercise_name].push(set as ExerciseSet);
+          acc[set.exercise_name].push({
+            id: set.id,
+            workout_id: set.workout_id,
+            exercise_name: set.exercise_name,
+            exercise_id: set.exercise_id ?? undefined,
+            weight: set.weight,
+            reps: set.reps,
+            completed: set.completed,
+            set_number: set.set_number,
+            restTime: set.rest_time ?? undefined,
+            rpe: set.rpe ?? undefined,
+            variant_id: set.variant_id ?? undefined,
+            tempo: set.tempo ?? undefined,
+            range_of_motion: set.range_of_motion ?? undefined,
+            added_weight: set.added_weight ?? undefined,
+            assistance_used: set.assistance_used ?? undefined,
+            notes: set.notes ?? undefined,
+            failurePoint: set.failure_point ?? null,
+            formScore: set.form_score ?? null,
+          });
           return acc;
         }, {}) || {};
         
