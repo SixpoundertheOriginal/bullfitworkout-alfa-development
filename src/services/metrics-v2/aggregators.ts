@@ -118,36 +118,54 @@ export function rollingWindows(
   perWorkout: PerWorkoutMetrics[],
   kind: 'volume'|'sets'|'reps'|'density'|'cvr'
 ): TimeSeriesPoint[] {
-  // Group by date and sum values
-  const byDate = new Map<string, number>();
-  
+  // Group by date and aggregate values
+  // For most kinds we simply sum the daily values, but for density we need to
+  // compute a weighted average based on total tonnage and duration for the day.
+  const byDate = new Map<string, any>();
+
   perWorkout.forEach(workout => {
     const date = new Date(workout.startedAt).toISOString().split('T')[0];
-    let value = 0;
-    
+
     switch (kind) {
-      case 'volume':
-        value = workout.totalVolumeKg;
+      case 'volume': {
+        const value = workout.totalVolumeKg;
+        byDate.set(date, (byDate.get(date) || 0) + value);
         break;
-      case 'sets':
-        value = workout.totalSets;
+      }
+      case 'sets': {
+        const value = workout.totalSets;
+        byDate.set(date, (byDate.get(date) || 0) + value);
         break;
-      case 'reps':
-        value = workout.totalReps;
+      }
+      case 'reps': {
+        const value = workout.totalReps;
+        byDate.set(date, (byDate.get(date) || 0) + value);
         break;
-      case 'density':
-        value = workout.kpis?.densityKgPerMin || 0;
+      }
+      case 'density': {
+        const cur = byDate.get(date) || { tonnage: 0, duration: 0 };
+        cur.tonnage += workout.totalVolumeKg || 0;
+        cur.duration += workout.durationMin || 0;
+        byDate.set(date, cur);
         break;
-      case 'cvr':
+      }
+      case 'cvr': {
         // Placeholder for completion rate
-        value = 1;
+        const value = 1;
+        byDate.set(date, (byDate.get(date) || 0) + value);
         break;
+      }
     }
-    
-    byDate.set(date, (byDate.get(date) || 0) + value);
   });
-  
+
   return Array.from(byDate.entries())
-    .map(([date, value]) => ({ date, value }))
+    .map(([date, value]) => {
+      if (kind === 'density') {
+        const { tonnage, duration } = value as { tonnage: number; duration: number };
+        const density = duration > 0 ? tonnage / duration : 0;
+        return { date, value: +density.toFixed(2) };
+      }
+      return { date, value: value as number };
+    })
     .sort((a, b) => a.date.localeCompare(b.date));
 }
