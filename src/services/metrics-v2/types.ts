@@ -17,11 +17,12 @@ export interface SetRaw {
   weightKg: number;
   reps: number;
   exerciseId: string;
+  exerciseName?: string;
 }
 
 export interface MetricsRepository {
   getWorkouts(range: DateRange, userId: string): Promise<WorkoutRaw[]>;
-  getSets(workoutIds: string[], userId: string): Promise<SetRaw[]>;
+  getSets(workoutIds: string[], userId: string, exerciseId?: string): Promise<SetRaw[]>;
 }
 
 // In-memory implementation for development/testing
@@ -30,7 +31,7 @@ export class InMemoryMetricsRepository implements MetricsRepository {
     return []
   }
 
-  async getSets(): Promise<SetRaw[]> {
+  async getSets(_workoutIds: string[] = [], _userId: string = '', _exerciseId?: string): Promise<SetRaw[]> {
     return []
   }
 }

@@ -61,27 +61,39 @@ export class SupabaseMetricsRepository implements MetricsRepository {
     }
   }
 
-  async getSets(workoutIds: string[], userId: string): Promise<SetRaw[]> {
+  async getSets(workoutIds: string[], userId: string, exerciseId?: string): Promise<SetRaw[]> {
     if (!this.isInitialized || !this.client || !workoutIds.length) {
       return this.getMockSets(workoutIds)
     }
 
     try {
       // Primary query: RLS-safe inner join to user's workouts; include completed or null
-      const { data: sets, error } = await this.client
+      const query = this.client
         .from('exercise_sets')
-        .select('id, workout_id, weight, reps, completed, workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, weight, reps, completed, exercises(name), workout_sessions!inner(id,user_id)')
         .in('workout_id', workoutIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
 
+      if (exerciseId) {
+        query.eq('exercise_id', exerciseId)
+      }
+
+      const { data: sets, error } = await query
+
       if (error) {
         console.error('[MetricsV2] Error fetching sets:', error)
         // Fallback: try without join (in case RLS allows)
-        const alt = await this.client
+        const altQuery = this.client
           .from('exercise_sets')
-          .select('id, workout_id, weight, reps, completed')
+          .select('id, workout_id, exercise_id, weight, reps, completed')
           .in('workout_id', workoutIds)
+
+        if (exerciseId) {
+          altQuery.eq('exercise_id', exerciseId)
+        }
+
+        const alt = await altQuery
         if (alt.error || !alt.data) {
           console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
           return this.getMockSets(workoutIds)
@@ -91,16 +103,23 @@ export class SupabaseMetricsRepository implements MetricsRepository {
           workoutId: s.workout_id,
           weightKg: s.weight,
           reps: s.reps,
-          exerciseId: undefined
+          exerciseId: s.exercise_id,
+          exerciseName: undefined
         }))
       }
 
       if (!sets || sets.length === 0) {
         console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
-        const alt = await this.client
+        const altQuery = this.client
           .from('exercise_sets')
-          .select('id, workout_id, weight, reps, completed')
+          .select('id, workout_id, exercise_id, weight, reps, completed')
           .in('workout_id', workoutIds)
+
+        if (exerciseId) {
+          altQuery.eq('exercise_id', exerciseId)
+        }
+
+        const alt = await altQuery
         if (alt.error) {
           console.error('[MetricsV2] Fallback sets query failed:', alt.error)
           return []
@@ -110,7 +129,8 @@ export class SupabaseMetricsRepository implements MetricsRepository {
           workoutId: s.workout_id,
           weightKg: s.weight,
           reps: s.reps,
-          exerciseId: undefined
+          exerciseId: s.exercise_id,
+          exerciseName: undefined
         }))
         console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
         return mapped
@@ -121,7 +141,8 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         workoutId: s.workout_id,
         weightKg: s.weight,
         reps: s.reps,
-        exerciseId: undefined
+        exerciseId: s.exercise_id,
+        exerciseName: s.exercises?.name
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)

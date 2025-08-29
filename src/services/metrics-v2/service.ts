@@ -76,7 +76,7 @@ export const metricsServiceV2 = {
           const sets = await repository.getSets(workoutIds, userId)
           return sets.map(s => ({
             workoutId: s.workoutId,
-            exerciseName: s.exerciseId || '',
+            exerciseName: s.exerciseName || s.exerciseId || '',
             weightKg: s.weightKg,
             reps: s.reps,
             seconds: undefined,
