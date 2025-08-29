@@ -28,7 +28,10 @@ const Analytics: React.FC = () => {
   React.useEffect(() => {
     setExerciseId(exerciseParam || undefined);
   }, [exerciseParam]);
-  const { data: exerciseOptions = [] } = useExerciseOptions();
+  const {
+    data: exerciseOptions = [],
+    isLoading: isExerciseOptionsLoading,
+  } = useExerciseOptions();
   const selectedKpi = (kpiParam as 'tonnage' | 'sets' | 'reps' | 'duration' | 'workouts') || 'tonnage';
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['metrics-v2', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString(), exerciseId],
@@ -231,6 +234,7 @@ const Analytics: React.FC = () => {
               groupBy={groupParam}
               exerciseId={exerciseId}
               exerciseOptions={exerciseOptions}
+              isExerciseLoading={isExerciseOptionsLoading}
               onGroupByChange={onGroupChange}
               onExerciseChange={onExerciseChange}
             />

@@ -9,7 +9,8 @@ export async function getExerciseOptions(userId: string): Promise<ExerciseOption
   const { data, error } = await supabase
     .from('exercise_sets')
     .select('exercise_id, exercises(name), workout_sessions!inner(user_id)')
-    .eq('workout_sessions.user_id', userId);
+    .eq('workout_sessions.user_id', userId)
+    .not('exercise_id', 'is', null);
 
   if (error) throw error;
 
