@@ -67,6 +67,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
     }
 
     try {
+
       // Direct query relying on RLS policies; include completed sets or those pending completion
       const query = this.client
         .from('exercise_sets')
@@ -83,6 +84,89 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       if (error || !sets) {
         console.error('[MetricsV2] Error fetching sets:', error)
         return this.getMockSets(workoutIds)
+
+      // Diagnostics + auth
+      console.log('[MetricsV2] getSets called', {
+        workoutIdsCount: workoutIds.length,
+        sample: workoutIds.slice(0, 5),
+        t: new Date().toISOString(),
+      })
+      const auth = await this.client.auth.getUser();
+      const authedUser = auth?.data?.user?.id;
+      if (!authedUser) {
+        console.error('[MetricsV2] getSets: no authenticated user in client context')
+      }
+
+      // Sanitize ids and verify ownership to satisfy RLS before sets fetch
+      const validIds = workoutIds.filter(id => typeof id === 'string' && id.trim().length > 0)
+      if (validIds.length === 0) return []
+      const { data: ownedW, error: ownErr } = await this.client
+        .from('workout_sessions')
+        .select('id')
+        .in('id', validIds)
+        .eq('user_id', userId)
+      if (ownErr) {
+        console.warn('[MetricsV2] Ownership precheck failed', ownErr)
+      }
+      const ownedIds = (ownedW || []).map(w => w.id)
+      if (ownedIds.length === 0) {
+        console.warn('[MetricsV2] No owned workouts among requested ids')
+        return []
+      }
+
+      // Primary query: RLS-safe inner join to user's workouts; include completed or null
+      const { data: sets, error } = await this.client
+        .from('exercise_sets')
+        .select('id, workout_id, weight, reps, completed, workout_sessions!inner(id,user_id)')
+        .in('workout_id', ownedIds)
+        .eq('workout_sessions.user_id', userId)
+        .or('completed.is.null,completed.eq.true')
+
+      if (error) {
+        console.error('[MetricsV2] Error fetching sets (joined):', {
+          code: (error as any)?.code,
+          msg: (error as any)?.message,
+          details: (error as any)?.details,
+          hint: (error as any)?.hint,
+        })
+        // Fallback: try without join (in case RLS allows)
+        const alt = await this.client
+          .from('exercise_sets')
+          .select('id, workout_id, weight, reps, completed')
+          .in('workout_id', ownedIds)
+        if (alt.error || !alt.data) {
+          console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
+          return this.getMockSets(workoutIds)
+        }
+        return alt.data.map((s: any) => ({
+          id: s.id,
+          workoutId: s.workout_id,
+          weightKg: s.weight,
+          reps: s.reps,
+          exerciseId: undefined
+        }))
+      }
+
+      if (!sets || sets.length === 0) {
+        console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
+        const alt = await this.client
+          .from('exercise_sets')
+          .select('id, workout_id, weight, reps, completed')
+          .in('workout_id', ownedIds)
+        if (alt.error) {
+          console.error('[MetricsV2] Fallback sets query failed:', alt.error)
+          return []
+        }
+        const mapped = (alt.data || []).map((s: any) => ({
+          id: s.id,
+          workoutId: s.workout_id,
+          weightKg: s.weight,
+          reps: s.reps,
+          exerciseId: undefined
+        }))
+        console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
+        return mapped
+
       }
 
       return sets.map((s: any) => ({
@@ -119,5 +203,35 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       { id: 'set-2', workoutId: w1, weightKg: 100, reps: 5, exerciseId: 'deadlift' },
       { id: 'set-3', workoutId: w2, weightKg: 60, reps: 12, exerciseId: 'squat' },
     ]
+  }
+
+  // New helper to list user's exercises within optional range
+  async getUserExercises(userId: string, range?: DateRange): Promise<Array<{ id?: string; name: string }>> {
+    if (!this.client) return []
+    try {
+      let q = this.client
+        .from('exercise_sets')
+        .select('exercise_id, exercise_name, workout_sessions!inner(user_id, start_time)')
+        .eq('workout_sessions.user_id', userId)
+      if (range) {
+        const endExclusive = new Date(new Date(range.end).getTime() + 24 * 60 * 60 * 1000).toISOString()
+        q = q.gte('workout_sessions.start_time', range.start).lt('workout_sessions.start_time', endExclusive)
+      }
+      const { data, error } = await q
+      if (error) {
+        console.error('[MetricsV2] getUserExercises error:', error)
+        return []
+      }
+      const dedup = new Map<string, { id?: string; name: string }>()
+      ;(data || []).forEach((row: any) => {
+        const key = row.exercise_id || row.exercise_name
+        if (!key) return
+        if (!dedup.has(key)) dedup.set(key, { id: row.exercise_id || undefined, name: row.exercise_name })
+      })
+      return Array.from(dedup.values())
+    } catch (e) {
+      console.error('[MetricsV2] getUserExercises exception:', e)
+      return []
+    }
   }
 }

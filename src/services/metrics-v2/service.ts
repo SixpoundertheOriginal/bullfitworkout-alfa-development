@@ -171,4 +171,8 @@ export const metricsServiceV2 = {
       throw error
     }
   }
+  ,
+  _getRepo() {
+    return repository
+  }
 }
