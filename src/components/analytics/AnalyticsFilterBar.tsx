@@ -3,14 +3,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 
 type GroupBy = 'day' | 'week' | 'month';
+interface ExerciseOption {
+  id: string;
+  name: string;
+}
 
 export function AnalyticsFilterBar({
   groupBy,
+  exerciseId,
+  exerciseOptions = [],
   onGroupByChange,
+  onExerciseChange,
   onReset,
 }: {
   groupBy: GroupBy;
+  exerciseId?: string;
+  exerciseOptions?: ExerciseOption[];
   onGroupByChange: (g: GroupBy) => void;
+  onExerciseChange?: (id?: string) => void;
   onReset?: () => void;
 }) {
   return (
@@ -26,6 +36,28 @@ export function AnalyticsFilterBar({
           <SelectItem value="month">By month</SelectItem>
         </SelectContent>
       </Select>
+
+      {onExerciseChange && (
+        <>
+          <div className="text-sm text-gray-400">Exercise:</div>
+          <Select
+            value={exerciseId ?? 'all'}
+            onValueChange={(v) => onExerciseChange(v === 'all' ? undefined : v)}
+          >
+            <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700 text-gray-200">
+              <SelectValue placeholder="All exercises" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 text-gray-200 border-gray-700">
+              <SelectItem value="all">All exercises</SelectItem>
+              {exerciseOptions.map((opt) => (
+                <SelectItem key={opt.id} value={opt.id}>
+                  {opt.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
 
       {onReset && (
         <Button variant="outline" className="border-white/10 text-gray-300 hover:bg-white/10" onClick={onReset}>

@@ -13,6 +13,7 @@ import type { AnalyticsData } from '@/types/analytics';
 import { parseKpiTabParams, writeKpiTabParams } from '@/utils/url';
 import { AnalyticsFilterBar } from '@/components/analytics/AnalyticsFilterBar';
 import { useAuth } from '@/context/AuthContext';
+import { useExerciseOptions } from '@/hooks/useExerciseOptions';
 
 const Analytics: React.FC = () => {
   const { dateRange } = useDateRange();
@@ -22,9 +23,15 @@ const Analytics: React.FC = () => {
   const { kpi: kpiParam } = parseKpiTabParams(location.search);
   const sp = new URLSearchParams(location.search);
   const groupParam = (sp.get('group') as 'day' | 'week' | 'month') || 'day';
+  const exerciseParam = sp.get('exercise') || undefined;
+  const [exerciseId, setExerciseId] = React.useState<string | undefined>(exerciseParam || undefined);
+  React.useEffect(() => {
+    setExerciseId(exerciseParam || undefined);
+  }, [exerciseParam]);
+  const { data: exerciseOptions = [] } = useExerciseOptions();
   const selectedKpi = (kpiParam as 'tonnage' | 'sets' | 'reps' | 'duration' | 'workouts') || 'tonnage';
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['metrics-v2', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
+    queryKey: ['metrics-v2', user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString(), exerciseId],
     queryFn: () =>
       metricsServiceV2.getMetricsV2({
         dateRange: {
@@ -32,6 +39,7 @@ const Analytics: React.FC = () => {
           end: dateRange.to!.toISOString(),
         },
         userId: user!.id,
+        ...(exerciseId ? { exerciseId } : {}),
       }),
     enabled: !!user?.id && !!dateRange.from && !!dateRange.to,
     select: (raw): AnalyticsData => {
@@ -106,6 +114,17 @@ const Analytics: React.FC = () => {
   const onGroupChange = (g: 'day' | 'week' | 'month') => {
     const u = new URLSearchParams(location.search);
     u.set('group', g);
+    navigate({ search: `?${u.toString()}` }, { replace: false });
+  };
+
+  const onExerciseChange = (id?: string) => {
+    setExerciseId(id);
+    const u = new URLSearchParams(location.search);
+    if (id) {
+      u.set('exercise', id);
+    } else {
+      u.delete('exercise');
+    }
     navigate({ search: `?${u.toString()}` }, { replace: false });
   };
 
@@ -208,7 +227,13 @@ const Analytics: React.FC = () => {
           </div>
           {/* Filter bar */}
           <div className="flex items-center justify-between">
-            <AnalyticsFilterBar groupBy={groupParam} onGroupByChange={onGroupChange} />
+            <AnalyticsFilterBar
+              groupBy={groupParam}
+              exerciseId={exerciseId}
+              exerciseOptions={exerciseOptions}
+              onGroupByChange={onGroupChange}
+              onExerciseChange={onExerciseChange}
+            />
           </div>
 
           <Card className="bg-gray-800/50 border-gray-700 p-6">
