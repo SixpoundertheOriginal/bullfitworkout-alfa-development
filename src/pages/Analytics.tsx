@@ -186,59 +186,6 @@ const Analytics: React.FC = () => {
         </Card>
       ) : data ? (
         <div className="space-y-6">
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card onClick={() => onSelectKpi('tonnage')} className={`bg-gray-800/50 border ${selectedKpi==='tonnage'?'border-purple-500':'border-gray-700'} p-4 cursor-pointer`}>
-              <div className="flex items-center text-gray-400 mb-2">
-                <Dumbbell className="w-4 h-4 mr-2 text-purple-400" />
-                Total Volume
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {data.totals.totalVolumeKg.toLocaleString()} kg
-              </div>
-            </Card>
-
-            <Card onClick={() => onSelectKpi('sets')} className={`bg-gray-800/50 border ${selectedKpi==='sets'?'border-purple-500':'border-gray-700'} p-4 cursor-pointer`}>
-              <div className="flex items-center text-gray-400 mb-2">
-                <Activity className="w-4 h-4 mr-2 text-purple-400" />
-                Total Sets
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {data.totals.totalSets.toLocaleString()}
-              </div>
-            </Card>
-
-            <Card onClick={() => onSelectKpi('workouts')} className={`bg-gray-800/50 border ${selectedKpi==='workouts'?'border-purple-500':'border-gray-700'} p-4 cursor-pointer`}>
-              <div className="flex items-center text-gray-400 mb-2">
-                <Users className="w-4 h-4 mr-2 text-purple-400" />
-                Workouts
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {data.totals.workouts.toLocaleString()}
-              </div>
-            </Card>
-
-            <Card onClick={() => onSelectKpi('duration')} className={`bg-gray-800/50 border ${selectedKpi==='duration'?'border-purple-500':'border-gray-700'} p-4 cursor-pointer`}>
-              <div className="flex items-center text-gray-400 mb-2">
-                <Timer className="w-4 h-4 mr-2 text-purple-400" />
-                Total Duration
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {data.totals.durationMin.toLocaleString()} min
-              </div>
-            </Card>
-          </div>
-          {/* Filter bar */}
-          <div className="flex items-center justify-between">
-            <AnalyticsFilterBar
-              groupBy={groupParam}
-              exerciseId={exerciseId}
-              exerciseOptions={exerciseOptions}
-              isExerciseLoading={isExerciseOptionsLoading}
-              onGroupByChange={onGroupChange}
-              onExerciseChange={onExerciseChange}
-            />
-=======
           {/* KPI + Filters toolbar */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -247,7 +194,6 @@ const Analytics: React.FC = () => {
             </div>
             {/* Placeholder for Saved Views / Add Filter */}
             {/* <Button variant="outline" className="border-white/10 text-gray-300 hover:bg-white/10">Saved Views</Button> */}
->>>>>>> 83e7020 (feat(analytics): KPI dropdown selector; toolbar integration; ensure workouts/duration fallback mapping)
           </div>
 
           <Card className="bg-gray-800/50 border-gray-700 p-6">
