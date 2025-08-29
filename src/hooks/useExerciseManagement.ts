@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { updateWorkout, updateExerciseSets, addExerciseToWorkout, removeExerciseFromWorkout } from "@/services/workoutService";
-import { ExerciseSet } from "@/types/exercise";
+import { ExerciseSet, Exercise } from "@/types/exercise";
 
 // Define a type for the update function to make the code more maintainable
 type UpdateExerciseSetsFunction = (exerciseSets: Record<string, ExerciseSet[]> | ((prev: Record<string, ExerciseSet[]>) => Record<string, ExerciseSet[]>)) => void;
@@ -11,6 +11,7 @@ export function useExerciseManagement(workoutId: string | undefined, onUpdate: U
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [exerciseSetModalOpen, setExerciseSetModalOpen] = useState(false);
   const [currentExercise, setCurrentExercise] = useState("");
+  const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
   const [exerciseSetsToEdit, setExerciseSetsToEdit] = useState<ExerciseSet[]>([]);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState("");
@@ -38,6 +39,7 @@ export function useExerciseManagement(workoutId: string | undefined, onUpdate: U
   const handleEditExercise = (exerciseName: string, exerciseSets: Record<string, ExerciseSet[]>) => {
     const setsForExercise = exerciseSets[exerciseName];
     setCurrentExercise(exerciseName);
+    setCurrentExerciseId(setsForExercise?.[0]?.exercise_id || null);
     setExerciseSetsToEdit(setsForExercise);
     setExerciseSetModalOpen(true);
   };
@@ -46,7 +48,7 @@ export function useExerciseManagement(workoutId: string | undefined, onUpdate: U
     if (!workoutId || !currentExercise) return;
     
     try {
-      const updated = await updateExerciseSets(workoutId, currentExercise, updatedSets);
+      const updated = await updateExerciseSets(workoutId, currentExerciseId, currentExercise, updatedSets);
       toast({
         title: "Exercise sets updated"
       });
@@ -68,19 +70,22 @@ export function useExerciseManagement(workoutId: string | undefined, onUpdate: U
     }
   };
 
-  const handleAddExercise = async (exerciseName: string): Promise<void> => {
+  const handleAddExercise = async (exercise: Exercise | string): Promise<void> => {
     if (!workoutId) return;
-    
+
+    const exerciseName = typeof exercise === 'string' ? exercise : exercise.name;
+    const exerciseId = typeof exercise === 'string' ? null : exercise.id;
+
     try {
-      const newSets = await addExerciseToWorkout(workoutId, exerciseName, 3);
-      
+      const newSets = await addExerciseToWorkout(workoutId, exerciseId, exerciseName, 3);
+
       // Create a new object first, then pass it to onUpdate
       onUpdate((prev: Record<string, ExerciseSet[]>) => {
         const newSetsRecord = { ...prev };
         newSetsRecord[exerciseName] = newSets;
         return newSetsRecord;
       });
-      
+
       toast({
         title: `Added ${exerciseName} to workout`
       });
@@ -88,7 +93,7 @@ export function useExerciseManagement(workoutId: string | undefined, onUpdate: U
       console.error("Error adding exercise:", error);
       toast({
         title: "Failed to add exercise",
-        variant: "destructive"
+        variant: "destructive",
       });
       throw error;
     }

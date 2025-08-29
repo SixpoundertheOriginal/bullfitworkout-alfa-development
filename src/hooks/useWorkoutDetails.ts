@@ -62,6 +62,7 @@ export function useWorkoutDetails(workoutId: string | undefined) {
           const exerciseName = set.exercise_name;
           const mapped = {
             ...(set as ExerciseSet),
+            exercise_id: set.exercise_id,
             restTime: (set.rest_time ?? null) as number | null,
           } as ExerciseSet;
           if (!acc[exerciseName]) {

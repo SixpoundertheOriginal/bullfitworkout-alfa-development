@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Updates or creates sets for an exercise in a workout
  */
-export async function updateExerciseSets(workoutId: string, exerciseName: string, sets: {
+export async function updateExerciseSets(workoutId: string, exerciseId: string | null, exerciseName: string, sets: {
   id: string;
   exercise_name: string;
   workout_id: string;
@@ -22,11 +22,15 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
   notes?: string | null;
 }[]) {
   // Get existing set IDs for this exercise in this workout
-  const { data: existingSets, error: fetchError } = await supabase
+  let query = supabase
     .from('exercise_sets')
     .select('id')
     .eq('workout_id', workoutId)
     .eq('exercise_name', exerciseName);
+  if (exerciseId) {
+    query = query.eq('exercise_id', exerciseId);
+  }
+  const { data: existingSets, error: fetchError } = await query;
     
   if (fetchError) throw fetchError;
   
@@ -36,6 +40,7 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
     .map(set => ({
       workout_id: workoutId,
       exercise_name: exerciseName,
+      exercise_id: exerciseId,
       weight: set.weight,
       reps: set.reps,
       set_number: set.set_number,
@@ -67,6 +72,7 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
         id: set.id,
         workout_id: workoutId,
         exercise_name: exerciseName,
+        exercise_id: exerciseId,
         weight: set.weight,
         reps: set.reps,
         set_number: set.set_number,
@@ -109,12 +115,17 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
   }
   
   // Fetch the updated sets
-  const { data: updatedSets, error: finalError } = await supabase
+  let finalQuery = supabase
     .from('exercise_sets')
     .select('*')
     .eq('workout_id', workoutId)
-    .eq('exercise_name', exerciseName)
     .order('set_number', { ascending: true });
+  if (exerciseId) {
+    finalQuery = finalQuery.eq('exercise_id', exerciseId);
+  } else {
+    finalQuery = finalQuery.eq('exercise_name', exerciseName);
+  }
+  const { data: updatedSets, error: finalError } = await finalQuery;
     
   if (finalError) throw finalError;
   return updatedSets;
@@ -123,10 +134,11 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
 /**
  * Adds a new exercise to a workout
  */
-export async function addExerciseToWorkout(workoutId: string, exerciseName: string, initialSets: number = 1) {
+export async function addExerciseToWorkout(workoutId: string, exerciseId: string | null, exerciseName: string, initialSets: number = 1) {
   const sets = Array.from({ length: initialSets }, (_, i) => ({
     workout_id: workoutId,
     exercise_name: exerciseName,
+    exercise_id: exerciseId,
     weight: 0,
     reps: 0,
     set_number: i + 1,

@@ -21,12 +21,12 @@ export function AddExerciseBar({
 }: AddExerciseBarProps) {
   const isMobile = useIsMobile();
 
-  // Handle selection of exercise and extract name if it's an object
+  // Pass the full exercise object so callers have access to id and name
   const handleSelectExercise = (exercise: string | Exercise) => {
     if (typeof exercise === 'string') {
       onSelectExercise(exercise);
-    } else if (exercise && typeof exercise === 'object' && 'name' in exercise) {
-      onSelectExercise(exercise.name);
+    } else {
+      onSelectExercise(exercise);
     }
   };
 
