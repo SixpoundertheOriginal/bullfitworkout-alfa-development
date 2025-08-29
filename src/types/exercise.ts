@@ -9,6 +9,7 @@ export interface ExerciseSet {
   set_number: number;
   exercise_name: string;
   workout_id: string;
+  exercise_id?: string;
   weightCalculation?: WeightCalculation;
   metadata?: Record<string, any>; // Add metadata property for RPE and other set-specific data
 }

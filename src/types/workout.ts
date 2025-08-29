@@ -29,6 +29,7 @@ export type ExerciseSet = {
   id: string;
   workout_id: string;
   exercise_name: string;
+  exercise_id?: string | null;
   weight: number;
   reps: number;
   completed: boolean;
