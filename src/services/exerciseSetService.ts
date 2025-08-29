@@ -13,6 +13,13 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
   set_number: number;
   completed: boolean;
   rest_time?: number;
+  rpe?: number | null;
+  variant_id?: string | null;
+  tempo?: string | null;
+  range_of_motion?: string | null;
+  added_weight?: number | null;
+  assistance_used?: number | null;
+  notes?: string | null;
 }[]) {
   // Get existing set IDs for this exercise in this workout
   const { data: existingSets, error: fetchError } = await supabase
@@ -33,7 +40,14 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
       reps: set.reps,
       set_number: set.set_number,
       completed: set.completed,
-      rest_time: set.rest_time || 60
+      rest_time: set.rest_time || 60,
+      rpe: set.rpe ?? null,
+      variant_id: set.variant_id ?? null,
+      tempo: set.tempo ?? null,
+      range_of_motion: set.range_of_motion ?? null,
+      added_weight: set.added_weight ?? null,
+      assistance_used: set.assistance_used ?? null,
+      notes: set.notes ?? null
     }));
   
   // Sets to delete - those that exist in the database but not in our updated list
@@ -57,7 +71,14 @@ export async function updateExerciseSets(workoutId: string, exerciseName: string
         reps: set.reps,
         set_number: set.set_number,
         completed: set.completed,
-        rest_time: set.rest_time || 60
+        rest_time: set.rest_time || 60,
+        rpe: set.rpe ?? null,
+        variant_id: set.variant_id ?? null,
+        tempo: set.tempo ?? null,
+        range_of_motion: set.range_of_motion ?? null,
+        added_weight: set.added_weight ?? null,
+        assistance_used: set.assistance_used ?? null,
+        notes: set.notes ?? null
       })));
     operations.push(updatePromise);
   }
@@ -109,7 +130,14 @@ export async function addExerciseToWorkout(workoutId: string, exerciseName: stri
     weight: 0,
     reps: 0,
     set_number: i + 1,
-    completed: true
+    completed: true,
+    rpe: null,
+    variant_id: null,
+    tempo: null,
+    range_of_motion: null,
+    added_weight: null,
+    assistance_used: null,
+    notes: null
   }));
   
   const { data, error } = await supabase
@@ -145,7 +173,14 @@ export async function resetWorkoutSets(workoutId: string) {
       .update({
         weight: 0,
         reps: 0,
-        completed: false
+        completed: false,
+        rpe: null,
+        variant_id: null,
+        tempo: null,
+        range_of_motion: null,
+        added_weight: null,
+        assistance_used: null,
+        notes: null
       })
       .eq('workout_id', workoutId)
       .select();
@@ -171,7 +206,14 @@ export async function bulkResetWorkoutSets(workoutIds: string[]) {
       .update({
         weight: 0,
         reps: 0,
-        completed: false
+        completed: false,
+        rpe: null,
+        variant_id: null,
+        tempo: null,
+        range_of_motion: null,
+        added_weight: null,
+        assistance_used: null,
+        notes: null
       })
       .in('workout_id', workoutIds)
       .select();

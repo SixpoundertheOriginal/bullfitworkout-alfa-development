@@ -2,7 +2,7 @@
 -- This is a SQL function to create a transactional save operation for workouts
 -- This will be executed separately by the user 
 
-CREATE OR REPLACE FUNCTION public.save_complete_workout(
+CREATE OR REPLACE FUNCTION public.save_workout_transaction(
   p_workout_data JSONB,
   p_exercise_sets JSONB
 ) RETURNS JSONB
@@ -52,7 +52,14 @@ BEGIN
         reps INTEGER,
         set_number INTEGER,
         completed BOOLEAN,
-        rest_time INTEGER
+        rest_time INTEGER,
+        rpe NUMERIC,
+        variant_id UUID,
+        tempo TEXT,
+        range_of_motion TEXT,
+        added_weight NUMERIC,
+        assistance_used NUMERIC,
+        notes TEXT
       )
     )
     INSERT INTO public.exercise_sets (
@@ -62,16 +69,30 @@ BEGIN
       reps,
       set_number,
       completed,
-      rest_time
+      rest_time,
+      rpe,
+      variant_id,
+      tempo,
+      range_of_motion,
+      added_weight,
+      assistance_used,
+      notes
     )
-    SELECT 
+    SELECT
       v_workout_id,
       sets.exercise_name,
       sets.weight,
       sets.reps,
       sets.set_number,
       sets.completed,
-      sets.rest_time
+      sets.rest_time,
+      sets.rpe,
+      sets.variant_id,
+      sets.tempo,
+      sets.range_of_motion,
+      sets.added_weight,
+      sets.assistance_used,
+      sets.notes
     FROM sets_data sets;
     
     -- Try to refresh materialized views if available

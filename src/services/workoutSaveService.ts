@@ -95,13 +95,21 @@ export const saveWorkout = async ({
           console.log(`🔄 Using actual rest time for ${exerciseName} set ${setNumber}: ${actualRestTime}s`);
         }
         
+        const anySet = set as any;
         return {
           exercise_name: exerciseName,
           weight: set.weight || 0,
           reps: set.reps || 0,
           set_number: setNumber,
           completed: set.completed || false,
-          rest_time: restTime
+          rest_time: restTime,
+          rpe: anySet.rpe ?? null,
+          variant_id: anySet.variant_id ?? null,
+          tempo: anySet.tempo ?? null,
+          range_of_motion: anySet.range_of_motion ?? null,
+          added_weight: anySet.added_weight ?? null,
+          assistance_used: anySet.assistance_used ?? null,
+          notes: anySet.notes ?? null
         };
       });
     });
@@ -376,15 +384,25 @@ async function saveExerciseSetsWithRetry(
       try {
         const { error: batchError } = await supabase
           .from('exercise_sets')
-          .insert(batch.map(set => ({
-            workout_id: workoutId,
-            exercise_name: exerciseName,
-            weight: set.weight || 0,
-            reps: set.reps || 0,
-            set_number: i + batch.indexOf(set) + 1,
-            completed: set.completed || false,
-            rest_time: set.restTime ?? null
-          })));
+          .insert(batch.map(set => {
+            const anySet = set as any;
+            return {
+              workout_id: workoutId,
+              exercise_name: exerciseName,
+              weight: set.weight || 0,
+              reps: set.reps || 0,
+              set_number: i + batch.indexOf(set) + 1,
+              completed: set.completed || false,
+              rest_time: set.restTime ?? null,
+              rpe: anySet.rpe ?? null,
+              variant_id: anySet.variant_id ?? null,
+              tempo: anySet.tempo ?? null,
+              range_of_motion: anySet.range_of_motion ?? null,
+              added_weight: anySet.added_weight ?? null,
+              assistance_used: anySet.assistance_used ?? null,
+              notes: anySet.notes ?? null
+            };
+          }));
           
         if (batchError) {
           console.error(`Error saving batch for ${exerciseName}:`, batchError);
@@ -396,6 +414,7 @@ async function saveExerciseSetsWithRetry(
             
             for (const set of batch) {
               try {
+                const anySet = set as any;
                 const { error: setError } = await supabase
                   .from('exercise_sets')
                   .insert({
@@ -405,7 +424,14 @@ async function saveExerciseSetsWithRetry(
                     reps: set.reps || 0,
                     set_number: i + batch.indexOf(set) + 1,
                     completed: set.completed || false,
-                    rest_time: set.restTime ?? null
+                    rest_time: set.restTime ?? null,
+                    rpe: anySet.rpe ?? null,
+                    variant_id: anySet.variant_id ?? null,
+                    tempo: anySet.tempo ?? null,
+                    range_of_motion: anySet.range_of_motion ?? null,
+                    added_weight: anySet.added_weight ?? null,
+                    assistance_used: anySet.assistance_used ?? null,
+                    notes: anySet.notes ?? null
                   });
                   
                 if (!setError) {
@@ -508,15 +534,25 @@ export const processRetryQueue = async (userId: string): Promise<boolean> => {
       
       const { error: batchError } = await supabase
         .from('exercise_sets')
-        .insert(sets.map((set, index) => ({
-          workout_id: workoutId,
-          exercise_name: exerciseName,
-          weight: set.weight || 0,
-          reps: set.reps || 0,
-          set_number: index + 1,
-          completed: set.completed || false,
-          rest_time: set.restTime ?? null
-        })));
+        .insert(sets.map((set, index) => {
+          const anySet = set as any;
+          return {
+            workout_id: workoutId,
+            exercise_name: exerciseName,
+            weight: set.weight || 0,
+            reps: set.reps || 0,
+            set_number: index + 1,
+            completed: set.completed || false,
+            rest_time: set.restTime ?? null,
+            rpe: anySet.rpe ?? null,
+            variant_id: anySet.variant_id ?? null,
+            tempo: anySet.tempo ?? null,
+            range_of_motion: anySet.range_of_motion ?? null,
+            added_weight: anySet.added_weight ?? null,
+            assistance_used: anySet.assistance_used ?? null,
+            notes: anySet.notes ?? null
+          };
+        }));
         
       if (batchError && attempt < 3) {
         // Add back to queue with increased attempt count
