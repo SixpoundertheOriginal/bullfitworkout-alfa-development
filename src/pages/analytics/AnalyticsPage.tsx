@@ -1,29 +1,34 @@
 import React from 'react';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
-import { getMetricOptions } from './metrics';
-import { metricToSeries } from './adapters';
-import type { ChartMetric } from './types';
-import * as FEATURE_FLAGS from '@/constants/featureFlags';
+import { METRICS, availableMetrics, type ChartMetric } from './registry';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
+import { useConfig } from '@/config/runtimeConfig';
 
 export type AnalyticsPageProps = {
   perWorkout?: PerWorkoutMetrics[];
 };
 
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] }) => {
-  const [options, setOptions] = React.useState(getMetricOptions());
-  const [metric, setMetric] = React.useState<ChartMetric>(options[0].key);
+  const { flags } = useConfig();
+  const initOpts = React.useMemo(() => availableMetrics({ derivedKpis: flags.derivedKpis }), [flags.derivedKpis]);
+  const [options, setOptions] = React.useState(initOpts);
+  const [metric, setMetric] = React.useState<ChartMetric>(initOpts[0].key);
   React.useEffect(() => {
-    const next = getMetricOptions();
+    const next = availableMetrics({ derivedKpis: flags.derivedKpis });
     setOptions(next);
     if (!next.some(o => o.key === metric)) {
       setMetric(next[0].key);
     }
-    console.debug('ANALYTICS_DERIVED_KPIS_ENABLED=', FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED);
-  }, [FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED]);
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
+      (window as any).__BF_DEBUG__ = {
+        ...(window as any).__BF_DEBUG__,
+        metricOptions: next,
+      };
+    }
+  }, [flags.derivedKpis]);
 
   const series = React.useMemo(() => {
-    const adapter = metricToSeries[metric];
+    const adapter = METRICS[metric].toSeries;
     return adapter ? adapter(perWorkout ?? []) : [];
   }, [metric, perWorkout]);
 
@@ -93,7 +98,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ perWorkout = [] })
 
   return (
     <div>
-      {FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED && (
+      {flags.derivedKpis && (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
             <div>Density</div>
