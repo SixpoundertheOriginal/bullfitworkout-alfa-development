@@ -67,12 +67,11 @@ export class SupabaseMetricsRepository implements MetricsRepository {
     }
 
     try {
-      // Primary query: RLS-safe inner join to user's workouts; include completed or null
+      // Direct query relying on RLS policies; include completed sets or those pending completion
       const query = this.client
         .from('exercise_sets')
-        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, exercises(name), workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
         .in('workout_id', workoutIds)
-        .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
 
       if (exerciseId) {
@@ -81,59 +80,9 @@ export class SupabaseMetricsRepository implements MetricsRepository {
 
       const { data: sets, error } = await query
 
-      if (error) {
+      if (error || !sets) {
         console.error('[MetricsV2] Error fetching sets:', error)
-        // Fallback: try without join (in case RLS allows)
-        const altQuery = this.client
-          .from('exercise_sets')
-          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
-          .in('workout_id', workoutIds)
-
-        if (exerciseId) {
-          altQuery.eq('exercise_id', exerciseId)
-        }
-
-        const alt = await altQuery
-        if (alt.error || !alt.data) {
-          console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
-          return this.getMockSets(workoutIds)
-        }
-        return alt.data.map((s: any) => ({
-          id: s.id,
-          workoutId: s.workout_id,
-          weightKg: s.weight,
-          reps: s.reps,
-          exerciseId: s.exercise_id,
-          exerciseName: s.exercise_name ?? s.exercise_id
-        }))
-      }
-
-      if (!sets || sets.length === 0) {
-        console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
-        const altQuery = this.client
-          .from('exercise_sets')
-          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
-          .in('workout_id', workoutIds)
-
-        if (exerciseId) {
-          altQuery.eq('exercise_id', exerciseId)
-        }
-
-        const alt = await altQuery
-        if (alt.error) {
-          console.error('[MetricsV2] Fallback sets query failed:', alt.error)
-          return []
-        }
-        const mapped = (alt.data || []).map((s: any) => ({
-          id: s.id,
-          workoutId: s.workout_id,
-          weightKg: s.weight,
-          reps: s.reps,
-          exerciseId: s.exercise_id,
-          exerciseName: s.exercise_name ?? s.exercise_id
-        }))
-        console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
-        return mapped
+        return this.getMockSets(workoutIds)
       }
 
       return sets.map((s: any) => ({
@@ -142,7 +91,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         weightKg: s.weight,
         reps: s.reps,
         exerciseId: s.exercise_id,
-        exerciseName: s.exercises?.name ?? s.exercise_name ?? s.exercise_id
+        exerciseName: s.exercise_name ?? s.exercise_id
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)
