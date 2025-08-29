@@ -12,6 +12,7 @@ export function AnalyticsFilterBar({
   groupBy,
   exerciseId,
   exerciseOptions = [],
+  isExerciseLoading = false,
   onGroupByChange,
   onExerciseChange,
   onReset,
@@ -19,6 +20,7 @@ export function AnalyticsFilterBar({
   groupBy: GroupBy;
   exerciseId?: string;
   exerciseOptions?: ExerciseOption[];
+  isExerciseLoading?: boolean;
   onGroupByChange: (g: GroupBy) => void;
   onExerciseChange?: (id?: string) => void;
   onReset?: () => void;
@@ -42,13 +44,24 @@ export function AnalyticsFilterBar({
           <div className="text-sm text-gray-400">Exercise:</div>
           <Select
             value={exerciseId ?? 'all'}
+            disabled={isExerciseLoading}
             onValueChange={(v) => onExerciseChange(v === 'all' ? undefined : v)}
           >
             <SelectTrigger className="w-[180px] bg-gray-800/50 border-gray-700 text-gray-200">
-              <SelectValue placeholder="All exercises" />
+              <SelectValue placeholder={isExerciseLoading ? 'Loading...' : 'All exercises'} />
             </SelectTrigger>
             <SelectContent className="bg-gray-900 text-gray-200 border-gray-700">
               <SelectItem value="all">All exercises</SelectItem>
+              {isExerciseLoading && (
+                <SelectItem value="loading" disabled>
+                  Loading...
+                </SelectItem>
+              )}
+              {!isExerciseLoading && exerciseOptions.length === 0 && (
+                <SelectItem value="none" disabled>
+                  No exercises found
+                </SelectItem>
+              )}
               {exerciseOptions.map((opt) => (
                 <SelectItem key={opt.id} value={opt.id}>
                   {opt.name}
