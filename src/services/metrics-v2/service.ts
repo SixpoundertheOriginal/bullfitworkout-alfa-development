@@ -14,19 +14,33 @@ try {
 }
 
 export const metricsServiceV2 = {
-  getMetricsV2: async ({ dateRange, userId }: { dateRange: DateRange; userId: string }) => {
+  getMetricsV2: async ({
+    dateRange,
+    userId,
+    exerciseId,
+  }: {
+    dateRange: DateRange;
+    userId: string;
+    exerciseId?: string;
+  }) => {
     try {
       // Fetch raw data first via repository (with built-in fallbacks)
       const rawWorkouts = await repository.getWorkouts(dateRange, userId)
       const workoutIds = rawWorkouts.map(w => w.id)
-      const rawSets = await repository.getSets(workoutIds, userId)
+      const rawSets = await repository.getSets(workoutIds, userId, exerciseId)
+      const sets = exerciseId
+        ? rawSets.filter(s => s.exerciseId === exerciseId)
+        : rawSets
 
       // Compute simple totals directly from repository data (authoritative)
-      const totalSets = rawSets.length
-      const totalReps = rawSets.reduce((a, s) => a + (Number(s.reps) || 0), 0)
+      const totalSets = sets.length
+      const totalReps = sets.reduce((a, s) => a + (Number(s.reps) || 0), 0)
       const totalWorkouts = rawWorkouts.length
       const durationMin = rawWorkouts.reduce((a, w) => a + (Number(w.duration) || 0), 0)
-      const totalVolumeKg = rawSets.reduce((a, s) => a + (Number(s.weightKg) || 0) * (Number(s.reps) || 0), 0)
+      const totalVolumeKg = sets.reduce(
+        (a, s) => a + (Number(s.weightKg) || 0) * (Number(s.reps) || 0),
+        0
+      )
 
       // Build series per day based on repository data
       const volByDay = new Map<string, number>()
@@ -34,7 +48,7 @@ export const metricsServiceV2 = {
       const repsByDay = new Map<string, number>()
       const workoutsByDay = new Map<string, number>()
       const durationByDay = new Map<string, number>()
-      for (const s of rawSets) {
+      for (const s of sets) {
         const w = rawWorkouts.find(w => w.id === s.workoutId)
         if (!w) continue
         const day = new Date(w.startedAt).toISOString().split('T')[0]
@@ -72,8 +86,12 @@ export const metricsServiceV2 = {
           const ws = await repository.getWorkouts(r, uid)
           return ws.map(w => ({ id: w.id, startedAt: w.startedAt }))
         },
-        getSets: async (workoutIds: string[]) => {
-          const sets = await repository.getSets(workoutIds, userId)
+        getSets: async (workoutIds: string[], exId?: string) => {
+          const sets = await repository.getSets(
+            workoutIds,
+            userId,
+            exId ?? exerciseId
+          )
           return sets.map(s => ({
             workoutId: s.workoutId,
             exerciseName: s.exerciseName || s.exerciseId || '',

@@ -11,7 +11,8 @@ export async function getMetricsV2(
   repo: MetricsRepository,
   userId: string,
   range: DateRange,
-  config: MetricsConfig = { tz: 'Europe/Warsaw', units: 'kg|min' }
+  config: MetricsConfig = { tz: 'Europe/Warsaw', units: 'kg|min' },
+  exerciseId?: string
 ): Promise<ServiceOutput> {
   // TODO: Call repo, calculators, aggregators, prDetector when implemented
   return {
