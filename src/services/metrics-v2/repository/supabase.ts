@@ -70,7 +70,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       // Primary query: RLS-safe inner join to user's workouts; include completed or null
       const query = this.client
         .from('exercise_sets')
-        .select('id, workout_id, exercise_id, weight, reps, completed, exercises(name), workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, exercises(name), workout_sessions!inner(id,user_id)')
         .in('workout_id', workoutIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
@@ -86,7 +86,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         // Fallback: try without join (in case RLS allows)
         const altQuery = this.client
           .from('exercise_sets')
-          .select('id, workout_id, exercise_id, weight, reps, completed')
+          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
           .in('workout_id', workoutIds)
 
         if (exerciseId) {
@@ -104,7 +104,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
           weightKg: s.weight,
           reps: s.reps,
           exerciseId: s.exercise_id,
-          exerciseName: undefined
+          exerciseName: s.exercise_name ?? s.exercise_id
         }))
       }
 
@@ -112,7 +112,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         console.warn('[MetricsV2] Joined sets query returned 0 rows; retrying without join filter', { workoutIdsCount: workoutIds.length })
         const altQuery = this.client
           .from('exercise_sets')
-          .select('id, workout_id, exercise_id, weight, reps, completed')
+          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed')
           .in('workout_id', workoutIds)
 
         if (exerciseId) {
@@ -130,7 +130,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
           weightKg: s.weight,
           reps: s.reps,
           exerciseId: s.exercise_id,
-          exerciseName: undefined
+          exerciseName: s.exercise_name ?? s.exercise_id
         }))
         console.log('[MetricsV2] Fallback sets returned', mapped.length, 'rows')
         return mapped
@@ -142,7 +142,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         weightKg: s.weight,
         reps: s.reps,
         exerciseId: s.exercise_id,
-        exerciseName: s.exercises?.name
+        exerciseName: s.exercises?.name ?? s.exercise_name ?? s.exercise_id
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)
