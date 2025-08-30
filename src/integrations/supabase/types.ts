@@ -1637,15 +1637,6 @@ export type Database = {
       }
     }
     Views: {
-      exercise_integrity_audit: {
-        Row: {
-          affected_ids: string[] | null
-          issue_type: string | null
-          name: string | null
-          occurrence_count: number | null
-        }
-        Relationships: []
-      }
       exercise_performance_summary: {
         Row: {
           avg_reps: number | null
@@ -1666,15 +1657,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      orphaned_exercise_references: {
-        Row: {
-          affected_ids: string[] | null
-          issue_type: string | null
-          name: string | null
-          occurrence_count: number | null
-        }
-        Relationships: []
       }
       rls_performance_metrics: {
         Row: {
@@ -1714,6 +1696,24 @@ export type Database = {
       get_current_user_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_exercise_integrity_audit: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          affected_ids: string[]
+          issue_type: string
+          name: string
+          occurrence_count: number
+        }[]
+      }
+      get_orphaned_exercise_references: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          affected_ids: string[]
+          issue_type: string
+          name: string
+          occurrence_count: number
+        }[]
       }
       increment_template_usage: {
         Args: { template_id: string }
