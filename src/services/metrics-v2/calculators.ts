@@ -1,21 +1,21 @@
-// Calculator signatures (implement later). Keep factors as data, not code.
-export const loadFactorMap: Record<string, number> = {
-  'Pull-Up': 0.93,
-  'Chin-Up': 0.95,
-  'Dip': 0.84,
-};
-
-export function calcSetVolume(weightKg: number | undefined, reps: number | undefined): number {
-  // TODO: implement
-  return 0;
+export function getReps(s: any) {
+  return s.reps ?? s.completedReps ?? s.actualReps ?? 0;
 }
 
-export function calcBodyweightLoad(userBwKg: number, exerciseName: string): number {
-  // TODO: implement
-  return 0;
+export function isBodyweightSet(s: any) {
+  return !!s.isBodyweight || s.equipment === 'bodyweight' || s.type === 'bodyweight';
 }
 
-export function calcIsometricLoad(weightKg: number | undefined, seconds: number | undefined): number {
-  // TODO: implement
-  return 0;
+export function getLoadKg(s: any, includeBW: boolean, bodyweightKg: number) {
+  const unit = s.unit ?? s.weightUnit ?? 'kg';
+  const base = unit === 'kg' ? (s.weightKg ?? s.weight ?? 0)
+    : unit === 'lb' ? (s.weight ?? 0) * 0.45359237 : 0;
+  const bw = includeBW && isBodyweightSet(s) ? (bodyweightKg || 0) * (s.loadFactor ?? 1) : 0;
+  return base + bw;
+}
+
+export function getVolumeKg(s: any, includeBW: boolean, bodyweightKg: number) {
+  const reps = getReps(s);
+  if (!reps) return 0;
+  return getLoadKg(s, includeBW, bodyweightKg) * reps;
 }

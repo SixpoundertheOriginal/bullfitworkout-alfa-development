@@ -2,8 +2,17 @@ import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
-import { MEASURES } from './measureOptions';
-import { TONNAGE_ID, DENSITY_ID, AVG_REST_ID, EFF_ID, type MetricId } from './metricIds';
+import { BASE_MEASURES, DERIVED_MEASURES } from './measureOptions';
+import {
+  TONNAGE_ID,
+  SETS_ID,
+  REPS_ID,
+  DURATION_ID,
+  DENSITY_ID,
+  AVG_REST_ID,
+  EFF_ID,
+  type MetricId,
+} from './metricIds';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2 from '@/hooks/useMetricsV2';
 import { useAuth } from '@/context/AuthContext';
@@ -106,42 +115,46 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
   }, [derivedEnabled]);
 
-  const options = React.useMemo(() => (
-    derivedEnabled ? MEASURES : MEASURES.filter(m => m.id === TONNAGE_ID)
-  ), [derivedEnabled]);
+  const options = React.useMemo(
+    () => (derivedEnabled ? [...BASE_MEASURES, ...DERIVED_MEASURES] : BASE_MEASURES),
+    [derivedEnabled]
+  );
+  const baseIds = React.useMemo(() => BASE_MEASURES.map(m => m.id), []);
   const [metric, setMetric] = React.useState<MetricId>(TONNAGE_ID);
-  const [unavailable, setUnavailable] = React.useState(false);
 
   React.useEffect(() => {
-    if (!options.some(o => o.id === metric)) {
-      setMetric(options[0]?.id || TONNAGE_ID);
+    if (!derivedEnabled && !baseIds.includes(metric)) {
+      setMetric(TONNAGE_ID);
     }
-  }, [options, metric]);
+  }, [derivedEnabled, metric, baseIds]);
+
+  const selectedSeries = seriesData[metric];
+  const unavailable = !selectedSeries;
+  const currentMeasureId = unavailable ? TONNAGE_ID : metric;
+  const series = seriesData[currentMeasureId] ?? [];
+
+  const baseTotals = React.useMemo(
+    () => ({
+      sets: totals[SETS_ID] ?? 0,
+      reps: totals[REPS_ID] ?? 0,
+      duration: totals[DURATION_ID] ?? 0,
+      tonnage: totals[TONNAGE_ID] ?? 0,
+    }),
+    [totals]
+  );
+
+  const kpiTotals = React.useMemo(
+    () => ({
+      density: totals[DENSITY_ID] ?? 0,
+      avgRestMs: totals[AVG_REST_ID] ?? 0,
+      efficiencyPct: totals[EFF_ID] ?? 0,
+    }),
+    [totals]
+  );
 
   React.useEffect(() => {
-    const available = options.map(o => o.id).filter(id => seriesData[id]);
-    if (!available.includes(metric) && available.length > 0) {
-      setMetric(available[0]);
-      setUnavailable(true);
-    } else {
-      setUnavailable(false);
-    }
-  }, [seriesData, options, metric]);
-
-  const series = seriesData[metric] ?? [];
-
-  const kpiTotals = React.useMemo(() => ({
-    density: totals[DENSITY_ID] ?? 0,
-    avgRestMs: totals[AVG_REST_ID] ?? 0,
-    efficiencyPct: totals[EFF_ID] ?? 0,
-  }), [totals]);
-
-  React.useEffect(() => {
-    console.debug('[Analytics] keys', {
-      totals: Object.keys(totals || {}),
-      series: Object.keys(seriesData || {}),
-    });
-  }, [totals, seriesData]);
+    console.debug('[Analytics] currentMeasure', currentMeasureId);
+  }, [currentMeasureId]);
 
   if (!data) {
     if (isLoading) {
@@ -195,6 +208,25 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           )}
         </div>
       </div>
+
+        <div className="flex gap-4 mb-4">
+          <div data-testid="kpi-sets">
+            <div>Sets</div>
+            <div>{baseTotals.sets}</div>
+          </div>
+          <div data-testid="kpi-reps">
+            <div>Reps</div>
+            <div>{baseTotals.reps}</div>
+          </div>
+          <div data-testid="kpi-duration">
+            <div>Duration (min)</div>
+            <div>{baseTotals.duration}</div>
+          </div>
+          <div data-testid="kpi-tonnage">
+            <div>Tonnage (kg)</div>
+            <div>{Math.round(baseTotals.tonnage)}</div>
+          </div>
+        </div>
 
         {derivedEnabled && (
           <div className="flex gap-4 mb-4">

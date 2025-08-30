@@ -26,11 +26,11 @@ export type TotalsKpis = {
 };
 
 export type Totals = {
-  totalVolumeKg: number;
-  totalSets: number;
-  totalReps: number;
+  tonnage_kg: number;
+  sets_count: number;
+  reps_total: number;
   workouts: number;
-  durationMin: number;
+  duration_min: number;
 };
 
 export type PersonalRecord = {

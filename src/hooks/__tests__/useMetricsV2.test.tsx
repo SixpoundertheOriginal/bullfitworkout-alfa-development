@@ -4,10 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi } from 'vitest';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
+import { TONNAGE_ID } from '@/pages/analytics/metricIds';
 
 vi.mock('@/services/metrics-v2/service', () => ({
   metricsServiceV2: {
-    getMetricsV2: vi.fn().mockResolvedValue({ series: { tonnage_kg: [] } }),
+    getMetricsV2: vi.fn().mockResolvedValue({ series: { [TONNAGE_ID]: [] } }),
   },
 }));
 

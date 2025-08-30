@@ -5,6 +5,16 @@ import { getMetricsV2 as computeV2 } from './index'
 import type { MetricsRepository as ComputeRepo, DateRange as ComputeRange } from './repository'
 import { supabase } from '@/integrations/supabase/client'
 import { isBodyweightExercise, getExerciseLoadFactor } from '@/utils/exerciseUtils'
+import { getReps, getLoadKg, getVolumeKg } from './calculators'
+import {
+  TONNAGE_ID,
+  SETS_ID,
+  REPS_ID,
+  DURATION_ID,
+  DENSITY_ID,
+  AVG_REST_ID,
+  EFF_ID,
+} from '@/pages/analytics/metricIds'
 
 // Try to initialize Supabase repository, fallback to in-memory if it fails
 let repository
@@ -86,17 +96,24 @@ export const metricsServiceV2 = {
       let totalVolumeKg = 0
 
       // Convert repository data to aggregator types
-      const setsForAggregator = rawSets.map(s => ({
-        id: s.id,
-        workoutId: s.workoutId,
-        weightKg: Number(s.weightKg) || 0,
-        reps: Number(s.reps) || 0,
-        exerciseId: s.exerciseId,
-        exerciseName: s.exerciseName,
-        failurePoint: s.failurePoint,
-        formScore: s.formScore,
-        restTimeSec: Number(s.restTimeSec) || 0,
-      }));
+      const setsForAggregator = rawSets.map(s => {
+        const aug = {
+          ...s,
+          isBodyweight: isBodyweightExercise(s.exerciseName || ''),
+          loadFactor: getExerciseLoadFactor(s.exerciseName || ''),
+        };
+        return {
+          id: s.id,
+          workoutId: s.workoutId,
+          weightKg: getLoadKg(aug, includeBodyweightLoads, bodyweightKg),
+          reps: getReps(aug),
+          exerciseId: s.exerciseId,
+          exerciseName: s.exerciseName,
+          failurePoint: s.failurePoint,
+          formScore: s.formScore,
+          restTimeSec: Number(s.restTimeSec) || 0,
+        };
+      });
 
       const workoutsForAggregator = rawWorkouts.map(w => ({
         id: w.id,
@@ -115,20 +132,17 @@ export const metricsServiceV2 = {
         const w = rawWorkouts.find(w => w.id === s.workoutId)
         if (!w) continue
         const day = new Date(w.startedAt).toISOString().split('T')[0]
-        let weight = Number(s.weightKg) || 0
-        if (
-          includeBodyweightLoads &&
-          weight <= 0 &&
-          isBodyweightExercise(s.exerciseName || '')
-        ) {
-          weight = bodyweightKg * getExerciseLoadFactor(s.exerciseName || '')
-        }
-        const reps = Number(s.reps) || 0
-        const inc = weight * reps
-        totalVolumeKg += inc
+        const aug = {
+          ...s,
+          isBodyweight: isBodyweightExercise(s.exerciseName || ''),
+          loadFactor: getExerciseLoadFactor(s.exerciseName || ''),
+        };
+        const reps = getReps(aug)
+        const volume = getVolumeKg(aug, includeBodyweightLoads, bodyweightKg)
+        totalVolumeKg += volume
         totalSets += 1
         totalReps += reps
-        volByDay.set(day, (volByDay.get(day) || 0) + inc)
+        volByDay.set(day, (volByDay.get(day) || 0) + volume)
         setsCountByDay.set(day, (setsCountByDay.get(day) || 0) + 1)
         repsByDay.set(day, (repsByDay.get(day) || 0) + reps)
       }
@@ -182,7 +196,7 @@ export const metricsServiceV2 = {
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
       const out = await computeV2(adapter, effectiveUserId, range)
       console.log('[MetricsV2][debug] repoTotals -> workouts:', totalWorkouts, 'totalVolumeKg:', totalVolumeKg, 'totalSets:', totalSets)
-      if (Array.isArray(out.series.tonnage_kg) && out.series.tonnage_kg.length === 0 && repoVolumeSeries.length > 0) {
+      if (Array.isArray(out.series[TONNAGE_ID]) && out.series[TONNAGE_ID].length === 0 && repoVolumeSeries.length > 0) {
         console.log('[MetricsV2][debug] No tonnage series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })
       }
 
@@ -193,43 +207,46 @@ export const metricsServiceV2 = {
 
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       const metricKeys = [
-        'tonnage_kg',
-        'sets',
-        'reps',
+        TONNAGE_ID,
+        SETS_ID,
+        REPS_ID,
         'workouts',
-        'duration',
-        'density_kg_min',
-        'avg_rest_ms',
-        'set_efficiency_pct',
+        DURATION_ID,
+        DENSITY_ID,
+        AVG_REST_ID,
+        EFF_ID,
       ]
 
       const result = {
         ...out,
         totals: {
           ...out.totals,
-          totalVolumeKg,
-          totalSets,
-          totalReps,
+          [TONNAGE_ID]: totalVolumeKg,
+          [SETS_ID]: totalSets,
+          [REPS_ID]: totalReps,
           workouts: totalWorkouts,
-          durationMin,
+          [DURATION_ID]: durationMin,
         },
         series: {
           ...out.series,
-          tonnage_kg: repoVolumeSeries,
-          sets: repoSetsSeries,
-          reps: repoRepsSeries,
+          [TONNAGE_ID]: repoVolumeSeries,
+          [SETS_ID]: repoSetsSeries,
+          [REPS_ID]: repoRepsSeries,
           workouts: repoWorkoutsSeries,
-          density_kg_min: out.series.density_kg_min || [],
+          [DENSITY_ID]: out.series[DENSITY_ID] || [],
           cvr: out.series.cvr || [],
-          duration: repoDurationSeries,
-          avg_rest_ms: out.series.avg_rest_ms || [],
-          set_efficiency_pct: out.series.set_efficiency_pct || [],
+          [DURATION_ID]: repoDurationSeries,
+          [AVG_REST_ID]: out.series[AVG_REST_ID] || [],
+          [EFF_ID]: out.series[EFF_ID] || [],
         },
         metricKeys,
         perWorkout,
         totalsKpis,
       }
-      console.debug('[v2] keys', { totals: Object.keys(result.totals || {}), series: Object.keys(result.series || {}) })
+      console.debug('[v2] keys', {
+        totals: Object.keys(result.totals || {}),
+        series: Object.fromEntries(Object.entries(result.series || {}).map(([k, v]) => [k, v.length])),
+      })
       return result
     } catch (error) {
       console.error('Error in getMetricsV2:', error)

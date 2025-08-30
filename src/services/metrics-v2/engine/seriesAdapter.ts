@@ -1,6 +1,6 @@
-import { getSetLoadKg } from './calculators';
-import type { SetLike, LoadCtx } from './calculators';
+import type { SetLike } from './calculators';
 import { TimeSeriesPoint } from '../dto';
+import { getVolumeKg } from '../calculators';
 
 export interface SeriesAdapterOpts extends LoadCtx {
   start?: Date;
@@ -13,7 +13,7 @@ export function toVolumeSeries(
   opts: SeriesAdapterOpts
 ): TimeSeriesPoint[] {
   const includeBodyweight = opts.includeBodyweightLoads ?? opts.includeBodyweight;
-  const ctx: LoadCtx = { includeBodyweight, bodyweightKg: opts.bodyweightKg };
+  const bodyweightKg = opts.bodyweightKg;
   let inRange = 0;
   let withLoad = 0;
   const map = new Map<string, number>();
@@ -25,11 +25,9 @@ export function toVolumeSeries(
     if (start && performedAt && performedAt < start) continue;
     if (end && performedAt && performedAt > end) continue;
     inRange++;
-    const loadKg = getSetLoadKg(s, ctx);
-    const reps = s.reps;
-    if (!loadKg || loadKg === 0 || reps == null) continue;
+    const volumeKg = getVolumeKg(s, includeBodyweight, bodyweightKg);
+    if (!volumeKg) continue;
     withLoad++;
-    const volumeKg = loadKg * reps;
     const date = (s.performedAt ?? '').split('T')[0];
     if (date) map.set(date, (map.get(date) || 0) + volumeKg);
   }
