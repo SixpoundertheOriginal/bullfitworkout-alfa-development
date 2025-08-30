@@ -15,7 +15,7 @@ describe('engine integration', () => {
 
   it('returns series points when sets produce volume', () => {
     const sets = [{ isBodyweight: true, reps: 10, performedAt: '2024-02-01T10:00:00Z' }];
-    const series = toVolumeSeries(sets, { includeBodyweight: true, bodyweightKg: 80 });
+    const series = toVolumeSeries(sets, { includeBodyweightLoads: true, bodyweightKg: 80 });
     expect(series.length).toBeGreaterThan(0);
   });
 });

@@ -166,9 +166,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+    <div className="space-y-6 p-4 md:p-6">
+      {/* Header with Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-card/50 backdrop-blur-sm rounded-lg border border-border/20">
+        <div className="flex items-center gap-3">
           <Switch
             id="derived-toggle"
             checked={derivedEnabled}
@@ -176,20 +177,27 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
               setDerivedEnabled(v);
               setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', v);
             }}
+            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
           />
           <UiTooltip>
             <TooltipTrigger asChild>
-              <Label htmlFor="derived-toggle" className="cursor-pointer">
-                Show derived KPIs (beta)
+              <Label htmlFor="derived-toggle" className="cursor-pointer font-medium text-sm text-foreground hover:text-primary transition-colors">
+                Show derived KPIs 
+                <span className="ml-1 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-md">beta</span>
               </Label>
             </TooltipTrigger>
-            <TooltipContent>
-              Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2).
+            <TooltipContent className="max-w-xs">
+              <p className="text-sm">Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2).</p>
             </TooltipContent>
           </UiTooltip>
         </div>
-        <div className="flex items-center gap-2">
-          <select value={preset} onChange={e => handlePreset(e.target.value)} data-testid="range-select">
+        <div className="flex items-center gap-3">
+          <select 
+            value={preset} 
+            onChange={e => handlePreset(e.target.value)} 
+            data-testid="range-select"
+            className="px-3 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+          >
             <option value="last7">Last 7 days</option>
             <option value="last14">Last 14 days</option>
             <option value="last30">Last 30 days</option>
@@ -209,77 +217,120 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         </div>
       </div>
 
-        <div className="flex gap-4 mb-4">
-          <div data-testid="kpi-sets">
-            <div>Sets</div>
-            <div>{baseTotals.sets}</div>
+      {/* Base KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div data-testid="kpi-sets" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Sets</div>
+          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.sets}</div>
+        </div>
+        <div data-testid="kpi-reps" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Reps</div>
+          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.reps}</div>
+        </div>
+        <div data-testid="kpi-duration" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Duration (min)</div>
+          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.duration}</div>
+        </div>
+        <div data-testid="kpi-tonnage" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Tonnage (kg)</div>
+          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{Math.round(baseTotals.tonnage)}</div>
+        </div>
+      </div>
+
+      {/* Derived KPIs */}
+      {derivedEnabled && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div data-testid="kpi-density" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min)</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">{fmtKgPerMin(kpiTotals.density)}</div>
           </div>
-          <div data-testid="kpi-reps">
-            <div>Reps</div>
-            <div>{baseTotals.reps}</div>
+          <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
           </div>
-          <div data-testid="kpi-duration">
-            <div>Duration (min)</div>
-            <div>{baseTotals.duration}</div>
-          </div>
-          <div data-testid="kpi-tonnage">
-            <div>Tonnage (kg)</div>
-            <div>{Math.round(baseTotals.tonnage)}</div>
+          <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
           </div>
         </div>
+      )}
 
-        {derivedEnabled && (
-          <div className="flex gap-4 mb-4">
-            <div data-testid="kpi-density">
-              <div>Density (kg/min)</div>
-              <div>{fmtKgPerMin(kpiTotals.density)}</div>
-            </div>
-            <div data-testid="kpi-rest">
-              <div>Avg Rest</div>
-              <div>{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
-            </div>
-            <div data-testid="kpi-efficiency">
-              <div>Set Efficiency</div>
-              <div>{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
-            </div>
-          </div>
-        )}
+      {/* Chart Section */}
+      <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/20 p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+          <h3 className="text-lg font-semibold text-foreground">Performance Trends</h3>
+          <select
+            value={metric}
+            onChange={e => setMetric(e.target.value as MetricId)}
+            data-testid="metric-select"
+            disabled={options.length === 0}
+            className="px-3 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all min-w-[180px]"
+          >
+            {options.map(o => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          value={metric}
-          onChange={e => setMetric(e.target.value as MetricId)}
-          data-testid="metric-select"
-          disabled={options.length === 0}
-        >
-          {options.map(o => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </select>
         {unavailable && (
-          <div className="text-xs text-muted-foreground" data-testid="measure-note">
+          <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted/10 rounded-md border border-muted/20" data-testid="measure-note">
             Selected measure unavailable for this range.
           </div>
         )}
+
         {Object.keys(seriesData).length === 0 && (
-          <div data-testid="no-metrics">No metrics available</div>
+          <div data-testid="no-metrics" className="text-center py-12 text-muted-foreground">
+            <div className="text-lg font-medium mb-2">No metrics available</div>
+            <div className="text-sm">Start tracking workouts to see your analytics</div>
+          </div>
         )}
 
         {series.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300} data-testid="chart">
-            <LineChart data={series}>
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-80 w-full" data-testid="chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={series} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <XAxis 
+                  dataKey="date" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))',
+                    fontSize: '14px'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
-          <div data-testid="empty-series">No data to display</div>
+          <div data-testid="empty-series" className="text-center py-12 text-muted-foreground">
+            <div className="text-lg font-medium mb-2">No data to display</div>
+            <div className="text-sm">Select a different time range or metric</div>
+          </div>
         )}
       </div>
-    );
+    </div>
+  );
   };
 
 export default AnalyticsPage;

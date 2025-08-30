@@ -2,6 +2,11 @@ import type { SetLike } from './calculators';
 import { TimeSeriesPoint } from '../dto';
 import { getVolumeKg } from '../calculators';
 
+export interface LoadCtx {
+  includeBodyweight?: boolean;
+  bodyweightKg?: number;
+}
+
 export interface SeriesAdapterOpts extends LoadCtx {
   start?: Date;
   end?: Date;
