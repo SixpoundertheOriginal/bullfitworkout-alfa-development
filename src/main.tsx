@@ -3,7 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { FEATURE_FLAGS, logFlagsOnce } from '@/constants/featureFlags';
+import { logFlagsOnce } from '@/constants/featureFlags';
 
 // Get the root element
 const rootElement = document.getElementById('root');

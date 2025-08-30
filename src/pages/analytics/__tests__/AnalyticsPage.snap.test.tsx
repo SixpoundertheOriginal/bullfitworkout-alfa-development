@@ -4,8 +4,7 @@ import { describe, it, expect } from 'vitest';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
+import { AnalyticsPage } from '../AnalyticsPage';
 const makeWorkouts = (): PerWorkoutMetrics[] => {
   const workouts: PerWorkoutMetrics[] = [];
   for (let i = 1; i <= 7; i++) {
