@@ -1,29 +1,56 @@
 import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { MetricId } from '@/pages/analytics/metricIds';
 
-interface Option { id: MetricId; label: string }
+export type MeasureOption = {
+  id: MetricId;
+  label: string;
+  icon?: string;
+};
 
-interface Props {
+export type MetricDropdownProps = {
   value: MetricId;
-  options: Option[];
-  onChange: (m: MetricId) => void;
+  onChange: (value: MetricId) => void;
+  options: MeasureOption[];
   disabled?: boolean;
-}
+};
 
-export function MetricDropdown({ value, options, onChange, disabled }: Props) {
+export const MetricDropdown: React.FC<MetricDropdownProps> = ({
+  value,
+  onChange,
+  options,
+  disabled = false,
+}) => {
+  const selectedOption = options.find(opt => opt.id === value);
+
   return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value as MetricId)}
-      data-testid="metric-select"
+    <Select 
+      value={value} 
+      onValueChange={onChange}
       disabled={disabled}
-      className="px-3 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all min-w-[180px]"
     >
-      {options.map(o => (
-        <option key={o.id} value={o.id}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger 
+        className="w-48 bg-card border-border text-foreground"
+        data-testid="metric-select"
+      >
+        <SelectValue>
+          {selectedOption?.label || 'Select metric'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem 
+            key={option.id} 
+            value={option.id}
+            className="cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              {option.icon && <span className="text-sm">{option.icon}</span>}
+              <span>{option.label}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
-}
+};

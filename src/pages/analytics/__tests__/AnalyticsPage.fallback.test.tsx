@@ -1,5 +1,6 @@
 import React from 'react';
-import { describe, it, expect, fireEvent, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
 import { AnalyticsPage } from '../AnalyticsPage';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { renderWithProviders } from '../../../../tests/utils/renderWithProviders';

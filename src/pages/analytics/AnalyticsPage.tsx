@@ -130,10 +130,22 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const serviceData = data ?? fetched;
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
+  const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
+
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
     if (v2Enabled && serviceData) {
-      return toChartSeries(serviceData as any);
+      // For V2, adapt legacy series data format (TimeSeriesPoint) to chart adapter input format
+      const transformedSeries: Record<string, { timestamp: string; value: number }[]> = {};
+      for (const [key, points] of Object.entries(serviceData.series || {})) {
+        transformedSeries[key] = points.map(p => ({
+          timestamp: p.date + 'T00:00:00.000Z', // Convert date to timestamp for adapter
+          value: p.value
+        }));
+      }
+      const adapted = toChartSeries({ series: transformedSeries });
+      return adapted;
     }
+    // Legacy fallback
     const raw = serviceData?.series ?? {};
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
@@ -148,7 +160,6 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     [derivedEnabled]
   );
   const baseIds = React.useMemo(() => BASE_MEASURES.map(m => m.id), []);
-  const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   React.useEffect(() => {
     if (!derivedEnabled && !baseIds.includes(currentMeasure)) {
@@ -158,7 +169,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
 
   React.useEffect(() => {
     if (!availableMeasures.includes(currentMeasure)) {
-      setCurrentMeasure(availableMeasures[0] ?? TONNAGE_ID);
+      const nextMeasure = (availableMeasures[0] ?? TONNAGE_ID) as MetricId;
+      console.debug('[metrics-v2.reset]', { prev: currentMeasure, next: nextMeasure });
+      setCurrentMeasure(nextMeasure);
     }
   }, [availableMeasures, currentMeasure]);
 
@@ -215,7 +228,16 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       seriesLen: seriesData[currentMeasure]?.length,
       sample: seriesData[currentMeasure]?.[0],
     });
-  }, [currentMeasure, availableMeasures, seriesData]);
+    
+    if (v2Enabled && v2Data) {
+      console.debug('[metrics-v2.chart]', {
+        measure: currentMeasure,
+        seriesLen: seriesData[currentMeasure]?.length || 0,
+        keys: availableMeasures,
+        tz: 'Europe/Warsaw'
+      });
+    }
+  }, [currentMeasure, availableMeasures, seriesData, v2Enabled, v2Data]);
 
   if (!data) {
     if (v2Enabled && v2Loading) {

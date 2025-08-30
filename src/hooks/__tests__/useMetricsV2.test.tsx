@@ -1,5 +1,5 @@
 import React from 'react';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi } from 'vitest';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
@@ -40,7 +40,7 @@ describe('useMetricsV2', () => {
     const params = { startISO: '2024-01-01', endISO: '2024-01-07', includeBodyweightLoads: undefined };
     const mockSeries = [{ date: '2024-01-01', value: 5 }];
     (metricsServiceV2.getMetricsV2 as any).mockResolvedValueOnce({ series: { tonnageKg: mockSeries } });
-    const { result, waitFor } = renderHook(() => useMetricsV2('u1', params), { wrapper });
+    const { result } = renderHook(() => useMetricsV2('u1', params), { wrapper });
     await waitFor(() => result.current.isSuccess);
     expect(result.current.data?.series?.[TONNAGE_ID]).toEqual(mockSeries);
   });

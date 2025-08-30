@@ -26,17 +26,30 @@ export type ChartSeriesOutput = {
 export function toChartSeries(payload: { series?: Record<string, { timestamp: string; value: number }[]> }): ChartSeriesOutput {
   const out: Record<string, TimeSeriesPoint[]> = {};
   const raw = payload.series ?? {};
+  
   for (const [k, points] of Object.entries(raw)) {
+    // Convert camelCase to snake_case
     const canonical = k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (!CANONICAL_KEYS.has(canonical)) continue;
-    const mapped = (points || []).map(p => ({ date: toWarsawDate(p.timestamp), value: p.value }));
+    
+    const mapped = (points || []).map(p => {
+      let value = p.value;
+      // Apply 2-decimal rounding for duration, tonnage, and density
+      if (canonical === 'duration_min' || canonical === 'tonnage_kg' || canonical === 'density_kg_per_min') {
+        value = Math.round(value * 100) / 100;
+      }
+      return { date: toWarsawDate(p.timestamp), value };
+    });
+    
     if (mapped.length > 0) out[canonical] = mapped;
   }
+  
   const availableMeasures = Object.keys(out);
   console.debug('[adapter.out]', {
     keys: availableMeasures,
     lengths: Object.fromEntries(availableMeasures.map(k => [k, out[k].length])),
     sample: availableMeasures[0] ? out[availableMeasures[0]][0] : undefined,
   });
+  
   return { series: out, availableMeasures };
 }
