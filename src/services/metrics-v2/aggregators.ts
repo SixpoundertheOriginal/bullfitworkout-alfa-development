@@ -1,11 +1,11 @@
 // Aggregation functions for workout metrics
 import { PerWorkoutMetrics, Totals, TimeSeriesPoint, TotalsKpis } from './dto';
 import { WorkoutRaw, SetRaw } from './types';
-import { 
-  calcWorkoutDensityKgPerMin, 
-  calcAvgRestPerSession, 
-  calcSetEfficiency, 
-  getTargetRestSecForWorkout 
+import {
+  calcWorkoutDensityKgPerMin,
+  calcAvgRestPerSession,
+  calcSetEfficiency,
+  getTargetRestSecForWorkout
 } from './calculators/derivedKpis';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
@@ -56,8 +56,8 @@ export function aggregatePerWorkout(
       
       kpis = {
         density: calcWorkoutDensityKgPerMin(totalVolumeKg, durationMin),
-        avgRest,
-        setEfficiency: calcSetEfficiency(avgRest, targetRestSec),
+        avgRestSec: avgRest,
+        setEfficiencyKgPerMin: calcSetEfficiency(avgRest, targetRestSec),
       };
     }
 
@@ -97,20 +97,20 @@ export function aggregateTotalsKpis(perWorkout: PerWorkoutMetrics[]): TotalsKpis
 
   // Weighted average rest time
   const totalRestSec = perWorkout.reduce((sum, w) => sum + ((w.restMin || 0) * 60), 0);
-  const avgRest = calcAvgRestPerSession(totalRestSec, totals.sets_count);
+  const avgRestSec = calcAvgRestPerSession(totalRestSec, totals.sets_count);
   
   // Weighted set efficiency (average of all workout efficiencies)
   const efficiencies = perWorkout
-    .map(w => w.kpis?.setEfficiency)
+    .map(w => w.kpis?.setEfficiencyKgPerMin)
     .filter((eff): eff is number => eff !== null && eff !== undefined);
-  const setEfficiency = efficiencies.length > 0
+  const setEfficiencyKgPerMin = efficiencies.length > 0
     ? efficiencies.reduce((sum, eff) => sum + eff, 0) / efficiencies.length
     : null;
 
   return {
     density,
-    avgRest,
-    setEfficiency,
+    avgRestSec,
+    setEfficiencyKgPerMin,
   };
 }
 

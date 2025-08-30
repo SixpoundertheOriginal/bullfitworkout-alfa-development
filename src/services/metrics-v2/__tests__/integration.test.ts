@@ -61,14 +61,14 @@ describe.skip('metrics-v2 integration', () => {
       // When flag is on, should have KPIs
       expect(result.perWorkout[0]).toHaveProperty('kpis');
       expect(result.perWorkout[0].kpis).toHaveProperty('density');
-      expect(result.perWorkout[0].kpis).toHaveProperty('avgRest');
-      expect(result.perWorkout[0].kpis).toHaveProperty('setEfficiency');
+      expect(result.perWorkout[0].kpis).toHaveProperty('avgRestSec');
+      expect(result.perWorkout[0].kpis).toHaveProperty('setEfficiencyKgPerMin');
 
       // Should have totals KPIs
       expect(result.totalsKpis).toBeDefined();
       expect(result.totalsKpis).toHaveProperty('density');
-      expect(result.totalsKpis).toHaveProperty('avgRest');
-      expect(result.totalsKpis).toHaveProperty('setEfficiency');
+      expect(result.totalsKpis).toHaveProperty('avgRestSec');
+      expect(result.totalsKpis).toHaveProperty('setEfficiencyKgPerMin');
     });
 
     it('should omit KPIs when feature flag is disabled', async () => {
@@ -148,13 +148,13 @@ describe.skip('metrics-v2 integration', () => {
 
       // Workout 1: avgRest = 150s, target = 90s, efficiency = 150/90 = 1.67
       const workout1 = result.perWorkout.find(w => w.totalSets === 2);
-      expect(workout1!.kpis!.avgRest).toBe(150); // (120+180)/2
-      expect(workout1!.kpis!.setEfficiency).toBeCloseTo(1.67);
+      expect(workout1!.kpis!.avgRestSec).toBe(150); // (120+180)/2
+      expect(workout1!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(1.67);
 
       // Workout 2: avgRest = 90s, target = 90s, efficiency = 90/90 = 1.0
       const workout2 = result.perWorkout.find(w => w.totalSets === 1);
-      expect(workout2!.kpis!.avgRest).toBe(90);
-      expect(workout2!.kpis!.setEfficiency).toBeCloseTo(1.0);
+      expect(workout2!.kpis!.avgRestSec).toBe(90);
+      expect(workout2!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(1.0);
     });
 
     it('should handle zero duration workouts gracefully', async () => {

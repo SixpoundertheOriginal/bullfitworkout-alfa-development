@@ -1,7 +1,12 @@
 // Public surface for v2 + DI-friendly façade
 import type { ServiceOutput, PerWorkoutMetrics, TimeSeriesPoint } from './dto';
 import type { MetricsRepository, DateRange } from './repository';
-import { calcDensityKgPerMin, calcAvgRestMs, calcSetEfficiencyPct } from './engine/calculators';
+import {
+  calcDensityKgPerMin,
+  calcAvgRestSec,
+  calcSetEfficiencyKgPerMin,
+  restCoveragePct,
+} from './engine/calculators';
 import { buildDayContexts } from './engine/dayContextBuilder';
 import { findPRs } from './prDetector';
 import { 
@@ -95,9 +100,13 @@ export async function getMetricsV2(
   const ctxByDay = buildDayContexts(workouts, sets);
 
   // Step 3: run calculators and aggregate totals/series
-  const densityRes = calcDensityKgPerMin(ctxByDay, { includeBodyweight: true, bodyweightKg: 0 });
-  const restRes = calcAvgRestMs(ctxByDay);
-  const effRes = calcSetEfficiencyPct(ctxByDay);
+  console.debug('[v2.build.rest_eff]', {
+    coveragePct: restCoveragePct(ctxByDay),
+  });
+  const loadCtx = { includeBodyweight: true, bodyweightKg: config.bodyweightKg ?? 0 };
+  const densityRes = calcDensityKgPerMin(ctxByDay, loadCtx);
+  const restRes = calcAvgRestSec(ctxByDay);
+  const effRes = calcSetEfficiencyKgPerMin(ctxByDay, loadCtx);
 
   const totalsBase = {
     tonnage_kg: perWorkout.reduce((s, w) => s + w.totalVolumeKg, 0),
@@ -134,8 +143,8 @@ export async function getMetricsV2(
     cvr: [],
     workouts: mapSeries(() => 1),
     duration_min: mapSeries(w => w.durationMin),
-    avg_rest_ms: restRes.series.avg_rest_ms,
-    set_efficiency_pct: effRes.series.set_efficiency_pct,
+    avgRestSec: restRes.series.avgRestSec,
+    setEfficiencyKgPerMin: effRes.series.setEfficiencyKgPerMin,
   };
 
   const metricKeys = Object.keys(series);

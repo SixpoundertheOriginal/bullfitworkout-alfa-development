@@ -32,8 +32,15 @@ export function buildDayContexts(
     setsByWorkout.get(s.workoutId)!.push(s);
   }
 
+  const toWarsawDay = (iso?: string): string => {
+    if (!iso) return '';
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw' }).format(
+      new Date(iso)
+    );
+  };
+
   for (const w of workouts) {
-    const day = (w.startedAt || '').split('T')[0];
+    const day = toWarsawDay(w.startedAt);
     if (!day) continue;
 
     let ctx = ctxByDay[day];

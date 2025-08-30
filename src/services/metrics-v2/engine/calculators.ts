@@ -69,6 +69,23 @@ export interface CalcResult {
   series: Record<string, TimeSeriesPoint[]>;
 }
 
+const EPSILON = 1e-9;
+const clampSec = (s: number): number => {
+  if (!isFinite(s)) return 0;
+  return Math.max(0, Math.min(s, 600));
+};
+
+export function restCoveragePct(ctxByDay: Record<string, DayContext>): number {
+  let explicit = 0;
+  let possible = 0;
+  for (const ctx of Object.values(ctxByDay)) {
+    const potential = ctx.sets.length > 1 ? ctx.sets.length - 1 : 0;
+    possible += potential;
+    explicit += ctx.restMs?.length ?? 0;
+  }
+  return possible > 0 ? +(100 * explicit / possible).toFixed(2) : 0;
+}
+
 export function calcDensityKgPerMin(
   ctxByDay: Record<string, DayContext>,
   loadCtx: LoadCtx
@@ -133,5 +150,53 @@ export function calcSetEfficiencyPct(
   return {
     totals: { set_efficiency_pct: +totalPct.toFixed(2) },
     series: { set_efficiency_pct: series },
+  };
+}
+
+export function calcAvgRestSec(
+  ctxByDay: Record<string, DayContext>
+): CalcResult {
+  const series: TimeSeriesPoint[] = [];
+  let sum = 0;
+  let count = 0;
+  for (const day of Object.keys(ctxByDay).sort()) {
+    const ctx = ctxByDay[day];
+    const secs = (ctx.restMs ?? []).map(ms => clampSec(ms / 1000));
+    const avg = secs.length ? secs.reduce((a, b) => a + b, 0) / secs.length : 0;
+    series.push({ date: day, value: +avg.toFixed(2) });
+    sum += secs.reduce((a, b) => a + b, 0);
+    count += secs.length;
+  }
+  const total = count ? sum / count : 0;
+  return {
+    totals: { avgRestSec: +total.toFixed(2) },
+    series: { avgRestSec: series },
+  };
+}
+
+export function calcSetEfficiencyKgPerMin(
+  ctxByDay: Record<string, DayContext>,
+  loadCtx: LoadCtx
+): CalcResult {
+  const series: TimeSeriesPoint[] = [];
+  let totalVol = 0;
+  let totalMin = 0;
+  for (const day of Object.keys(ctxByDay).sort()) {
+    const ctx = ctxByDay[day];
+    const vol = ctx.sets.reduce((s, set) => s + getSetVolumeKg(set, loadCtx), 0);
+    const restSec = (ctx.restMs ?? []).reduce((s, ms) => s + clampSec(ms / 1000), 0);
+    const workSec = (ctx.workMsTotal ?? ctx.sets.reduce((s, set) => s + (set.workMs ?? (set.reps ?? 0) * 1000), 0)) / 1000;
+    const minutes = (restSec + workSec) / 60;
+    const eff = minutes > EPSILON ? vol / minutes : 0;
+    const val = Math.max(0, eff);
+    series.push({ date: day, value: +val.toFixed(2) });
+    totalVol += vol;
+    totalMin += minutes;
+  }
+  const totalEff = totalMin > EPSILON ? totalVol / totalMin : 0;
+  console.debug('[v2.audit.rest_efficiency]', { coveragePct: restCoveragePct(ctxByDay) });
+  return {
+    totals: { setEfficiencyKgPerMin: +Math.max(0, totalEff).toFixed(2) },
+    series: { setEfficiencyKgPerMin: series },
   };
 }

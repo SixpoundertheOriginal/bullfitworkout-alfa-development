@@ -1,4 +1,8 @@
-import { calcDensityKgPerMin, calcAvgRestMs, calcSetEfficiencyPct } from './engine/calculators';
+import {
+  calcDensityKgPerMin,
+  calcAvgRestSec,
+  calcSetEfficiencyKgPerMin,
+} from './engine/calculators';
 
 export interface MetricDef {
   id: string;
@@ -17,19 +21,19 @@ export const METRIC_DEFS: MetricDef[] = [
     calculator: calcDensityKgPerMin,
   },
   {
-    id: 'avg_rest_ms',
-    units: 'ms',
+    id: 'avgRestSec',
+    units: 's',
     category: 'rest',
     aggregation: 'timeseries/day',
-    calculator: calcAvgRestMs,
+    calculator: calcAvgRestSec,
   },
   {
-    id: 'set_efficiency_pct',
-    units: '%',
+    id: 'setEfficiencyKgPerMin',
+    units: 'kg/min',
     category: 'efficiency',
     aggregation: 'timeseries/day',
-    calculator: calcSetEfficiencyPct,
+    calculator: calcSetEfficiencyKgPerMin,
   },
 ];
 
-export const DEFS_VERSION = 2;
+export const DEFS_VERSION = 3;

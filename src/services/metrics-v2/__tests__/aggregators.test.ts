@@ -89,8 +89,8 @@ describe('aggregators', () => {
       expect(result[0].kpis).toBeDefined();
       expect(result[0].kpis).toMatchObject({
         density: 33.78, // 1520/45
-        avgRest: 150, // (120+180)/2
-        setEfficiency: 1.67, // 150/90
+        avgRestSec: 150, // (120+180)/2
+        setEfficiencyKgPerMin: 1.67, // 150/90
       });
     });
 
@@ -185,8 +185,8 @@ describe('aggregators', () => {
           restMin: 5,
           kpis: {
             density: 50,
-            avgRest: 30,
-            setEfficiency: 0.8,
+            avgRestSec: 30,
+            setEfficiencyKgPerMin: 0.8,
           },
         },
         {
@@ -199,18 +199,18 @@ describe('aggregators', () => {
           restMin: 10,
           kpis: {
             density: 50,
-            avgRest: 40,
-            setEfficiency: 1.2,
+            avgRestSec: 40,
+            setEfficiencyKgPerMin: 1.2,
           },
         },
       ];
-      
+
       const result = aggregateTotalsKpis(perWorkout);
 
       expect(result).toEqual({
         density: 50, // 5000/100
-        avgRest: 36, // (5*60 + 10*60) / 25 sets
-        setEfficiency: 1, // (0.8 + 1.2) / 2
+        avgRestSec: 36, // (5*60 + 10*60) / 25 sets
+        setEfficiencyKgPerMin: 1, // (0.8 + 1.2) / 2
       });
     });
   });

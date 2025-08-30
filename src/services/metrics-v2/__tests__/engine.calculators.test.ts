@@ -3,9 +3,11 @@ import {
   getSetLoadKg,
   deriveRestMs,
   calcDensityKgPerMin,
-  calcAvgRestMs,
-  calcSetEfficiencyPct,
+  calcAvgRestSec,
+  calcSetEfficiencyKgPerMin,
+  restCoveragePct,
 } from '../engine/calculators';
+import { buildDayContexts } from '../engine/dayContextBuilder';
 
 const ctx = { includeBodyweight: true, bodyweightKg: 80 };
 
@@ -37,9 +39,33 @@ describe('engine calculators', () => {
     };
     const density = calcDensityKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 80 });
     expect(density.totals.density_kg_min).toBeGreaterThan(0);
-    const avgRest = calcAvgRestMs(ctxByDay);
-    expect(avgRest.totals.avg_rest_ms).toBe(60000);
-    const eff = calcSetEfficiencyPct(ctxByDay);
-    expect(eff.totals.set_efficiency_pct).toBeGreaterThan(0);
+    const avgRest = calcAvgRestSec(ctxByDay);
+    expect(avgRest.totals.avgRestSec).toBe(60);
+    const eff = calcSetEfficiencyKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 0 });
+    expect(eff.totals.setEfficiencyKgPerMin).toBeGreaterThan(0);
+  });
+
+  it('clamps negative rest and applies epsilon', () => {
+    const ctxByDay = {
+      '2024-01-01': {
+        sets: [{ weight: 50, reps: 5, workMs: 0 }],
+        activeMinutes: 0,
+        restMs: [-1000],
+      },
+    };
+    const avg = calcAvgRestSec(ctxByDay);
+    expect(avg.totals.avgRestSec).toBe(0);
+    const eff = calcSetEfficiencyKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 0 });
+    expect(eff.totals.setEfficiencyKgPerMin).toBe(0);
+  });
+
+  it('handles Warsaw day bucketing', () => {
+    const workouts = [{ id: 'w1', startedAt: '2024-01-01T23:30:00Z' }];
+    const sets = [{ workoutId: 'w1', weightKg: 20, reps: 5, seconds: 30, restMs: 30000 }];
+    const ctxByDay = buildDayContexts(workouts as any, sets as any);
+    const day = Object.keys(ctxByDay)[0];
+    expect(day).toBe('2024-01-02');
+    const coverage = restCoveragePct(ctxByDay);
+    expect(coverage).toBe(100);
   });
 });
