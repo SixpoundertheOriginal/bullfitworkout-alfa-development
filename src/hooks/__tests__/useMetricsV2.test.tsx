@@ -8,11 +8,12 @@ import { TONNAGE_ID } from '@/pages/analytics/metricIds';
 
 vi.mock('@/services/metrics-v2/service', () => ({
   metricsServiceV2: {
-    getMetricsV2: vi.fn().mockResolvedValue({ series: { [TONNAGE_ID]: [] } }),
+    getMetricsV2: vi.fn().mockResolvedValue({ series: { tonnageKg: [] } }),
   },
 }));
 
 import useMetricsV2 from '../useMetricsV2';
+import { metricsServiceV2 } from '@/services/metrics-v2/service';
 
 const client = new QueryClient();
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -32,5 +33,15 @@ describe('useMetricsV2', () => {
       true,
       DEFS_VERSION,
     ]);
+  });
+
+  it('maps camelCase series keys to snake_case', async () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
+    const params = { startISO: '2024-01-01', endISO: '2024-01-07', includeBodyweightLoads: undefined };
+    const mockSeries = [{ date: '2024-01-01', value: 5 }];
+    (metricsServiceV2.getMetricsV2 as any).mockResolvedValueOnce({ series: { tonnageKg: mockSeries } });
+    const { result, waitFor } = renderHook(() => useMetricsV2('u1', params), { wrapper });
+    await waitFor(() => result.current.isSuccess);
+    expect(result.current.data?.series?.[TONNAGE_ID]).toEqual(mockSeries);
   });
 });

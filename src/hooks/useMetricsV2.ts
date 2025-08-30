@@ -91,6 +91,16 @@ export default function useMetricsV2(
           bodyweightKg,
         })
         .then((res: any) => {
+          const keyMap: Record<string, string> = {
+            tonnageKg: 'tonnage_kg',
+            durationMin: 'duration_min',
+            densityKgPerMin: 'density_kg_per_min',
+          };
+          if (res?.series) {
+            res.series = Object.fromEntries(
+              Object.entries(res.series).map(([k, v]) => [keyMap[k as keyof typeof keyMap] || k, v])
+            );
+          }
           const points = res?.series?.[TONNAGE_ID]?.length || 0;
           console.debug('[MetricsV2][debug] series points:', points);
           return res as AnalyticsServiceData;
