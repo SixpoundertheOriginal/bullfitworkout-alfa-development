@@ -1,7 +1,8 @@
 // Public surface for v2 + DI-friendly façade
 import type { ServiceOutput, PerWorkoutMetrics, TimeSeriesPoint } from './dto';
 import type { MetricsRepository, DateRange } from './repository';
-import { calcDensityKgPerMin, calcAvgRestMs, calcSetEfficiencyPct, type DayContext, type SetLike } from './engine/calculators';
+import { calcDensityKgPerMin, calcAvgRestMs, calcSetEfficiencyPct } from './engine/calculators';
+import { buildDayContexts } from './engine/dayContextBuilder';
 import { findPRs } from './prDetector';
 
 export type MetricsConfig = {
@@ -64,7 +65,6 @@ export async function getMetricsV2(
 
   // Step 2: Build per-workout metrics and DayContext records for calculators
   const perWorkout: PerWorkoutMetrics[] = [];
-  const ctxByDay: Record<string, DayContext> = {};
 
   workouts.forEach(w => {
     const wSets = sets.filter(s => s.workoutId === w.id);
@@ -84,32 +84,9 @@ export async function getMetricsV2(
       activeMin: durationMin,
       restMin: 0,
     });
-
-    const day = (w.startedAt || '').split('T')[0];
-    if (!day) return;
-    if (!ctxByDay[day]) {
-      ctxByDay[day] = { sets: [], activeMinutes: 0, restMs: [], workMsTotal: 0 } as DayContext;
-    }
-
-    const ctx = ctxByDay[day];
-    ctx.activeMinutes += durationMin;
-    ctx.workMsTotal = (ctx.workMsTotal ?? 0) + workSeconds * 1000;
-
-    wSets.forEach(s => {
-      const setLike: SetLike = {
-        weight: s.weightKg,
-        unit: 'kg',
-        reps: s.reps,
-        isBodyweight: s.isBodyweight,
-        performedAt: s.performedAt,
-        workMs: (s.seconds ?? 0) * 1000,
-      };
-      ctx.sets.push(setLike);
-      if (typeof s.restMs === 'number') {
-        ctx.restMs = ctx.restMs ? [...ctx.restMs, s.restMs] : [s.restMs];
-      }
-    });
   });
+
+  const ctxByDay = buildDayContexts(workouts, sets);
 
   // Step 3: run calculators and aggregate totals/series
   const densityRes = calcDensityKgPerMin(ctxByDay, { includeBodyweight: true, bodyweightKg: 0 });
