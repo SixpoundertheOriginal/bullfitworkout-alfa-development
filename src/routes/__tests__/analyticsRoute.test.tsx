@@ -1,16 +1,14 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import AppRoutes from '../AppRoutes';
+import { renderWithProviders } from '../../../tests/utils/renderWithProviders';
+
+vi.mock('recharts', async () => await import('../../../tests/mocks/recharts'));
 
 describe('analytics route', () => {
   it('renders new AnalyticsPage on /analytics', () => {
-    render(
-      <MemoryRouter initialEntries={['/analytics']}>
-        <AppRoutes />
-      </MemoryRouter>
-    );
+    renderWithProviders(<AppRoutes />, { route: '/analytics' });
     expect(screen.getByTestId('metric-select')).toBeInTheDocument();
   });
 });
