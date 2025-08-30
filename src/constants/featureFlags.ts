@@ -26,7 +26,7 @@ function readLocal(name: keyof FeatureFlags): boolean | undefined {
 
 function readEnv(name: keyof FeatureFlags): boolean | undefined {
   const key = `VITE_${name}`;
-  const raw = (import.meta as any).env?.[key] ?? process.env?.[key];
+  const raw = (import.meta as any).env?.[key];
   return typeof raw === 'string' ? raw === 'true' : undefined;
 }
 
