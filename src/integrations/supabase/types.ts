@@ -684,6 +684,78 @@ export type Database = {
           },
         ]
       }
+      exercises_backup_20250830: {
+        Row: {
+          base_exercise_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          difficulty: string | null
+          equipment_type: string[] | null
+          id: string | null
+          instructions: Json | null
+          is_compound: boolean | null
+          is_custom: boolean | null
+          media_urls: Json | null
+          metadata: Json | null
+          movement_pattern: string | null
+          name: string | null
+          primary_muscle_groups: string[] | null
+          secondary_muscle_groups: string[] | null
+          tips: string[] | null
+          updated_at: string | null
+          variation_type: string | null
+          variation_value: string | null
+          variations: string[] | null
+        }
+        Insert: {
+          base_exercise_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          equipment_type?: string[] | null
+          id?: string | null
+          instructions?: Json | null
+          is_compound?: boolean | null
+          is_custom?: boolean | null
+          media_urls?: Json | null
+          metadata?: Json | null
+          movement_pattern?: string | null
+          name?: string | null
+          primary_muscle_groups?: string[] | null
+          secondary_muscle_groups?: string[] | null
+          tips?: string[] | null
+          updated_at?: string | null
+          variation_type?: string | null
+          variation_value?: string | null
+          variations?: string[] | null
+        }
+        Update: {
+          base_exercise_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          difficulty?: string | null
+          equipment_type?: string[] | null
+          id?: string | null
+          instructions?: Json | null
+          is_compound?: boolean | null
+          is_custom?: boolean | null
+          media_urls?: Json | null
+          metadata?: Json | null
+          movement_pattern?: string | null
+          name?: string | null
+          primary_muscle_groups?: string[] | null
+          secondary_muscle_groups?: string[] | null
+          tips?: string[] | null
+          updated_at?: string | null
+          variation_type?: string | null
+          variation_value?: string | null
+          variations?: string[] | null
+        }
+        Relationships: []
+      }
       experience_logs: {
         Row: {
           amount: number
@@ -1565,6 +1637,15 @@ export type Database = {
       }
     }
     Views: {
+      exercise_integrity_audit: {
+        Row: {
+          affected_ids: string[] | null
+          issue_type: string | null
+          name: string | null
+          occurrence_count: number | null
+        }
+        Relationships: []
+      }
       exercise_performance_summary: {
         Row: {
           avg_reps: number | null
@@ -1585,6 +1666,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      orphaned_exercise_references: {
+        Row: {
+          affected_ids: string[] | null
+          issue_type: string | null
+          name: string | null
+          occurrence_count: number | null
+        }
+        Relationships: []
       }
       rls_performance_metrics: {
         Row: {
