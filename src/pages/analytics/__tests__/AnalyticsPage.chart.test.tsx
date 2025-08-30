@@ -22,4 +22,20 @@ describe('AnalyticsPage chart', () => {
     expect(getByTestId('chart')).toBeDefined();
     expect(queryByTestId('empty-series')).toBeNull();
   });
+
+  it('renders density chart when density series present', () => {
+    const data = {
+      series: {
+        density_kg_per_min: [{ date: '2024-01-01', value: 5 }],
+      },
+      metricKeys: ['density_kg_per_min'],
+    };
+    const { getByTestId, queryByTestId } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage data={data} />
+      </TooltipProvider>
+    );
+    expect(getByTestId('chart')).toBeDefined();
+    expect(queryByTestId('measure-note')).toBeNull();
+  });
 });

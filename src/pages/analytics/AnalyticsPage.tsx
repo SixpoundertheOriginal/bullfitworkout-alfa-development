@@ -2,7 +2,6 @@ import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
-import { BASE_MEASURES, DERIVED_MEASURES } from './measureOptions';
 import {
   TONNAGE_ID,
   SETS_ID,
@@ -136,7 +135,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
     if (v2Enabled && v2Data) {
       // Use V2 DTO series via adapter (camelCase keys, timestamps)
-      return toChartSeries({ series: v2Data.series });
+      return toChartSeries(v2Data);
     }
     // Legacy fallback (already in snake_case {date,value})
     const raw = serviceData?.series ?? {};
@@ -148,11 +147,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
   }, [derivedEnabled]);
 
-  const options = React.useMemo(
-    () => (derivedEnabled ? [...BASE_MEASURES, ...DERIVED_MEASURES] : BASE_MEASURES),
-    [derivedEnabled]
-  );
-  const baseIds = React.useMemo(() => BASE_MEASURES.map(m => m.id), []);
+  const baseIds = React.useMemo(() => ['tonnage_kg', 'sets', 'reps', 'duration_min'], []);
 
   React.useEffect(() => {
     if (!derivedEnabled && !baseIds.includes(currentMeasure)) {
@@ -160,21 +155,24 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     }
   }, [derivedEnabled, currentMeasure, baseIds]);
 
+  const resetRef = React.useRef(false);
   React.useEffect(() => {
-    if (!availableMeasures.includes(currentMeasure)) {
+    if (!resetRef.current && !availableMeasures.includes(currentMeasure)) {
       const nextMeasure = (availableMeasures[0] ?? TONNAGE_ID) as MetricId;
       console.debug('[metrics-v2.reset]', { prev: currentMeasure, next: nextMeasure });
       setCurrentMeasure(nextMeasure);
+      resetRef.current = true;
     }
   }, [availableMeasures, currentMeasure]);
 
   // Use currentMeasure after it's properly initialized
   const series = seriesData[currentMeasure] ?? [];
   const unavailable = series.length === 0;
-  const dropdownOptions = React.useMemo(
-    () => options.filter(o => availableMeasures.includes(o.id)),
-    [options, availableMeasures]
-  );
+  const dropdownOptions = React.useMemo(() => {
+    if (v2Enabled) return availableMeasures;
+    const ids = derivedEnabled ? [...baseIds, DENSITY_ID] : baseIds;
+    return ids.filter(id => availableMeasures.includes(id));
+  }, [availableMeasures, v2Enabled, derivedEnabled, baseIds]);
 
   const baseTotals = React.useMemo(
     () => {
@@ -215,23 +213,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   );
 
   React.useEffect(() => {
-    console.debug('[chart.props]', {
-      currentMeasure,
+    console.debug('[chart.props.density]', {
       availableMeasures,
-      seriesKeys: Object.keys(seriesData || {}),
-      seriesLen: seriesData[currentMeasure]?.length,
-      sample: seriesData[currentMeasure]?.[0],
+      currentMeasure,
+      len: seriesData?.density_kg_per_min?.length,
     });
-    
-    if (v2Enabled && v2Data) {
-      console.debug('[metrics-v2.chart]', {
-        measure: currentMeasure,
-        seriesLen: seriesData[currentMeasure]?.length || 0,
-        keys: availableMeasures,
-        tz: 'Europe/Warsaw'
-      });
-    }
-  }, [currentMeasure, availableMeasures, seriesData, v2Enabled, v2Data]);
+  }, [availableMeasures, currentMeasure, seriesData]);
 
   if (!data) {
     if (v2Enabled && v2Loading) {

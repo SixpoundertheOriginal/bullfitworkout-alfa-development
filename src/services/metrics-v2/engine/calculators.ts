@@ -79,12 +79,13 @@ export function calcDensityKgPerMin(
   for (const day of Object.keys(ctxByDay).sort()) {
     const ctx = ctxByDay[day];
     const vol = ctx.sets.reduce((s, set) => s + getSetVolumeKg(set, loadCtx), 0);
-    const density = vol / Math.max(1, ctx.activeMinutes);
+    const minutes = ctx.activeMinutes;
+    const density = minutes > 0 ? vol / minutes : 0;
     series.push({ date: day, value: +density.toFixed(2) });
     totalVolume += vol;
-    totalActive += ctx.activeMinutes;
+    totalActive += minutes;
   }
-  const totalDensity = totalVolume / Math.max(1, totalActive);
+  const totalDensity = totalActive > 0 ? totalVolume / totalActive : 0;
   return {
     totals: { density_kg_min: +totalDensity.toFixed(2) },
     series: { density_kg_min: series },

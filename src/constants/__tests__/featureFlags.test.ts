@@ -24,12 +24,14 @@ describe('featureFlags precedence', () => {
 
   it('env overrides defaults', async () => {
     process.env.VITE_KPI_ANALYTICS_ENABLED = 'false' as any;
+    (import.meta as any).env.VITE_KPI_ANALYTICS_ENABLED = 'false';
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(false);
   });
 
   it('localStorage overrides env', async () => {
     process.env.VITE_KPI_ANALYTICS_ENABLED = 'false' as any;
+    (import.meta as any).env.VITE_KPI_ANALYTICS_ENABLED = 'false';
     localStorage.setItem('bf_flag_KPI_ANALYTICS_ENABLED', 'true');
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);

@@ -7,4 +7,11 @@ describe('chartAdapter', () => {
     const out = toChartSeries(v2Payload);
     expect(out).toEqual(expectedChartSeries);
   });
+
+  it('maps densityKgPerMin to density_kg_per_min', () => {
+    const out = toChartSeries(v2Payload);
+    expect(out.series.density_kg_per_min).toEqual([
+      { date: '2024-05-01', value: 5 },
+    ]);
+  });
 });

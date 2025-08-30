@@ -12,9 +12,9 @@ describe('AnalyticsPage measure fallback', () => {
     const first = {
       series: {
         tonnage_kg: [{ date: '2024-01-01', value: 1000 }],
-        duration_min: [{ date: '2024-01-01', value: 60 }],
+        density_kg_per_min: [{ date: '2024-01-01', value: 5 }],
       },
-      metricKeys: ['tonnage_kg', 'duration_min'],
+      metricKeys: ['tonnage_kg', 'density_kg_per_min'],
     };
     const second = {
       series: { tonnage_kg: [{ date: '2024-01-01', value: 1000 }] },
@@ -26,7 +26,7 @@ describe('AnalyticsPage measure fallback', () => {
       </TooltipProvider>
     );
     const select = document.querySelector('[data-testid="metric-select"]') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'duration_min' } });
+    fireEvent.change(select, { target: { value: 'density_kg_per_min' } });
     rerender(
       <TooltipProvider>
         <AnalyticsPage data={second} />

@@ -7,6 +7,9 @@ const CANONICAL_KEYS = new Set([
   'tonnage_kg',
   'density_kg_per_min',
 ]);
+const KEY_MAP: Record<string, string> = {
+  densityKgPerMin: 'density_kg_per_min',
+};
 
 function toWarsawDate(ts: string): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -33,8 +36,7 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp: st
   const raw = payload.series ?? {};
   
   for (const [k, points] of Object.entries(raw)) {
-    // Convert camelCase to snake_case
-    const canonical = k.replace(/([A-Z])/g, '_$1').toLowerCase();
+    const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (!CANONICAL_KEYS.has(canonical)) continue;
     
     const mapped = (points || []).map(p => {
@@ -50,6 +52,12 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp: st
   }
   
   const availableMeasures = Object.keys(out);
+  const density = out['density_kg_per_min'];
+  console.debug('[adapter.out.density]', {
+    has: Boolean(density),
+    len: density?.length ?? 0,
+    sample: density?.[0],
+  });
   console.debug('[adapter.out]', {
     keys: availableMeasures,
     lengths: Object.fromEntries(availableMeasures.map(k => [k, out[k].length])),
