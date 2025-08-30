@@ -3,6 +3,9 @@ import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/d
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 import { useConfig } from '@/config/runtimeConfig';
 import { buildMetricOptions } from './metricOptions';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import useMetricsV2 from '@/hooks/useMetricsV2';
+import { useAuth } from '@/context/AuthContext';
 
 export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
@@ -13,9 +16,19 @@ export type AnalyticsServiceData = {
 export type AnalyticsPageProps = { data?: AnalyticsServiceData };
 
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
-  const perWorkout = data?.perWorkout ?? [];
-  const seriesData = data?.series ?? {};
-  const metricKeys = data?.metricKeys ?? [];
+  let userId: string | undefined;
+  try {
+    const auth = useAuth();
+    userId = auth.user?.id;
+  } catch {
+    userId = undefined;
+  }
+
+  const { data: fetched, isLoading, error } = useMetricsV2(userId);
+  const serviceData = data ?? fetched;
+  const perWorkout = serviceData?.perWorkout ?? [];
+  const seriesData = serviceData?.series ?? {};
+  const metricKeys = serviceData?.metricKeys ?? [];
   const { flags } = useConfig();
 
   React.useEffect(() => {
@@ -88,9 +101,18 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     return sign + formatter(Math.abs(value));
   };
 
+  if (!data) {
+    if (isLoading) {
+      return <div data-testid="loading">Loading analytics...</div>;
+    }
+    if (error) {
+      return <div data-testid="error">Failed to load analytics</div>;
+    }
+  }
+
   return (
     <div>
-      {flags.derivedKpis && (
+      {flags.derivedKpis ? (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
             <div>Density</div>
@@ -112,21 +134,38 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             )}</div>
           </div>
         </div>
+      ) : (
+        <div data-testid="kpi-disabled">Derived KPIs disabled</div>
       )}
 
-        <select
-          value={metric}
-          onChange={e => setMetric(e.target.value)}
-          data-testid="metric-select"
-        >
+      <select
+        value={metric}
+        onChange={e => setMetric(e.target.value)}
+        data-testid="metric-select"
+        disabled={metricKeys.length === 0}
+      >
         {options.map(o => (
           <option key={o.key} value={o.key}>
             {o.label}
           </option>
         ))}
       </select>
+      {metricKeys.length === 0 && (
+        <div data-testid="no-metrics">No metrics available</div>
+      )}
 
-      <pre data-testid="series">{JSON.stringify(series, null, 2)}</pre>
+      {series.length > 0 ? (
+        <ResponsiveContainer width="100%" height={300} data-testid="chart">
+          <LineChart data={series}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" stroke="#8884d8" />
+          </LineChart>
+        </ResponsiveContainer>
+      ) : (
+        <div data-testid="empty-series">No data to display</div>
+      )}
     </div>
   );
 };

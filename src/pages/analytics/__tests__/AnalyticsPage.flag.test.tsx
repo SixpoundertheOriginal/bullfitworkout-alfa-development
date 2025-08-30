@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ConfigProvider } from '@/config/runtimeConfig';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { AnalyticsPage } from '../AnalyticsPage';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // counts renders based on console.debug log emitted by AnalyticsPage
 
@@ -18,18 +19,23 @@ describe('AnalyticsPage render with derived KPI feature flag', () => {
     try {
       // initial render with flag enabled
       (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
+      const client = new QueryClient();
       const { rerender } = render(
-        <ConfigProvider initialFlags={{ derivedKpis: FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED }}>
-          <AnalyticsPage data={{ metricKeys: [] }} />
-        </ConfigProvider>
+        <QueryClientProvider client={client}>
+          <ConfigProvider initialFlags={{ derivedKpis: FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED }}>
+            <AnalyticsPage data={{ metricKeys: [] }} />
+          </ConfigProvider>
+        </QueryClientProvider>
       );
 
       // toggle flag and rerender
       (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
       rerender(
-        <ConfigProvider initialFlags={{ derivedKpis: FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED }}>
-          <AnalyticsPage data={{ metricKeys: [] }} />
-        </ConfigProvider>
+        <QueryClientProvider client={client}>
+          <ConfigProvider initialFlags={{ derivedKpis: FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED }}>
+            <AnalyticsPage data={{ metricKeys: [] }} />
+          </ConfigProvider>
+        </QueryClientProvider>
       );
 
       renderCalls = debugSpy.mock.calls.filter((args) =>

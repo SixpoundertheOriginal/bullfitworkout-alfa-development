@@ -90,11 +90,11 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
         Set Efficiency (×)
       </option>
     </select>
-    <pre
-      data-testid="series"
+    <div
+      data-testid="empty-series"
     >
-      []
-    </pre>
+      No data to display
+    </div>
   </div>
 </div>
 `;
