@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { useWorkoutNavigation } from "@/context/WorkoutNavigationContext";
 import { useWorkoutStore } from "@/store/workoutStore";
 import { NavigationItem } from "@/components/ui/enhanced/NavigationItem";
-import { FEATURE_FLAGS } from "@/config/flags";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 export const BottomNav = () => {
   const location = useLocation();

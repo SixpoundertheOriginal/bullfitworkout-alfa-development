@@ -5,7 +5,7 @@ import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 interface RangeParams {
   startISO: string;
   endISO: string;
-  includeBodyweightLoads: boolean;
+  includeBodyweightLoads?: boolean;
 }
 
 export default function useMetricsV2(
@@ -13,13 +13,25 @@ export default function useMetricsV2(
   range?: RangeParams
 ) {
   return useQuery<AnalyticsServiceData>({
-    queryKey: ['metricsV2', userId, range?.startISO, range?.endISO, range?.includeBodyweightLoads],
-    queryFn: () =>
-      metricsServiceV2.getMetricsV2({
-        userId: userId!,
-        dateRange: { start: range!.startISO, end: range!.endISO },
+    queryKey: ['metricsV2', range?.startISO, range?.endISO, range?.includeBodyweightLoads],
+    queryFn: () => {
+      console.debug('[MetricsV2][debug] params', {
+        startISO: range!.startISO,
+        endISO: range!.endISO,
         includeBodyweightLoads: range?.includeBodyweightLoads,
-      }) as Promise<AnalyticsServiceData>,
+      });
+      return metricsServiceV2
+        .getMetricsV2({
+          userId: userId!,
+          dateRange: { start: range!.startISO, end: range!.endISO },
+          includeBodyweightLoads: range?.includeBodyweightLoads,
+        })
+        .then((res: any) => {
+          const points = res?.series?.volume?.length || 0;
+          console.debug('[MetricsV2][debug] series points:', points);
+          return res as AnalyticsServiceData;
+        });
+    },
     enabled: !!userId && !!range,
     staleTime: 60000,
     refetchOnWindowFocus: false,
