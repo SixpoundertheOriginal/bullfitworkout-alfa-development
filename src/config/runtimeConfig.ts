@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getFlag as getFeatureFlag, setFlagOverride } from '@/constants/featureFlags';
+import { getFlag as getFeatureFlag, setFlagOverride } from './featureFlags';
 
 export type Flags = {
   derivedKpis: boolean;
@@ -44,8 +44,9 @@ export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children, initia
 
   useEffect(() => {
     if (isBrowser) {
-      (window as any).__FLAGS__ = {
-        ...(window as any).__FLAGS__,
+      const windowWithFlags = window as any;
+      windowWithFlags.__FLAGS__ = {
+        ...windowWithFlags.__FLAGS__,
         [FLAG_PATHS.derivedKpis]: flags.derivedKpis,
       };
     }
