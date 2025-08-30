@@ -26,7 +26,7 @@ import { AIRecommendationBadge } from './AIRecommendationBadge';
 import { useExerciseVariants } from '@/hooks/useExerciseVariants';
 import { VariantSelectionData } from '@/types/exercise-variants';
 import { formatDistanceToNow } from 'date-fns';
-import { useFeatureFlag } from '@/config/flags';
+import { useFeatureFlags } from '@/constants/featureFlags';
 import { useBodyweightKg } from '@/providers/ProfileProvider';
 import {
   isBodyweight,
@@ -64,7 +64,7 @@ export function EnhancedExerciseCard({
   const { variants, recommendations, getProgressionTrend, getLastPerformed, getPersonalBest } = useExerciseVariants(exercise.id);
   
   // Feature flags and bodyweight calculations
-  const bwLoadsEnabled = useFeatureFlag('BW_LOADS_ENABLED');
+  const { ANALYTICS_DERIVED_KPIS_ENABLED: bwLoadsEnabled } = useFeatureFlags();
   const bodyweightKg = useBodyweightKg();
   const isDefaultBw = isUsingDefaultBodyweight(bodyweightKg);
   

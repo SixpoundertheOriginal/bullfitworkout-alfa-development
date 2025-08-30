@@ -2,10 +2,21 @@
 
 import { ExerciseSet } from '@/types/exercise';
 import { calculateEffectiveWeight, getExerciseLoadFactor, isBodyweightExercise } from '@/types/exercise';
-import { isFeatureEnabled } from '@/config/flags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { effectiveLoadPerRepKg, isometricWorkKgSec, isBodyweight } from '@/utils/load';
-import { emitBwLoadApplied, emitIsometricWorkLogged } from '@/config/flags';
 import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
+
+function emitBwLoadApplied(data: { exerciseId: string; userBw: number; loadPerRep: number }) {
+  if (import.meta.env.DEV) {
+    console.log('[Telemetry] bw_load_applied', data);
+  }
+}
+
+function emitIsometricWorkLogged(data: { exerciseId: string; loadKg: number; durationSec: number; workKgSec: number }) {
+  if (import.meta.env.DEV) {
+    console.log('[Telemetry] isometric_work_logged', data);
+  }
+}
 
 // Enhanced ProcessedWorkoutMetrics with bodyweight and isometric work separation
 export interface ProcessedWorkoutMetrics {
@@ -175,7 +186,7 @@ export const processWorkoutMetrics = (
 
   // Configurable fallbacks and feature gates
   const REST_FALLBACK_SECONDS = 60; // used when set.restTime is missing
-  const BW_LOADS_ENABLED = isFeatureEnabled('BW_LOADS_ENABLED');
+  const BW_LOADS_ENABLED = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
 
   let totalRpe = 0;
   let rpeCount = 0;

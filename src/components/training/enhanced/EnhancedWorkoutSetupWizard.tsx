@@ -21,6 +21,8 @@ import {
 import WizardProgress from './WizardProgress';
 import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
+
+const SETUP_CHOOSE_EXERCISES_ENABLED = FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED;
 import {
   TrainingFocus,
   TrainingGoals,

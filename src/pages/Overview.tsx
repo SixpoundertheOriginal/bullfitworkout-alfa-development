@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { FEATURE_FLAGS } from "@/config/flags";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { Link } from "react-router-dom";
 import { useParallelOverviewData } from "@/hooks/useParallelOverviewData";
 import { useUnifiedOverviewData } from "@/hooks/useUnifiedOverviewData";

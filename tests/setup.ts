@@ -11,4 +11,4 @@ afterAll(() => {
   vi.useRealTimers();
 });
 
-// Global helper: allow tests to mock feature flags via vi.mock('@/config/flags')
+// Global helper: allow tests to mock feature flags via vi.mock('@/constants/featureFlags')

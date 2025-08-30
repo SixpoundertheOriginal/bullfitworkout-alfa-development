@@ -13,8 +13,8 @@ import ProfilePage from "@/pages/ProfilePage";
 import Auth from "@/pages/Auth";
 import AllExercisesPage from "@/pages/AllExercisesPage";
 import Overview from "@/pages/Overview";
-import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
-import { FEATURE_FLAGS } from "@/config/flags";
+import Analytics from "@/pages/Analytics";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WorkoutManagementPage } from "@/pages/WorkoutManagementPage";
 import EnhancedTrainingCoachPage from "@/pages/EnhancedTrainingCoachPage";
 
@@ -67,7 +67,7 @@ export const RouterProvider = () => {
                 element={
                   <ProtectedRoute>
                     <MainLayout>
-                      <AnalyticsPage />
+                      <Analytics />
                     </MainLayout>
                   </ProtectedRoute>
                 }

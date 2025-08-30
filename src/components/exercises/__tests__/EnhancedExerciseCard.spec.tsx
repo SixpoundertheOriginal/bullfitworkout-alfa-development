@@ -11,8 +11,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Exercise } from '@/types/exercise';
 
 // Use typed mocks from src/__mocks__
-vi.mock('@/config/flags');
-import * as flags from '@/config/flags';
+vi.mock('@/constants/featureFlags');
+import * as flags from '@/constants/featureFlags';
 
 // Use typed mocks from src/__mocks__
 vi.mock('@/providers/ProfileProvider');
@@ -78,7 +78,7 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('when BW_LOADS_ENABLED flag is on', () => {
     beforeEach(() => {
-      (flags.useFeatureFlag as any).mockReturnValue(true);
+      (flags.useFeatureFlags as any).mockReturnValue({ ANALYTICS_DERIVED_KPIS_ENABLED: true });
     });
 
     it('shows estimated load badge for bodyweight reps exercise with profile weight', async () => {
@@ -200,7 +200,7 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('when BW_LOADS_ENABLED flag is off', () => {
     beforeEach(() => {
-      (flags.useFeatureFlag as any).mockReturnValue(false);
+      (flags.useFeatureFlags as any).mockReturnValue({ ANALYTICS_DERIVED_KPIS_ENABLED: false });
     });
 
     it('hides load badges when feature flag is disabled', async () => {
@@ -225,7 +225,7 @@ describe('EnhancedExerciseCard Bodyweight Load Badges', () => {
 
   describe('specific exercise calculations', () => {
     beforeEach(() => {
-      (flags.useFeatureFlag as any).mockReturnValue(true);
+      (flags.useFeatureFlags as any).mockReturnValue({ ANALYTICS_DERIVED_KPIS_ENABLED: true });
     });
 
     it('calculates hanging leg raise load correctly', async () => {

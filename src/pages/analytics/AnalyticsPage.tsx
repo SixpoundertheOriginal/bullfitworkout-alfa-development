@@ -1,12 +1,15 @@
 import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
-import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import { buildMetricOptions } from './metricOptions';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2 from '@/hooks/useMetricsV2';
 import { useAuth } from '@/context/AuthContext';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Label } from '@/components/ui/label';
 
 export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
@@ -43,7 +46,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     userId = undefined;
   }
 
-  const [derivedEnabled, setDerivedEnabled] = React.useState<boolean>(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED);
+  const { ANALYTICS_DERIVED_KPIS_ENABLED } = useFeatureFlags();
+  const [derivedEnabled, setDerivedEnabled] = React.useState<boolean>(
+    ANALYTICS_DERIVED_KPIS_ENABLED
+  );
   const [range, setRange] = React.useState<Range>(() => loadRange());
   const rangeIso = React.useMemo(
     () => ({ startISO: range.start.toISOString(), endISO: range.end.toISOString() }),
@@ -177,18 +183,26 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
+        <div className="flex items-center gap-2">
+          <Switch
+            id="derived-toggle"
             checked={derivedEnabled}
-            onChange={e => {
-              setDerivedEnabled(e.target.checked);
-              (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = e.target.checked;
+            onCheckedChange={(v) => {
+              setDerivedEnabled(v);
+              setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', v);
             }}
-            title="Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2)."
           />
-          <span>Show derived KPIs (beta)</span>
-        </label>
+          <UiTooltip>
+            <TooltipTrigger asChild>
+              <Label htmlFor="derived-toggle" className="cursor-pointer">
+                Show derived KPIs (beta)
+              </Label>
+            </TooltipTrigger>
+            <TooltipContent>
+              Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2).
+            </TooltipContent>
+          </UiTooltip>
+        </div>
         <div className="flex items-center gap-2">
           <select value={preset} onChange={e => handlePreset(e.target.value)} data-testid="range-select">
             <option value="last7">Last 7 days</option>
@@ -210,7 +224,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         </div>
       </div>
 
-      {flags.derivedKpis && (
+      {derivedEnabled && (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
             <div>Density</div>

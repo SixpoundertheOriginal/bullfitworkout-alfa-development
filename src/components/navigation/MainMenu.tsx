@@ -1,7 +1,7 @@
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Clock, BarChart3, Zap, Dumbbell, User } from "lucide-react"
-import { FEATURE_FLAGS } from "@/config/flags";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useLocation, Link } from "react-router-dom"
 
 export const MainMenu = () => {
