@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { AnalyticsPage } from '../AnalyticsPage';
 import { ConfigProvider } from '@/config/runtimeConfig';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const makeWorkouts = (): PerWorkoutMetrics[] => {
   const workouts: PerWorkoutMetrics[] = [];
@@ -42,10 +43,13 @@ describe('AnalyticsPage KPI cards', () => {
       series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
+    const client = new QueryClient();
     const { container, getByTestId } = render(
-      <ConfigProvider initialFlags={{ derivedKpis: true }}>
-        <AnalyticsPage data={data} />
-      </ConfigProvider>
+      <QueryClientProvider client={client}>
+        <ConfigProvider initialFlags={{ derivedKpis: true }}>
+          <AnalyticsPage data={data} />
+        </ConfigProvider>
+      </QueryClientProvider>
     );
     expect(getByTestId('kpi-density')).toBeTruthy();
     expect(container).toMatchSnapshot();
@@ -58,10 +62,13 @@ describe('AnalyticsPage KPI cards', () => {
       series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
+    const client = new QueryClient();
     const { queryByTestId } = render(
-      <ConfigProvider initialFlags={{ derivedKpis: false }}>
-        <AnalyticsPage data={data} />
-      </ConfigProvider>
+      <QueryClientProvider client={client}>
+        <ConfigProvider initialFlags={{ derivedKpis: false }}>
+          <AnalyticsPage data={data} />
+        </ConfigProvider>
+      </QueryClientProvider>
     );
     expect(queryByTestId('kpi-density')).toBeNull();
   });
