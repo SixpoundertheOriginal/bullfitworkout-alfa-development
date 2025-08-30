@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
-import { useConfig } from '@/config/runtimeConfig';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { buildMetricOptions } from './metricOptions';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2 from '@/hooks/useMetricsV2';
