@@ -1,9 +1,58 @@
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { metricsServiceV2 } from '@/services/metrics-v2/service';
 import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 import { TONNAGE_ID } from '@/pages/analytics/metricIds';
+
+// Factory for stable params
+function buildMetricsParams(opts: {
+  startISO: string;
+  endISO: string;
+  userId: string;
+  unit: 'kg';
+  tz: 'Europe/Warsaw';
+  includeBodyweight?: boolean;
+  includeTimePeriodAverages?: boolean;
+  bodyweightKg?: number;
+}) {
+  return Object.freeze({
+    startISO: opts.startISO,
+    endISO: opts.endISO,
+    userId: opts.userId,
+    unit: opts.unit,
+    tz: opts.tz,
+    includeBodyweight: opts.includeBodyweight ?? false,
+    includeTimePeriodAverages: opts.includeTimePeriodAverages ?? false,
+    bodyweightKg: opts.bodyweightKg ?? 75,
+  });
+}
+
+// V2 DTO type with required structure
+export type MetricsV2Data = {
+  meta: {
+    version: 'v2';
+    generatedAt: string;
+    tz: 'Europe/Warsaw';
+    unit: 'kg';
+  };
+  inputs: {
+    startISO: string;
+    endISO: string;
+    userId: string;
+    unit: 'kg';
+    tz: 'Europe/Warsaw';
+  };
+  kpis: {
+    sets: number;
+    reps: number;
+    durationMin: number;
+    tonnageKg: number;
+    densityKgPerMin: number;
+  };
+  error?: string;
+};
 
 interface RangeParams {
   startISO: string;
@@ -13,6 +62,7 @@ interface RangeParams {
   bodyweightKg?: number;
 }
 
+// Legacy useMetricsV2 (unchanged)
 export default function useMetricsV2(
   userId?: string,
   range?: RangeParams
@@ -49,5 +99,142 @@ export default function useMetricsV2(
     enabled: !!userId && !!startISO && !!endISO,
     staleTime: 60000,
     refetchOnWindowFocus: false,
+  });
+}
+
+// New V2-specific hook for analytics
+export function useMetricsV2Analytics(
+  userId?: string,
+  range?: { startISO: string; endISO: string }
+) {
+  const requestId = React.useRef(`req-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  
+  const params = React.useMemo(() => {
+    if (!userId || !range?.startISO || !range?.endISO) return null;
+    return buildMetricsParams({
+      startISO: range.startISO,
+      endISO: range.endISO,
+      userId,
+      unit: 'kg',
+      tz: 'Europe/Warsaw',
+    });
+  }, [userId, range?.startISO, range?.endISO]);
+
+  return useQuery<MetricsV2Data>({
+    queryKey: ['metrics-v2', params],
+    queryFn: async (): Promise<MetricsV2Data> => {
+      const t0 = performance.now();
+      const fromCache = false; // TODO: detect from TanStack Query
+      
+      try {
+        const response = await metricsServiceV2.getMetricsV2({
+          userId: params!.userId,
+          dateRange: { start: params!.startISO, end: params!.endISO },
+          includeBodyweightLoads: params!.includeBodyweight,
+          includeTimePeriodAverages: params!.includeTimePeriodAverages,
+          bodyweightKg: params!.bodyweightKg,
+        });
+
+        const durationMs = performance.now() - t0;
+        
+        // Transform to V2 DTO format with 2-decimal rounding
+        const sets = response.totals?.sets_count ?? 0;
+        const reps = response.totals?.reps_total ?? 0;
+        const durationMin = Math.round((response.totals?.duration_min ?? 0) * 100) / 100;
+        const tonnageKg = Math.round((response.totals?.tonnage_kg ?? 0) * 100) / 100;
+        const densityKgPerMin = durationMin > 0 
+          ? Math.round((tonnageKg / durationMin) * 100) / 100 
+          : 0;
+
+        const result: MetricsV2Data = {
+          meta: {
+            version: 'v2',
+            generatedAt: new Date().toISOString(),
+            tz: 'Europe/Warsaw',
+            unit: 'kg',
+          },
+          inputs: {
+            startISO: params!.startISO,
+            endISO: params!.endISO,
+            userId: params!.userId,
+            unit: 'kg',
+            tz: 'Europe/Warsaw',
+          },
+          kpis: {
+            sets,
+            reps,
+            durationMin,
+            tonnageKg,
+            densityKgPerMin,
+          },
+        };
+
+        // Structured logging
+        console.log({
+          tag: 'metrics-v2.fetch',
+          requestId: requestId.current,
+          userId: params!.userId,
+          startISO: params!.startISO,
+          endISO: params!.endISO,
+          tz: 'Europe/Warsaw',
+          unit: 'kg',
+          fromCache,
+          durationMs,
+          counts: { sets, reps, workouts: response.totals?.workouts ?? 0, days: response.series?.tonnage_kg?.length ?? 0 },
+          kpis: { tonnageKg, durationMin, densityKgPerMin },
+          status: 'success',
+        });
+
+        return result;
+      } catch (error) {
+        const durationMs = performance.now() - t0;
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        console.log({
+          tag: 'metrics-v2.fetch',
+          requestId: requestId.current,
+          userId: params!.userId,
+          startISO: params!.startISO,
+          endISO: params!.endISO,
+          tz: 'Europe/Warsaw',
+          unit: 'kg',
+          fromCache,
+          durationMs,
+          errorName,
+          errorMessage,
+          status: 'error',
+        });
+
+        return {
+          meta: {
+            version: 'v2',
+            generatedAt: new Date().toISOString(),
+            tz: 'Europe/Warsaw',
+            unit: 'kg',
+          },
+          inputs: {
+            startISO: params!.startISO,
+            endISO: params!.endISO,
+            userId: params!.userId,
+            unit: 'kg',
+            tz: 'Europe/Warsaw',
+          },
+          kpis: {
+            sets: 0,
+            reps: 0,
+            durationMin: 0,
+            tonnageKg: 0,
+            densityKgPerMin: 0,
+          },
+          error: errorMessage,
+        };
+      }
+    },
+    enabled: !!params,
+    staleTime: 60000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev, // keepPreviousData equivalent in v5
   });
 }

@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 export type FeatureFlags = {
   KPI_ANALYTICS_ENABLED: boolean;
   ANALYTICS_DERIVED_KPIS_ENABLED: boolean;
+  ANALYTICS_V2_ENABLED: boolean;
   SETUP_CHOOSE_EXERCISES_ENABLED: boolean;
   SET_COMPLETE_NOTIFICATIONS_ENABLED: boolean;
 };
@@ -10,6 +11,7 @@ export type FeatureFlags = {
 const DEFAULTS: FeatureFlags = {
   KPI_ANALYTICS_ENABLED: true,
   ANALYTICS_DERIVED_KPIS_ENABLED: false,
+  ANALYTICS_V2_ENABLED: false,
   SETUP_CHOOSE_EXERCISES_ENABLED: false,
   SET_COMPLETE_NOTIFICATIONS_ENABLED: false,
 };
@@ -42,6 +44,7 @@ function resolveFlag(name: keyof FeatureFlags): boolean {
 export const FEATURE_FLAGS: FeatureFlags = {
   KPI_ANALYTICS_ENABLED: resolveFlag('KPI_ANALYTICS_ENABLED'),
   ANALYTICS_DERIVED_KPIS_ENABLED: resolveFlag('ANALYTICS_DERIVED_KPIS_ENABLED'),
+  ANALYTICS_V2_ENABLED: resolveFlag('ANALYTICS_V2_ENABLED'),
   SETUP_CHOOSE_EXERCISES_ENABLED: resolveFlag('SETUP_CHOOSE_EXERCISES_ENABLED'),
   SET_COMPLETE_NOTIFICATIONS_ENABLED: resolveFlag('SET_COMPLETE_NOTIFICATIONS_ENABLED'),
 };

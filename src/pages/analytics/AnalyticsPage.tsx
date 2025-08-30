@@ -14,13 +14,15 @@ import {
   type MetricId,
 } from './metricIds';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import useMetricsV2 from '@/hooks/useMetricsV2';
+import useMetricsV2, { useMetricsV2Analytics, type MetricsV2Data } from '@/hooks/useMetricsV2';
 import { useAuth } from '@/context/AuthContext';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { TimePeriodAveragesSection } from '@/components/analytics/TimePeriodAveragesSection';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
@@ -59,10 +61,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     userId = undefined;
   }
 
-  const { ANALYTICS_DERIVED_KPIS_ENABLED } = useFeatureFlags();
+  const { ANALYTICS_DERIVED_KPIS_ENABLED, ANALYTICS_V2_ENABLED } = useFeatureFlags();
   const [derivedEnabled, setDerivedEnabled] = React.useState<boolean>(
     ANALYTICS_DERIVED_KPIS_ENABLED
   );
+  const [v2Enabled, setV2Enabled] = React.useState<boolean>(ANALYTICS_V2_ENABLED);
+  const [testerPanelOpen, setTesterPanelOpen] = React.useState<boolean>(false);
   const [range, setRange] = React.useState<Range>(() => loadRange());
   const rangeIso = React.useMemo(
     () => ({ startISO: range.start.toISOString(), endISO: range.end.toISOString() }),
@@ -104,13 +108,23 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     }
   };
 
-  const { data: fetched, isLoading, error } = useMetricsV2(userId, {
-    startISO: rangeIso.startISO,
-    endISO: rangeIso.endISO,
-    includeBodyweightLoads: derivedEnabled,
-    includeTimePeriodAverages: true,
-    bodyweightKg: 75, // TODO: Get from user profile
-  });
+  // V2 Analytics Hook
+  const { data: v2Data, isLoading: v2Loading, error: v2Error } = useMetricsV2Analytics(
+    userId,
+    v2Enabled ? rangeIso : undefined
+  );
+
+  // Legacy Hook (fallback)
+  const { data: fetched, isLoading, error } = useMetricsV2(userId, 
+    v2Enabled ? undefined : {
+      startISO: rangeIso.startISO,
+      endISO: rangeIso.endISO,
+      includeBodyweightLoads: derivedEnabled,
+      includeTimePeriodAverages: true,
+      bodyweightKg: 75, // TODO: Get from user profile
+    }
+  );
+
   const serviceData = data ?? fetched;
   const seriesData = serviceData?.series ?? {};
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
@@ -138,22 +152,41 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const series = seriesData[currentMeasureId] ?? [];
 
   const baseTotals = React.useMemo(
-    () => ({
-      sets: totals[SETS_ID] ?? 0,
-      reps: totals[REPS_ID] ?? 0,
-      duration: totals[DURATION_ID] ?? 0,
-      tonnage: totals[TONNAGE_ID] ?? 0,
-    }),
-    [totals]
+    () => {
+      if (v2Enabled && v2Data) {
+        return {
+          sets: v2Data.kpis.sets,
+          reps: v2Data.kpis.reps,
+          duration: v2Data.kpis.durationMin,
+          tonnage: v2Data.kpis.tonnageKg,
+        };
+      }
+      return {
+        sets: totals[SETS_ID] ?? 0,
+        reps: totals[REPS_ID] ?? 0,
+        duration: totals[DURATION_ID] ?? 0,
+        tonnage: totals[TONNAGE_ID] ?? 0,
+      };
+    },
+    [v2Enabled, v2Data, totals]
   );
 
   const kpiTotals = React.useMemo(
-    () => ({
-      density: totals[DENSITY_ID] ?? 0,
-      avgRestMs: totals[AVG_REST_ID] ?? 0,
-      efficiencyPct: totals[EFF_ID] ?? 0,
-    }),
-    [totals]
+    () => {
+      if (v2Enabled && v2Data) {
+        return {
+          density: v2Data.kpis.densityKgPerMin,
+          avgRestMs: 0, // Not in V2 core KPIs
+          efficiencyPct: 0, // Not in V2 core KPIs
+        };
+      }
+      return {
+        density: totals[DENSITY_ID] ?? 0,
+        avgRestMs: totals[AVG_REST_ID] ?? 0,
+        efficiencyPct: totals[EFF_ID] ?? 0,
+      };
+    },
+    [v2Enabled, v2Data, totals]
   );
 
   React.useEffect(() => {
@@ -161,10 +194,16 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }, [currentMeasureId]);
 
   if (!data) {
-    if (isLoading) {
+    if (v2Enabled && v2Loading) {
+      return <div data-testid="loading">Loading V2 analytics...</div>;
+    }
+    if (v2Enabled && v2Error) {
+      return <div data-testid="error">Failed to load V2 analytics</div>;
+    }
+    if (!v2Enabled && isLoading) {
       return <div data-testid="loading">Loading analytics...</div>;
     }
-    if (error) {
+    if (!v2Enabled && error) {
       return <div data-testid="error">Failed to load analytics</div>;
     }
   }
@@ -173,27 +212,54 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     <div className="space-y-6 p-4 md:p-6">
       {/* Header with Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-card/50 backdrop-blur-sm rounded-lg border border-border/20">
-        <div className="flex items-center gap-3">
-          <Switch
-            id="derived-toggle"
-            checked={derivedEnabled}
-            onCheckedChange={(v) => {
-              setDerivedEnabled(v);
-              setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', v);
-            }}
-            className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
-          />
-          <UiTooltip>
-            <TooltipTrigger asChild>
-              <Label htmlFor="derived-toggle" className="cursor-pointer font-medium text-sm text-foreground hover:text-primary transition-colors">
-                Show derived KPIs 
-                <span className="ml-1 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-md">beta</span>
-              </Label>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p className="text-sm">Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2).</p>
-            </TooltipContent>
-          </UiTooltip>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <Switch
+              id="v2-toggle"
+              checked={v2Enabled}
+              onCheckedChange={(v) => {
+                setV2Enabled(v);
+                setFlagOverride('ANALYTICS_V2_ENABLED', v);
+              }}
+              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
+            />
+            <UiTooltip>
+              <TooltipTrigger asChild>
+                <Label htmlFor="v2-toggle" className="cursor-pointer font-medium text-sm text-foreground hover:text-primary transition-colors">
+                  Metrics V2 
+                  <span className="ml-1 text-xs bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded-md">tester</span>
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-sm">Use Metrics V2 for accurate tonnage calculations with 5 core KPIs</p>
+              </TooltipContent>
+            </UiTooltip>
+          </div>
+          
+          {!v2Enabled && (
+            <div className="flex items-center gap-3">
+              <Switch
+                id="derived-toggle"
+                checked={derivedEnabled}
+                onCheckedChange={(v) => {
+                  setDerivedEnabled(v);
+                  setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', v);
+                }}
+                className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
+              />
+              <UiTooltip>
+                <TooltipTrigger asChild>
+                  <Label htmlFor="derived-toggle" className="cursor-pointer font-medium text-sm text-foreground hover:text-primary transition-colors">
+                    Show derived KPIs 
+                    <span className="ml-1 text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-md">beta</span>
+                  </Label>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p className="text-sm">Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2).</p>
+                </TooltipContent>
+              </UiTooltip>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <select 
@@ -242,11 +308,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       </div>
 
       {/* Derived KPIs */}
-      {derivedEnabled && (
+      {(derivedEnabled && !v2Enabled) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div data-testid="kpi-density" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">{fmtKgPerMin(kpiTotals.density)}</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
+              {fmtKgPerMin(kpiTotals.density)}
+            </div>
           </div>
           <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest</div>
@@ -255,6 +323,18 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency</div>
             <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* V2 Density KPI (standalone when V2 enabled) */}
+      {v2Enabled && (
+        <div className="grid grid-cols-1 gap-4">
+          <div data-testid="kpi-density-v2" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min) - V2</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
+              {kpiTotals.density.toFixed(2)}
+            </div>
           </div>
         </div>
       )}
@@ -334,11 +414,34 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         )}
       </div>
 
-      {/* Time Period Averages Section */}
-      <TimePeriodAveragesSection
-        timePeriodAverages={serviceData?.timePeriodAverages}
-        isLoading={isLoading}
-      />
+      {/* Time Period Averages Section (only for legacy) */}
+      {!v2Enabled && (
+        <TimePeriodAveragesSection
+          timePeriodAverages={serviceData?.timePeriodAverages}
+          isLoading={isLoading}
+        />
+      )}
+
+      {/* Tester Data Panel (V2 only) */}
+      {v2Enabled && (
+        <Collapsible open={testerPanelOpen} onOpenChange={setTesterPanelOpen}>
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between p-4 bg-muted/30 backdrop-blur-sm rounded-lg border border-border/40 cursor-pointer hover:bg-muted/40 transition-all">
+              <h3 className="text-sm font-medium text-foreground">Tester Data Panel (Raw V2 Response)</h3>
+              <ChevronDown 
+                className={`h-4 w-4 text-muted-foreground transition-transform ${testerPanelOpen ? 'rotate-180' : ''}`}
+              />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 p-4 bg-muted/20 backdrop-blur-sm rounded-lg border border-border/20">
+              <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono overflow-x-auto">
+                {v2Data ? JSON.stringify(v2Data, null, 2) : 'No V2 data loaded'}
+              </pre>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
   };
