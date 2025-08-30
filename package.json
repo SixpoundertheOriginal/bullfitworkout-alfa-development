@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "lint": "npm run check:db-types && eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest",
+    "test:unit": "vitest run",
+    "test:ci": "vitest run --reporter=dot",
     "check:db-types": "npx supabase gen types typescript --project-id oglcdlzomfuoyeqeobal > /tmp/supabase-types.ts && diff -q /tmp/supabase-types.ts src/integrations/supabase/types.ts && rm /tmp/supabase-types.ts"
   },
   "dependencies": {
