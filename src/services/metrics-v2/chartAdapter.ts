@@ -24,6 +24,11 @@ export type ChartSeriesOutput = {
 
 // Convert Metrics v2 payload to chart-friendly series keyed by canonical measure ids
 export function toChartSeries(payload: { series?: Record<string, { timestamp: string; value: number }[]> }): ChartSeriesOutput {
+  console.debug('[adapter.in]', {
+    hasSeries: Boolean(payload?.series),
+    seriesKeys: payload?.series ? Object.keys(payload.series) : [],
+    rawKeys: Object.keys(payload || {}),
+  });
   const out: Record<string, TimeSeriesPoint[]> = {};
   const raw = payload.series ?? {};
   

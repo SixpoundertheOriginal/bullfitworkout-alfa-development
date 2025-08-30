@@ -51,6 +51,14 @@ export type MetricsV2Data = {
     tonnageKg: number;
     densityKgPerMin: number;
   };
+  // per-day time series used by charts (camelCase keys, timestamps)
+  series?: {
+    sets?: { timestamp: string; value: number }[];
+    reps?: { timestamp: string; value: number }[];
+    durationMin?: { timestamp: string; value: number }[];
+    tonnageKg?: { timestamp: string; value: number }[];
+    densityKgPerMin?: { timestamp: string; value: number }[];
+  };
   error?: string;
 };
 
@@ -176,6 +184,13 @@ export function useMetricsV2Analytics(
             durationMin,
             tonnageKg,
             densityKgPerMin,
+          },
+          series: {
+            sets: (response.series?.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            reps: (response.series?.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            durationMin: (response.series?.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            tonnageKg: (response.series?.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            densityKgPerMin: (response.series?.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
           },
         };
 

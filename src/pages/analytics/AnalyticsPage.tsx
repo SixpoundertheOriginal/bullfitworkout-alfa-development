@@ -134,23 +134,15 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
-    if (v2Enabled && serviceData) {
-      // For V2, adapt legacy series data format (TimeSeriesPoint) to chart adapter input format
-      const transformedSeries: Record<string, { timestamp: string; value: number }[]> = {};
-      for (const [key, points] of Object.entries(serviceData.series || {})) {
-        transformedSeries[key] = points.map(p => ({
-          timestamp: p.date + 'T00:00:00.000Z', // Convert date to timestamp for adapter
-          value: p.value
-        }));
-      }
-      const adapted = toChartSeries({ series: transformedSeries });
-      return adapted;
+    if (v2Enabled && v2Data) {
+      // Use V2 DTO series via adapter (camelCase keys, timestamps)
+      return toChartSeries({ series: v2Data.series });
     }
-    // Legacy fallback
+    // Legacy fallback (already in snake_case {date,value})
     const raw = serviceData?.series ?? {};
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
-  }, [v2Enabled, serviceData]);
+  }, [v2Enabled, v2Data, serviceData]);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
