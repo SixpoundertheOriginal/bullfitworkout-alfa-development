@@ -3,103 +3,149 @@
 exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
 <div>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <label class="flex items-center gap-2">
-        <input
-          checked=""
-          title="Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2)."
-          type="checkbox"
-        />
-        <span>
+    <div
+      class="flex items-center justify-between mb-4"
+    >
+      <div
+        class="flex items-center gap-2"
+      >
+        <button
+          aria-checked="true"
+          class="peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"
+          data-state="checked"
+          id="derived-toggle"
+          role="switch"
+          type="button"
+          value="on"
+        >
+          <span
+            class="pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0"
+            data-state="checked"
+          />
+        </button>
+        <label
+          class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+          data-state="closed"
+          for="derived-toggle"
+        >
           Show derived KPIs (beta)
-        </span>
-      </label>
-      <div class="flex items-center gap-2">
+        </label>
+      </div>
+      <div
+        class="flex items-center gap-2"
+      >
         <select
           data-testid="range-select"
         >
-          <option value="last7">
+          <option
+            value="last7"
+          >
             Last 7 days
           </option>
-          <option value="last14">
+          <option
+            value="last14"
+          >
             Last 14 days
           </option>
-          <option value="last30">
+          <option
+            value="last30"
+          >
             Last 30 days
           </option>
-          <option value="thisMonth">
+          <option
+            value="thisMonth"
+          >
             This month
           </option>
-          <option value="custom">
+          <option
+            value="custom"
+          >
             Custom
           </option>
         </select>
       </div>
     </div>
-    <div class="flex gap-4 mb-4">
-      <div data-testid="kpi-density">
+    <div
+      class="flex gap-4 mb-4"
+    >
+      <div
+        data-testid="kpi-density"
+      >
         <div>
-          Density
+          Density (kg/min)
         </div>
         <div>
-          20.00 kg/min
-        </div>
-        <div>
-          +10.00 kg/min
+          15.00 kg/min
         </div>
       </div>
-      <div data-testid="kpi-rest">
+      <div
+        data-testid="kpi-rest"
+      >
         <div>
           Avg Rest
         </div>
         <div>
-          0m 30s
-        </div>
-        <div>
-          -0m 30s
+          1m 0s
         </div>
       </div>
-      <div data-testid="kpi-efficiency">
+      <div
+        data-testid="kpi-efficiency"
+      >
         <div>
           Set Efficiency
         </div>
         <div>
           0.80×
         </div>
-        <div>
-          -0.20×
-        </div>
       </div>
     </div>
     <select
       data-testid="metric-select"
     >
-      <option value="volume">
+      <option
+        value="volume"
+      >
         Tonnage (kg)
       </option>
-      <option value="sets">
+      <option
+        value="sets"
+      >
         Sets
       </option>
-      <option value="workouts">
+      <option
+        value="workouts"
+      >
         Workouts
       </option>
-      <option value="duration">
+      <option
+        value="duration"
+      >
         Duration (min)
       </option>
-      <option value="reps">
+      <option
+        value="reps"
+      >
         Reps
       </option>
-      <option value="density">
+      <option
+        value="density"
+      >
         Density (kg/min)
       </option>
-      <option value="avgRest">
+      <option
+        value="avgRest"
+      >
         Avg Rest / Session (sec)
       </option>
-      <option value="setEfficiency">
+      <option
+        value="setEfficiency"
+      >
         Set Efficiency (×)
       </option>
     </select>
-    <div data-testid="empty-series">
+    <div
+      data-testid="empty-series"
+    >
       No data to display
     </div>
   </div>
