@@ -20,12 +20,14 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
+import { TimePeriodAveragesSection } from '@/components/analytics/TimePeriodAveragesSection';
 
 export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
   series?: Record<string, TimeSeriesPoint[]>;
   metricKeys?: string[];
   totals?: Record<string, number>;
+  timePeriodAverages?: import('@/services/metrics-v2/calculators/timePeriodAveragesCalculator').TimePeriodAveragesOutput;
 };
 
 export type AnalyticsPageProps = { data?: AnalyticsServiceData };
@@ -106,6 +108,8 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     startISO: rangeIso.startISO,
     endISO: rangeIso.endISO,
     includeBodyweightLoads: derivedEnabled,
+    includeTimePeriodAverages: true,
+    bodyweightKg: 75, // TODO: Get from user profile
   });
   const serviceData = data ?? fetched;
   const seriesData = serviceData?.series ?? {};
@@ -329,6 +333,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           </div>
         )}
       </div>
+
+      {/* Time Period Averages Section */}
+      <TimePeriodAveragesSection
+        timePeriodAverages={serviceData?.timePeriodAverages}
+        isLoading={isLoading}
+      />
     </div>
   );
   };

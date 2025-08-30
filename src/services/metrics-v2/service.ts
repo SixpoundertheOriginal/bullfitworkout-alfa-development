@@ -31,17 +31,23 @@ export const metricsServiceV2 = {
     userId,
     exerciseId,
     includeBodyweightLoads = false,
+    includeTimePeriodAverages = false,
+    bodyweightKg = 75,
   }: {
     dateRange: DateRange;
     userId: string;
     exerciseId?: string;
     includeBodyweightLoads?: boolean;
+    includeTimePeriodAverages?: boolean;
+    bodyweightKg?: number;
   }) => {
     try {
       console.debug('[MetricsV2][debug] params', {
         startISO: dateRange.start,
         endISO: dateRange.end,
         includeBodyweightLoads,
+        includeTimePeriodAverages,
+        bodyweightKg,
       })
       const {
         data: sessionData,
@@ -65,7 +71,7 @@ export const metricsServiceV2 = {
 
       const effectiveUserId = sessionUserId
 
-      let bodyweightKg = 70
+      let effectiveBodyweightKg = bodyweightKg
       if (includeBodyweightLoads) {
         try {
           const { data } = await supabase
@@ -74,7 +80,7 @@ export const metricsServiceV2 = {
             .eq('id', effectiveUserId)
             .single()
           const bw = (data as any)?.bodyweight_kg
-          if (typeof bw === 'number') bodyweightKg = bw
+          if (typeof bw === 'number') effectiveBodyweightKg = bw
         } catch {
           /* ignore */
         }
@@ -105,7 +111,7 @@ export const metricsServiceV2 = {
         return {
           id: s.id,
           workoutId: s.workoutId,
-          weightKg: getLoadKg(aug, includeBodyweightLoads, bodyweightKg),
+          weightKg: getLoadKg(aug, includeBodyweightLoads, effectiveBodyweightKg),
           reps: getReps(aug),
           exerciseId: s.exerciseId,
           exerciseName: s.exerciseName,
@@ -138,7 +144,7 @@ export const metricsServiceV2 = {
           loadFactor: getExerciseLoadFactor(s.exerciseName || ''),
         };
         const reps = getReps(aug)
-        const volume = getVolumeKg(aug, includeBodyweightLoads, bodyweightKg)
+        const volume = getVolumeKg(aug, includeBodyweightLoads, effectiveBodyweightKg)
         totalVolumeKg += volume
         totalSets += 1
         totalReps += reps
@@ -194,7 +200,12 @@ export const metricsServiceV2 = {
       }
 
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
-      const out = await computeV2(adapter, effectiveUserId, range)
+      const out = await computeV2(adapter, effectiveUserId, range, {
+        tz: 'Europe/Warsaw',
+        units: 'kg|min',
+        includeTimePeriodAverages,
+        bodyweightKg: includeBodyweightLoads ? effectiveBodyweightKg : 75
+      })
       console.log('[MetricsV2][debug] repoTotals -> workouts:', totalWorkouts, 'totalVolumeKg:', totalVolumeKg, 'totalSets:', totalSets)
       if (Array.isArray(out.series[TONNAGE_ID]) && out.series[TONNAGE_ID].length === 0 && repoVolumeSeries.length > 0) {
         console.log('[MetricsV2][debug] No tonnage series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })

@@ -4,10 +4,16 @@ import type { MetricsRepository, DateRange } from './repository';
 import { calcDensityKgPerMin, calcAvgRestMs, calcSetEfficiencyPct } from './engine/calculators';
 import { buildDayContexts } from './engine/dayContextBuilder';
 import { findPRs } from './prDetector';
+import { 
+  calculateTimePeriodAverages, 
+  type TimePeriodAveragesOutput 
+} from './calculators/timePeriodAveragesCalculator';
 
 export type MetricsConfig = {
   tz?: 'Europe/Warsaw';
   units?: 'kg|min';
+  includeTimePeriodAverages?: boolean;
+  bodyweightKg?: number;
 };
 
 export async function getMetricsV2(
@@ -134,13 +140,39 @@ export async function getMetricsV2(
 
   const metricKeys = Object.keys(series);
 
-  // Step 4: return populated ServiceOutput
+  // Step 4: Calculate time period averages if requested
+  let timePeriodAverages: TimePeriodAveragesOutput | undefined;
+  if (config.includeTimePeriodAverages) {
+    // Transform data to match calculator input format
+    const timePeriodSets = sets.map(set => ({
+      workoutId: set.workoutId,
+      exerciseName: set.exerciseName,
+      weightKg: set.weightKg,
+      reps: set.reps,
+      seconds: set.seconds,
+      isBodyweight: set.isBodyweight,
+      performedAt: set.performedAt,
+      restMs: set.restMs,
+      isWarmup: false // Add default since not in original data
+    }));
+
+    timePeriodAverages = calculateTimePeriodAverages({
+      workouts,
+      sets: timePeriodSets,
+      referenceDate: new Date(),
+      timezone: config.tz || 'Europe/Warsaw',
+      bodyweightKg: config.bodyweightKg || 75
+    });
+  }
+
+  // Step 5: return populated ServiceOutput
   return {
     totals: totals as any,
     perWorkout,
     prs: findPRs(),
     series,
     metricKeys,
+    timePeriodAverages,
     meta: {
       generatedAt: new Date().toISOString(),
       version: 'v2',

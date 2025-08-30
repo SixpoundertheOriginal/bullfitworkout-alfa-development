@@ -49,6 +49,7 @@ export type ServiceOutput = {
   series: Record<string, TimeSeriesPoint[]>;
   metricKeys: string[];
   totalsKpis?: TotalsKpis;
+  timePeriodAverages?: import('./calculators/timePeriodAveragesCalculator').TimePeriodAveragesOutput;
   meta: {
     generatedAt: string;
     version: 'v2';

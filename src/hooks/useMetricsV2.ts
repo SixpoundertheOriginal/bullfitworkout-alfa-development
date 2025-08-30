@@ -9,6 +9,8 @@ interface RangeParams {
   startISO: string;
   endISO: string;
   includeBodyweightLoads?: boolean;
+  includeTimePeriodAverages?: boolean;
+  bodyweightKg?: number;
 }
 
 export default function useMetricsV2(
@@ -16,21 +18,27 @@ export default function useMetricsV2(
   range?: RangeParams
 ) {
   const includeBodyweight = range?.includeBodyweightLoads ?? FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
+  const includeTimePeriodAverages = range?.includeTimePeriodAverages ?? false;
+  const bodyweightKg = range?.bodyweightKg ?? 75;
   const startISO = range?.startISO;
   const endISO = range?.endISO;
   return useQuery<AnalyticsServiceData>({
-    queryKey: ['metricsV2', startISO, endISO, includeBodyweight, DEFS_VERSION],
+    queryKey: ['metricsV2', startISO, endISO, includeBodyweight, includeTimePeriodAverages, bodyweightKg, DEFS_VERSION],
     queryFn: () => {
       console.debug('[MetricsV2][debug] params', {
         startISO,
         endISO,
         includeBodyweightLoads: includeBodyweight,
+        includeTimePeriodAverages,
+        bodyweightKg,
       });
       return metricsServiceV2
         .getMetricsV2({
           userId: userId!,
           dateRange: { start: startISO!, end: endISO! },
           includeBodyweightLoads: includeBodyweight,
+          includeTimePeriodAverages,
+          bodyweightKg,
         })
         .then((res: any) => {
           const points = res?.series?.[TONNAGE_ID]?.length || 0;
