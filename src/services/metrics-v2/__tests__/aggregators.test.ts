@@ -147,11 +147,11 @@ describe('aggregators', () => {
       const result = aggregateTotals(perWorkout);
       
       expect(result).toEqual({
-        totalVolumeKg: 2500,
-        totalSets: 25,
-        totalReps: 125,
+        tonnage_kg: 2500,
+        sets_count: 25,
+        reps_total: 125,
         workouts: 2,
-        durationMin: 105,
+        duration_min: 105,
       });
     });
   });
@@ -206,7 +206,7 @@ describe('aggregators', () => {
       ];
       
       const result = aggregateTotalsKpis(perWorkout);
-      
+
       expect(result).toEqual({
         density: 50, // 5000/100
         avgRest: 36, // (5*60 + 10*60) / 25 sets

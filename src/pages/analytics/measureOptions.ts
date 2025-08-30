@@ -1,6 +1,14 @@
-import { TONNAGE_ID, DENSITY_ID } from './metricIds';
+import { TONNAGE_ID, SETS_ID, REPS_ID, DURATION_ID, DENSITY_ID } from './metricIds';
 
-export const MEASURES = [
+export const BASE_MEASURES = [
   { id: TONNAGE_ID, label: 'Tonnage (kg)' },
+  { id: SETS_ID, label: 'Sets' },
+  { id: REPS_ID, label: 'Reps' },
+  { id: DURATION_ID, label: 'Duration (min)' },
+];
+
+export const DERIVED_MEASURES = [
   { id: DENSITY_ID, label: 'Density (kg/min)' },
 ];
+
+export const MEASURES = [...BASE_MEASURES, ...DERIVED_MEASURES];

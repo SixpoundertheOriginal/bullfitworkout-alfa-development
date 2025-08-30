@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { TONNAGE_ID, DENSITY_ID } from '@/pages/analytics/metricIds';
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -40,7 +41,7 @@ vi.mock('../aggregators', () => ({
   aggregateTotalsKpis: () => ({}),
 }));
 
-vi.mock('../index', () => ({ getMetricsV2: async () => ({ series: { tonnage_kg: [] }, totals: { density_kg_min: 1 } }) }));
+vi.mock('../index', () => ({ getMetricsV2: async () => ({ series: { [TONNAGE_ID]: [] }, totals: { [DENSITY_ID]: 1 } }) }));
 
 import { metricsServiceV2 } from '../service';
 
@@ -51,8 +52,8 @@ describe('metricsServiceV2 bodyweight loads', () => {
       dateRange: { start: '2024-01-01', end: '2024-01-02' },
       includeBodyweightLoads: true,
     });
-    expect(res.series.tonnage_kg.length).toBeGreaterThan(0);
-    expect(res.series.tonnage_kg[0].value).toBeGreaterThan(0);
-    expect(res.totals.density_kg_min).toBeGreaterThan(0);
+    expect(res.series[TONNAGE_ID].length).toBeGreaterThan(0);
+    expect(res.series[TONNAGE_ID][0].value).toBeGreaterThan(0);
+    expect(res.totals[DENSITY_ID]).toBeGreaterThan(0);
   });
 });

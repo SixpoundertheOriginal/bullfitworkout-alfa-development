@@ -3,6 +3,7 @@ import { metricsServiceV2 } from '@/services/metrics-v2/service';
 import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
+import { TONNAGE_ID } from '@/pages/analytics/metricIds';
 
 interface RangeParams {
   startISO: string;
@@ -32,7 +33,7 @@ export default function useMetricsV2(
           includeBodyweightLoads: includeBodyweight,
         })
         .then((res: any) => {
-          const points = res?.series?.tonnage_kg?.length || 0;
+          const points = res?.series?.[TONNAGE_ID]?.length || 0;
           console.debug('[MetricsV2][debug] series points:', points);
           return res as AnalyticsServiceData;
         });

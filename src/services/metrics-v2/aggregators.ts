@@ -77,11 +77,11 @@ export function aggregatePerWorkout(
 
 export function aggregateTotals(perWorkout: PerWorkoutMetrics[]): Totals {
   return {
-    totalVolumeKg: perWorkout.reduce((sum, w) => sum + w.totalVolumeKg, 0),
-    totalSets: perWorkout.reduce((sum, w) => sum + w.totalSets, 0),
-    totalReps: perWorkout.reduce((sum, w) => sum + w.totalReps, 0),
+    tonnage_kg: perWorkout.reduce((sum, w) => sum + w.totalVolumeKg, 0),
+    sets_count: perWorkout.reduce((sum, w) => sum + w.totalSets, 0),
+    reps_total: perWorkout.reduce((sum, w) => sum + w.totalReps, 0),
     workouts: perWorkout.length,
-    durationMin: perWorkout.reduce((sum, w) => sum + w.durationMin, 0),
+    duration_min: perWorkout.reduce((sum, w) => sum + w.durationMin, 0),
   };
 }
 
@@ -91,13 +91,13 @@ export function aggregateTotalsKpis(perWorkout: PerWorkoutMetrics[]): TotalsKpis
   }
 
   const totals = aggregateTotals(perWorkout);
-  
+
   // Overall density
-  const density = calcWorkoutDensityKgPerMin(totals.totalVolumeKg, totals.durationMin);
-  
+  const density = calcWorkoutDensityKgPerMin(totals.tonnage_kg, totals.duration_min);
+
   // Weighted average rest time
   const totalRestSec = perWorkout.reduce((sum, w) => sum + ((w.restMin || 0) * 60), 0);
-  const avgRest = calcAvgRestPerSession(totalRestSec, totals.totalSets);
+  const avgRest = calcAvgRestPerSession(totalRestSec, totals.sets_count);
   
   // Weighted set efficiency (average of all workout efficiencies)
   const efficiencies = perWorkout

@@ -16,17 +16,23 @@ export async function getMetricsV2(
 ): Promise<ServiceOutput> {
   // TODO: Call repo, calculators, aggregators, prDetector when implemented
   return {
-    totals: { totalVolumeKg: 0, totalSets: 0, totalReps: 0, workouts: 0, durationMin: 0 },
+    totals: {
+      tonnage_kg: 0,
+      sets_count: 0,
+      reps_total: 0,
+      workouts: 0,
+      duration_min: 0,
+    },
     perWorkout: [],
     prs: [],
     series: {
       tonnage_kg: [],
-      sets: [],
-      reps: [],
+      sets_count: [],
+      reps_total: [],
       density_kg_min: [],
       cvr: [],
       workouts: [],
-      duration: [],
+      duration_min: [],
       avg_rest_ms: [],
       set_efficiency_pct: [],
     },
