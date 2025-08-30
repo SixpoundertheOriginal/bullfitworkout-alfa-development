@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { toChartSeries } from '../chartAdapter';
+import { v2Payload, expectedChartSeries } from './metrics-v2.fixture';
 
-describe('ChartAdapter', () => {
-  it('aligns labels and datasets', () => {
-    const out = toChartSeries([{ date: '2025-08-01', value: 0 }]);
-    expect(out.labels.length).toBe(out.datasets.length);
+describe('chartAdapter', () => {
+  it('maps v2 payload to snake_case keys and {date,value}', () => {
+    const out = toChartSeries(v2Payload);
+    expect(out).toEqual(expectedChartSeries);
   });
 });

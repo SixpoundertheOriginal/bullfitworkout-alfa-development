@@ -21,6 +21,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
 import { TimePeriodAveragesSection } from '@/components/analytics/TimePeriodAveragesSection';
+import { MetricDropdown } from '@/components/analytics/MetricDropdown';
+import { toChartSeries } from '@/services/metrics-v2/chartAdapter';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 
@@ -126,8 +128,16 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   );
 
   const serviceData = data ?? fetched;
-  const seriesData = serviceData?.series ?? {};
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
+
+  const { series: seriesData, availableMeasures } = React.useMemo(() => {
+    if (v2Enabled && serviceData) {
+      return toChartSeries(serviceData as any);
+    }
+    const raw = serviceData?.series ?? {};
+    const measures = Object.keys(raw).filter(k => raw[k]?.length);
+    return { series: raw, availableMeasures: measures };
+  }, [v2Enabled, serviceData]);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
@@ -138,18 +148,26 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     [derivedEnabled]
   );
   const baseIds = React.useMemo(() => BASE_MEASURES.map(m => m.id), []);
-  const [metric, setMetric] = React.useState<MetricId>(TONNAGE_ID);
+  const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   React.useEffect(() => {
-    if (!derivedEnabled && !baseIds.includes(metric)) {
-      setMetric(TONNAGE_ID);
+    if (!derivedEnabled && !baseIds.includes(currentMeasure)) {
+      setCurrentMeasure(TONNAGE_ID);
     }
-  }, [derivedEnabled, metric, baseIds]);
+  }, [derivedEnabled, currentMeasure, baseIds]);
 
-  const selectedSeries = seriesData[metric];
-  const unavailable = !selectedSeries;
-  const currentMeasureId = unavailable ? TONNAGE_ID : metric;
-  const series = seriesData[currentMeasureId] ?? [];
+  React.useEffect(() => {
+    if (!availableMeasures.includes(currentMeasure)) {
+      setCurrentMeasure(availableMeasures[0] ?? TONNAGE_ID);
+    }
+  }, [availableMeasures, currentMeasure]);
+
+  const series = seriesData[currentMeasure] ?? [];
+  const unavailable = series.length === 0;
+  const dropdownOptions = React.useMemo(
+    () => options.filter(o => availableMeasures.includes(o.id)),
+    [options, availableMeasures]
+  );
 
   const baseTotals = React.useMemo(
     () => {
@@ -190,8 +208,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   );
 
   React.useEffect(() => {
-    console.debug('[Analytics] currentMeasure', currentMeasureId);
-  }, [currentMeasureId]);
+    console.debug('[chart.props]', {
+      currentMeasure,
+      availableMeasures,
+      seriesKeys: Object.keys(seriesData || {}),
+      seriesLen: seriesData[currentMeasure]?.length,
+      sample: seriesData[currentMeasure]?.[0],
+    });
+  }, [currentMeasure, availableMeasures, seriesData]);
 
   if (!data) {
     if (v2Enabled && v2Loading) {
@@ -343,19 +367,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       <div className="bg-card/50 backdrop-blur-sm rounded-lg border border-border/20 p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h3 className="text-lg font-semibold text-foreground">Performance Trends</h3>
-          <select
-            value={metric}
-            onChange={e => setMetric(e.target.value as MetricId)}
-            data-testid="metric-select"
-            disabled={options.length === 0}
-            className="px-3 py-2 bg-card border border-border rounded-md text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all min-w-[180px]"
-          >
-            {options.map(o => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          <MetricDropdown
+            value={currentMeasure}
+            onChange={setCurrentMeasure}
+            options={dropdownOptions}
+            disabled={dropdownOptions.length === 0}
+          />
         </div>
 
         {unavailable && (

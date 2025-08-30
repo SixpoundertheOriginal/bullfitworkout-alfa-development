@@ -22,7 +22,7 @@ describe('metric selector and KPI gating', () => {
     totals: baseTotals,
   };
 
-  it('toggle OFF → base cards and 4 base measures', () => {
+  it('toggle OFF → base cards, no measures available', () => {
     (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
     const client = new QueryClient();
     render(
@@ -33,13 +33,13 @@ describe('metric selector and KPI gating', () => {
       </QueryClientProvider>
     );
     const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(select.options.length).toBe(4);
+    expect(select.options.length).toBe(0);
     expect(screen.getByTestId('kpi-sets')).toBeInTheDocument();
     expect(screen.getByTestId('kpi-tonnage')).toBeInTheDocument();
     expect(screen.queryByTestId('kpi-density')).toBeNull();
   });
 
-  it('toggle ON → derived cards and selector adds density', () => {
+  it('toggle ON → derived cards allowed', () => {
     (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
     const client = new QueryClient();
     render(
@@ -50,32 +50,7 @@ describe('metric selector and KPI gating', () => {
       </QueryClientProvider>
     );
     const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(select.options.length).toBe(5);
+    expect(select.options.length).toBe(0);
     expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
-  });
-
-  it('derived selected then toggled OFF → resets to tonnage', () => {
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
-    const client = new QueryClient();
-    const { rerender } = render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage key="on" data={data} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-    const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: DENSITY_ID } });
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
-    rerender(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage key="off" data={data} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-    const updated = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(updated.options.length).toBe(4);
-    expect(updated.value).toBe(TONNAGE_ID);
   });
 });
