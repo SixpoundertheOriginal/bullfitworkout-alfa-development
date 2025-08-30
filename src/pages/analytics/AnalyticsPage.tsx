@@ -130,6 +130,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const serviceData = data ?? fetched;
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
+  // Initialize currentMeasure state early
   const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
@@ -175,6 +176,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     }
   }, [availableMeasures, currentMeasure]);
 
+  // Use currentMeasure after it's properly initialized
   const series = seriesData[currentMeasure] ?? [];
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(
