@@ -1,11 +1,18 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 const modulePath = '@/constants/featureFlags';
 
-afterEach(() => {
+beforeEach(() => {
   vi.resetModules();
   localStorage.clear();
   delete process.env.VITE_KPI_ANALYTICS_ENABLED;
+  delete process.env.VITE_ANALYTICS_DERIVED_KPIS_ENABLED;
+});
+
+afterAll(async () => {
+  const { setFlagOverride } = await import(modulePath);
+  setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', true);
+  setFlagOverride('KPI_ANALYTICS_ENABLED', true);
 });
 
 describe('featureFlags precedence', () => {

@@ -1,10 +1,15 @@
 import React from 'react';
-import { render } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { setFlagOverride } from '@/constants/featureFlags';
 import { AnalyticsPage } from '../AnalyticsPage';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { renderWithProviders } from '../../../../tests/utils/renderWithProviders';
+
+vi.mock('recharts', async () => await import('../../../../tests/mocks/recharts'));
+
+afterEach(() => {
+  setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', true);
+});
 
 // counts renders based on console.debug log emitted by AnalyticsPage
 
@@ -15,24 +20,18 @@ describe('AnalyticsPage render with derived KPI feature flag', () => {
 
     let renderCalls = 0;
     let errorCalls = 0;
-    const client = new QueryClient();
-    const { rerender } = render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage key="on" data={{ metricKeys: [] }} />
-        </TooltipProvider>
-      </QueryClientProvider>
+    const { rerender } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage key="on" data={{ metricKeys: [] }} />
+      </TooltipProvider>
     );
-    ;
 
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
+    setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', false);
 
     rerender(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage key="off" data={{ metricKeys: [] }} />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <TooltipProvider>
+        <AnalyticsPage key="off" data={{ metricKeys: [] }} />
+      </TooltipProvider>
     );
 
     renderCalls = debugSpy.mock.calls.filter((args) =>
@@ -47,4 +46,3 @@ describe('AnalyticsPage render with derived KPI feature flag', () => {
     expect(errorCalls).toBe(0);
   });
 });
-

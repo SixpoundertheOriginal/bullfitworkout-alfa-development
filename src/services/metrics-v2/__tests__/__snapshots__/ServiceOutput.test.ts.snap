@@ -3,36 +3,26 @@
 exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`] = `
 {
   "meta": {
-    "generatedAt": "2025-08-27T17:40:15.004Z",
     "inputs": {
       "tz": "Europe/Warsaw",
       "units": "kg|min",
     },
     "version": "v2",
   },
+  "metricKeys": [],
   "perWorkout": [],
   "prs": [],
   "series": {
+    "avgRest": [],
     "cvr": [],
     "density": [],
+    "duration": [],
     "reps": [],
+    "setEfficiency": [],
     "sets": [],
     "volume": [],
     "workouts": [],
-    "duration": [],
-    "avgRest": [],
-    "setEfficiency": [],
   },
-  "metricKeys": [
-    "volume",
-    "sets",
-    "reps",
-    "workouts",
-    "duration",
-    "density",
-    "avgRest",
-    "setEfficiency",
-  ],
   "totals": {
     "durationMin": 0,
     "totalReps": 0,

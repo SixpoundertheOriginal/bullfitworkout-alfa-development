@@ -1,11 +1,16 @@
 import React from 'react';
-import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
-import { FEATURE_FLAGS } from '@/constants/featureFlags';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { setFlagOverride } from '@/constants/featureFlags';
 import { AnalyticsPage } from '../AnalyticsPage';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { renderWithProviders } from '../../../../tests/utils/renderWithProviders';
+
+vi.mock('recharts', async () => await import('../../../../tests/mocks/recharts'));
+
+afterEach(() => {
+  setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', true);
+});
 
 const makeWorkouts = (): PerWorkoutMetrics[] => {
   const workouts: PerWorkoutMetrics[] = [];
@@ -49,14 +54,11 @@ describe('AnalyticsPage KPI cards', () => {
       series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
-    const client = new QueryClient();
-    const { container, getByTestId } = render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage data={data} />
-        </TooltipProvider>
-      </QueryClientProvider>
+    setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', true);
+    const { container, getByTestId } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage data={data} />
+      </TooltipProvider>
     );
     expect(getByTestId('kpi-density')).toBeTruthy();
     expect(container).toMatchSnapshot();
@@ -74,14 +76,11 @@ describe('AnalyticsPage KPI cards', () => {
       series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
-    const client = new QueryClient();
-    const { queryByTestId } = render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage data={data} />
-        </TooltipProvider>
-      </QueryClientProvider>
+    setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', false);
+    const { queryByTestId } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage data={data} />
+      </TooltipProvider>
     );
     expect(queryByTestId('kpi-density')).toBeNull();
   });

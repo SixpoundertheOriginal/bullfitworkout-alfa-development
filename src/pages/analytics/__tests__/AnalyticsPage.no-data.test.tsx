@@ -1,19 +1,17 @@
 import React from 'react';
-import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi } from 'vitest';
 import { AnalyticsPage } from '../AnalyticsPage';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { renderWithProviders } from '../../../../tests/utils/renderWithProviders';
+
+vi.mock('recharts', async () => await import('../../../../tests/mocks/recharts'));
 
 describe('AnalyticsPage defaults', () => {
   it('renders without workout data', () => {
-    const client = new QueryClient();
-    const { getByTestId } = render(
-      <QueryClientProvider client={client}>
-        <TooltipProvider>
-          <AnalyticsPage />
-        </TooltipProvider>
-      </QueryClientProvider>
+    const { getByTestId } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage />
+      </TooltipProvider>
     );
     expect(getByTestId('metric-select')).toBeDisabled();
     expect(getByTestId('empty-series').textContent).toBe('No data to display');
