@@ -6,6 +6,7 @@ import { buildMetricOptions } from './metricOptions';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2 from '@/hooks/useMetricsV2';
 import { useAuth } from '@/context/AuthContext';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 
 export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
@@ -14,6 +15,24 @@ export type AnalyticsServiceData = {
 };
 
 export type AnalyticsPageProps = { data?: AnalyticsServiceData };
+
+type Range = { start: Date; end: Date };
+const DAY_MS = 86400000;
+
+function loadRange(): Range {
+  if (typeof window !== 'undefined') {
+    const raw = window.localStorage.getItem('analytics:lastRange');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        return { start: new Date(parsed.start), end: new Date(parsed.end) };
+      } catch {}
+    }
+  }
+  const end = new Date();
+  const start = new Date(end.getTime() - 30 * DAY_MS);
+  return { start, end };
+}
 
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   let userId: string | undefined;
@@ -24,12 +43,57 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     userId = undefined;
   }
 
-  const { data: fetched, isLoading, error } = useMetricsV2(userId);
+  const { flags, setFlag } = useConfig();
+  const [range, setRange] = React.useState<Range>(() => loadRange());
+  const rangeIso = React.useMemo(
+    () => ({ startISO: range.start.toISOString(), endISO: range.end.toISOString() }),
+    [range.start, range.end]
+  );
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(
+        'analytics:lastRange',
+        JSON.stringify({ start: rangeIso.startISO, end: rangeIso.endISO })
+      );
+    }
+  }, [rangeIso.startISO, rangeIso.endISO]);
+
+  const [preset, setPreset] = React.useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return window.localStorage.getItem('analytics:lastPreset') || 'last30';
+    }
+    return 'last30';
+  });
+
+  const handlePreset = (p: string) => {
+    setPreset(p);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('analytics:lastPreset', p);
+    }
+    if (p !== 'custom') {
+      const end = new Date();
+      let start = new Date();
+      if (p === 'last7') start = new Date(end.getTime() - 7 * DAY_MS);
+      else if (p === 'last14') start = new Date(end.getTime() - 14 * DAY_MS);
+      else if (p === 'last30') start = new Date(end.getTime() - 30 * DAY_MS);
+      else if (p === 'thisMonth') {
+        start = new Date(end.getFullYear(), end.getMonth(), 1);
+        end.setHours(23, 59, 59, 999);
+      }
+      setRange({ start, end });
+    }
+  };
+
+  const { data: fetched, isLoading, error } = useMetricsV2(userId, {
+    startISO: rangeIso.startISO,
+    endISO: rangeIso.endISO,
+    includeBodyweightLoads: flags.derivedKpis,
+  });
   const serviceData = data ?? fetched;
   const perWorkout = serviceData?.perWorkout ?? [];
   const seriesData = serviceData?.series ?? {};
   const metricKeys = serviceData?.metricKeys ?? [];
-  const { flags } = useConfig();
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', flags.derivedKpis);
@@ -112,7 +176,38 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
 
   return (
     <div>
-      {flags.derivedKpis ? (
+      <div className="flex items-center justify-between mb-4">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={flags.derivedKpis}
+            onChange={e => setFlag('derivedKpis', e.target.checked)}
+            title="Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2)."
+          />
+          <span>Show derived KPIs (beta)</span>
+        </label>
+        <div className="flex items-center gap-2">
+          <select value={preset} onChange={e => handlePreset(e.target.value)} data-testid="range-select">
+            <option value="last7">Last 7 days</option>
+            <option value="last14">Last 14 days</option>
+            <option value="last30">Last 30 days</option>
+            <option value="thisMonth">This month</option>
+            <option value="custom">Custom</option>
+          </select>
+          {preset === 'custom' && (
+            <DateRangePicker
+              value={{ from: range.start, to: range.end }}
+              onChange={r => {
+                if (r?.from && r?.to) {
+                  setRange({ start: r.from, end: r.to });
+                }
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {flags.derivedKpis && (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
             <div>Density</div>
@@ -134,8 +229,6 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             )}</div>
           </div>
         </div>
-      ) : (
-        <div data-testid="kpi-disabled">Derived KPIs disabled</div>
       )}
 
       <select
