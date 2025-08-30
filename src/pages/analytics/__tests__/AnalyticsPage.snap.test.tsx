@@ -5,6 +5,8 @@ import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/d
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnalyticsPage } from '../AnalyticsPage';
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 const makeWorkouts = (): PerWorkoutMetrics[] => {
   const workouts: PerWorkoutMetrics[] = [];
   for (let i = 1; i <= 7; i++) {
@@ -39,14 +41,21 @@ describe('AnalyticsPage KPI cards', () => {
     const workouts = makeWorkouts();
     const data = {
       perWorkout: workouts,
-      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
+      totals: {
+        density_kg_min: 15,
+        avg_rest_ms: 60000,
+        set_efficiency_pct: 80,
+      },
+      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
     (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
     const client = new QueryClient();
     const { container, getByTestId } = render(
       <QueryClientProvider client={client}>
-        <AnalyticsPage data={data} />
+        <TooltipProvider>
+          <AnalyticsPage data={data} />
+        </TooltipProvider>
       </QueryClientProvider>
     );
     expect(getByTestId('kpi-density')).toBeTruthy();
@@ -57,14 +66,21 @@ describe('AnalyticsPage KPI cards', () => {
     const workouts = makeWorkouts();
     const data = {
       perWorkout: workouts,
-      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density: [], avgRest: [], setEfficiency: [] } as Record<string, TimeSeriesPoint[]>,
+      totals: {
+        density_kg_min: 15,
+        avg_rest_ms: 60000,
+        set_efficiency_pct: 80,
+      },
+      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
     (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
     const client = new QueryClient();
     const { queryByTestId } = render(
       <QueryClientProvider client={client}>
-        <AnalyticsPage data={data} />
+        <TooltipProvider>
+          <AnalyticsPage data={data} />
+        </TooltipProvider>
       </QueryClientProvider>
     );
     expect(queryByTestId('kpi-density')).toBeNull();

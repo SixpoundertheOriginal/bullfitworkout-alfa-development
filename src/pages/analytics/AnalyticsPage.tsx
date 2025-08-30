@@ -15,6 +15,7 @@ export type AnalyticsServiceData = {
   perWorkout?: PerWorkoutMetrics[];
   series?: Record<string, TimeSeriesPoint[]>;
   metricKeys?: string[];
+  totals?: Record<string, number>;
 };
 
 export type AnalyticsPageProps = { data?: AnalyticsServiceData };
@@ -97,9 +98,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     includeBodyweightLoads: derivedEnabled,
   });
   const serviceData = data ?? fetched;
-  const perWorkout = serviceData?.perWorkout ?? [];
   const seriesData = serviceData?.series ?? {};
   const metricKeys = serviceData?.metricKeys ?? [];
+  const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
@@ -127,49 +128,21 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }, [metricKeys, derivedEnabled]);
 
   const series = React.useMemo(() => {
-    return seriesData[metric] ?? [];
+    // metric keys from selector may use legacy ids; map to v2 ids
+    const keyMap: Record<string, string> = {
+      density: 'density_kg_min',
+      avgRest: 'avg_rest_ms',
+      setEfficiency: 'set_efficiency_pct',
+    };
+    const resolved = keyMap[metric] || metric;
+    return seriesData[resolved] ?? [];
   }, [metric, seriesData]);
 
-  // KPI calculations (last 7 days vs previous 7 days) using server-provided KPIs
-  const kpis = React.useMemo(() => {
-    const now = new Date('2023-01-15'); // deterministic for tests; replace in real app
-    const dayMs = 86400000;
-    const startCurr = new Date(now.getTime() - 7 * dayMs);
-    const startPrev = new Date(now.getTime() - 14 * dayMs);
-
-    const currWorkouts = perWorkout.filter(w => {
-      const d = new Date(w.startedAt);
-      return d >= startCurr && d < now;
-    });
-    const prevWorkouts = perWorkout.filter(w => {
-      const d = new Date(w.startedAt);
-      return d >= startPrev && d < startCurr;
-    });
-
-    const avgKpi = (wps: PerWorkoutMetrics[], key: keyof NonNullable<PerWorkoutMetrics['kpis']>) => {
-      const arr = wps
-        .map(w => w.kpis?.[key] as number | null | undefined)
-        .filter((n): n is number => n !== null && n !== undefined);
-      return arr.length > 0 ? arr.reduce((s, n) => s + n, 0) / arr.length : key === 'setEfficiency' ? null : 0;
-    };
-
-    const curr = {
-      density: avgKpi(currWorkouts, 'density'),
-      avgRest: avgKpi(currWorkouts, 'avgRest'),
-      efficiency: avgKpi(currWorkouts, 'setEfficiency'),
-    };
-    const prev = {
-      density: avgKpi(prevWorkouts, 'density'),
-      avgRest: avgKpi(prevWorkouts, 'avgRest'),
-      efficiency: avgKpi(prevWorkouts, 'setEfficiency'),
-    };
-    return { curr, prev };
-  }, [perWorkout]);
-
-  const renderDelta = (value: number, formatter: (n: number) => string) => {
-    const sign = value >= 0 ? '+' : '-';
-    return sign + formatter(Math.abs(value));
-  };
+  const kpiTotals = React.useMemo(() => ({
+    density: totals['density_kg_min'] ?? 0,
+    avgRestMs: totals['avg_rest_ms'] ?? 0,
+    efficiencyPct: totals['set_efficiency_pct'] ?? 0,
+  }), [totals]);
 
   if (!data) {
     if (isLoading) {
@@ -227,23 +200,16 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       {derivedEnabled && (
         <div className="flex gap-4 mb-4">
           <div data-testid="kpi-density">
-            <div>Density</div>
-            <div>{fmtKgPerMin(kpis.curr.density)}</div>
-            <div>{renderDelta(kpis.curr.density - kpis.prev.density, fmtKgPerMin)}</div>
+            <div>Density (kg/min)</div>
+            <div>{fmtKgPerMin(kpiTotals.density)}</div>
           </div>
           <div data-testid="kpi-rest">
             <div>Avg Rest</div>
-            <div>{fmtSeconds(kpis.curr.avgRest)}</div>
-            <div>{renderDelta(kpis.curr.avgRest - kpis.prev.avgRest, fmtSeconds)}</div>
+            <div>{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
           </div>
           <div data-testid="kpi-efficiency">
             <div>Set Efficiency</div>
-            <div>{fmtRatio(kpis.curr.efficiency)}</div>
-            <div>{fmtRatio(
-              kpis.curr.efficiency !== null && kpis.prev.efficiency !== null
-                ? kpis.curr.efficiency - kpis.prev.efficiency
-                : null
-            )}</div>
+            <div>{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
           </div>
         </div>
       )}
