@@ -40,7 +40,7 @@ vi.mock('../aggregators', () => ({
   aggregateTotalsKpis: () => ({}),
 }));
 
-vi.mock('../index', () => ({ getMetricsV2: async () => ({ series: {}, totals: {} }) }));
+vi.mock('../index', () => ({ getMetricsV2: async () => ({ series: { tonnage_kg: [] }, totals: { density_kg_min: 1 } }) }));
 
 import { metricsServiceV2 } from '../service';
 
@@ -51,6 +51,8 @@ describe('metricsServiceV2 bodyweight loads', () => {
       dateRange: { start: '2024-01-01', end: '2024-01-02' },
       includeBodyweightLoads: true,
     });
-    expect(res.series.volume[0].value).toBeGreaterThan(0);
+    expect(res.series.tonnage_kg.length).toBeGreaterThan(0);
+    expect(res.series.tonnage_kg[0].value).toBeGreaterThan(0);
+    expect(res.totals.density_kg_min).toBeGreaterThan(0);
   });
 });

@@ -7,7 +7,7 @@ import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 
 vi.mock('@/services/metrics-v2/service', () => ({
   metricsServiceV2: {
-    getMetricsV2: vi.fn().mockResolvedValue({ series: { volume: [] } }),
+    getMetricsV2: vi.fn().mockResolvedValue({ series: { tonnage_kg: [] } }),
   },
 }));
 
