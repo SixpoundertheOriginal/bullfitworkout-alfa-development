@@ -1,17 +1,18 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { MetricId } from '@/pages/analytics/metricIds';
 
-export type MeasureOption = {
-  id: MetricId;
-  label: string;
-  icon?: string;
+const LABELS: Record<string, string> = {
+  duration_min: 'Duration (min)',
+  tonnage_kg: 'Tonnage (kg)',
+  density_kg_per_min: 'Density (kg/min)',
+  reps: 'Reps',
+  sets: 'Sets',
 };
 
 export type MetricDropdownProps = {
-  value: MetricId;
-  onChange: (value: MetricId) => void;
-  options: MeasureOption[];
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
   disabled?: boolean;
 };
 
@@ -21,33 +22,18 @@ export const MetricDropdown: React.FC<MetricDropdownProps> = ({
   options,
   disabled = false,
 }) => {
-  const selectedOption = options.find(opt => opt.id === value);
-
   return (
-    <Select 
-      value={value} 
-      onValueChange={onChange}
-      disabled={disabled}
-    >
-      <SelectTrigger 
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
+      <SelectTrigger
         className="w-48 bg-card border-border text-foreground"
         data-testid="metric-select"
       >
-        <SelectValue>
-          {selectedOption?.label || 'Select metric'}
-        </SelectValue>
+        <SelectValue>{LABELS[value] || value}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {options.map((option) => (
-          <SelectItem 
-            key={option.id} 
-            value={option.id}
-            className="cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              {option.icon && <span className="text-sm">{option.icon}</span>}
-              <span>{option.label}</span>
-            </div>
+        {options.map(opt => (
+          <SelectItem key={opt} value={opt} className="cursor-pointer">
+            {LABELS[opt] || opt}
           </SelectItem>
         ))}
       </SelectContent>

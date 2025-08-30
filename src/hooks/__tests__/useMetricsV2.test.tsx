@@ -31,17 +31,12 @@ describe('useMetricsV2', () => {
       params.startISO,
       params.endISO,
       true,
+      false,
+      75,
       DEFS_VERSION,
     ]);
+    client.clear();
   });
 
-  it('maps camelCase series keys to snake_case', async () => {
-    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
-    const params = { startISO: '2024-01-01', endISO: '2024-01-07', includeBodyweightLoads: undefined };
-    const mockSeries = [{ date: '2024-01-01', value: 5 }];
-    (metricsServiceV2.getMetricsV2 as any).mockResolvedValueOnce({ series: { tonnageKg: mockSeries } });
-    const { result } = renderHook(() => useMetricsV2('u1', params), { wrapper });
-    await waitFor(() => result.current.isSuccess);
-    expect(result.current.data?.series?.[TONNAGE_ID]).toEqual(mockSeries);
-  });
+  // Series key mapping covered in adapter tests
 });

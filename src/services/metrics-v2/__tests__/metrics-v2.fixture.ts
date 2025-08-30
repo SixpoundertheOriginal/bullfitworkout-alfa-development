@@ -7,7 +7,9 @@ export const v2Payload = {
     durationMin: [
       { timestamp: '2024-05-01T06:00:00Z', value: 60 },
     ],
-    densityKgPerMin: [],
+    densityKgPerMin: [
+      { timestamp: '2024-05-01T06:00:00Z', value: 5 },
+    ],
   },
 };
 
@@ -20,6 +22,9 @@ export const expectedChartSeries = {
     duration_min: [
       { date: '2024-05-01', value: 60 },
     ],
+    density_kg_per_min: [
+      { date: '2024-05-01', value: 5 },
+    ],
   },
-  availableMeasures: ['tonnage_kg', 'duration_min'],
+  availableMeasures: ['tonnage_kg', 'duration_min', 'density_kg_per_min'],
 };
