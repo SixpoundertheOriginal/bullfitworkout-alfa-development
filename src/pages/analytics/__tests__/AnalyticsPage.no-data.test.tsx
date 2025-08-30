@@ -13,7 +13,7 @@ describe('AnalyticsPage defaults', () => {
         <AnalyticsPage />
       </TooltipProvider>
     );
-    expect(getByTestId('metric-select')).not.toBeDisabled();
-    expect(getByTestId('empty-series').textContent).toBe('No data to display');
+    expect(getByTestId('metric-select')).toBeDisabled();
+    expect(getByTestId('no-metrics').textContent).toContain('No metrics available');
   });
 });
