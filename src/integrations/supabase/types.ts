@@ -441,6 +441,33 @@ export type Database = {
           },
         ]
       }
+      exercise_merge_audit: {
+        Row: {
+          affected_workout_count: number | null
+          canonical_id: string | null
+          id: string
+          merge_date: string | null
+          merged_ids: string[] | null
+          original_name: string
+        }
+        Insert: {
+          affected_workout_count?: number | null
+          canonical_id?: string | null
+          id?: string
+          merge_date?: string | null
+          merged_ids?: string[] | null
+          original_name: string
+        }
+        Update: {
+          affected_workout_count?: number | null
+          canonical_id?: string | null
+          id?: string
+          merge_date?: string | null
+          merged_ids?: string[] | null
+          original_name?: string
+        }
+        Relationships: []
+      }
       exercise_performances: {
         Row: {
           created_at: string
@@ -615,7 +642,7 @@ export type Database = {
           id: string
           instructions: Json
           is_compound: boolean
-          is_custom: boolean | null
+          is_custom: boolean
           media_urls: Json | null
           metadata: Json | null
           movement_pattern: string
@@ -638,7 +665,7 @@ export type Database = {
           id?: string
           instructions: Json
           is_compound: boolean
-          is_custom?: boolean | null
+          is_custom?: boolean
           media_urls?: Json | null
           metadata?: Json | null
           movement_pattern: string
@@ -661,7 +688,7 @@ export type Database = {
           id?: string
           instructions?: Json
           is_compound?: boolean
-          is_custom?: boolean | null
+          is_custom?: boolean
           media_urls?: Json | null
           metadata?: Json | null
           movement_pattern?: string
