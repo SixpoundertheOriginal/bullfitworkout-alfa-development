@@ -25,7 +25,7 @@ import { TimingDebugPanel } from '@/components/TimingDebugPanel';
 import { AppBackground } from '@/components/ui/AppBackground';
 import { UniversalCard } from '@/components/ui/UniversalCard';
 import { logExerciseFeedback } from "@/services/exerciseFeedbackService";
-import { SET_COMPLETE_NOTIFICATIONS_ENABLED } from '@/constants/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -323,7 +323,7 @@ const TrainingSessionPage = () => {
       let perceivedDifficulty: number | null = null;
       let satisfaction: number | null = null;
 
-      if (SET_COMPLETE_NOTIFICATIONS_ENABLED) {
+      if (FEATURE_FLAGS.SET_COMPLETE_NOTIFICATIONS_ENABLED) {
         const difficultyStr = window.prompt(`Rate difficulty for ${getExerciseDisplayName(exerciseName)} (1-10)`);
         const satisfactionStr = window.prompt(`Rate satisfaction for ${getExerciseDisplayName(exerciseName)} (1-10)`);
         perceivedDifficulty = Number(difficultyStr);

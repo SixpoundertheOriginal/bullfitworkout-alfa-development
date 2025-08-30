@@ -1,7 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { ConfigProvider } from '@/config/runtimeConfig';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { AnalyticsPage } from '../AnalyticsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -17,17 +17,16 @@ describe('AnalyticsPage render with derived KPI feature flag', () => {
     const client = new QueryClient();
     const { rerender } = render(
       <QueryClientProvider client={client}>
-        <ConfigProvider initialFlags={{ derivedKpis: true }}>
-          <AnalyticsPage data={{ metricKeys: [] }} />
-        </ConfigProvider>
+        <AnalyticsPage key="on" data={{ metricKeys: [] }} />
       </QueryClientProvider>
     );
+    ;
+
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
 
     rerender(
       <QueryClientProvider client={client}>
-        <ConfigProvider initialFlags={{ derivedKpis: false }}>
-          <AnalyticsPage data={{ metricKeys: [] }} />
-        </ConfigProvider>
+        <AnalyticsPage key="off" data={{ metricKeys: [] }} />
       </QueryClientProvider>
     );
 

@@ -67,7 +67,6 @@ export const RouterProvider = () => {
                 element={
                   <ProtectedRoute>
                     <MainLayout>
-                      {console.debug('[RouterProvider] rendering AnalyticsPage')}
                       <AnalyticsPage />
                     </MainLayout>
                   </ProtectedRoute>

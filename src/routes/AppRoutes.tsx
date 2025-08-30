@@ -4,11 +4,9 @@ import AnalyticsPage from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 export const AppRoutes: React.FC = () => (
-  <ConfigProvider>
-    <Routes>
-      <Route path="/analytics" element={<AnalyticsPage />} />
-    </Routes>
-  </ConfigProvider>
+  <Routes>
+    <Route path="/analytics" element={<AnalyticsPage />} />
+  </Routes>
 );
 
 export default AppRoutes;

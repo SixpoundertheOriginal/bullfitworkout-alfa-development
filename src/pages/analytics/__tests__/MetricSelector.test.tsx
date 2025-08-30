@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import AnalyticsPage from '../AnalyticsPage';
-import { ConfigProvider } from '@/config/runtimeConfig';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/dto';
 
 describe('metric selector and KPI gating', () => {
@@ -12,10 +12,9 @@ describe('metric selector and KPI gating', () => {
       series: {} as Record<string, TimeSeriesPoint[]>,
       metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
     };
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
     const { rerender } = render(
-      <ConfigProvider initialFlags={{ derivedKpis: true }}>
-        <AnalyticsPage data={data} />
-      </ConfigProvider>
+      <AnalyticsPage data={data} />
     );
 
     const select = screen.getByTestId('metric-select') as HTMLSelectElement;
@@ -23,11 +22,10 @@ describe('metric selector and KPI gating', () => {
     expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
 
     fireEvent.change(select, { target: { value: 'density' } });
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
 
     rerender(
-      <ConfigProvider initialFlags={{ derivedKpis: false }}>
-        <AnalyticsPage data={data} />
-      </ConfigProvider>
+      <AnalyticsPage data={data} />
     );
 
     const updated = screen.getByTestId('metric-select') as HTMLSelectElement;

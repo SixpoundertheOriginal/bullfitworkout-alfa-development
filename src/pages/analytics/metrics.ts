@@ -1,4 +1,4 @@
-import * as FEATURE_FLAGS from '@/constants/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import type { ChartMetric, MetricOption } from './types';
 
 /** @deprecated Use metricKeys from service instead */

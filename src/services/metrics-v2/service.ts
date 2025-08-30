@@ -58,12 +58,13 @@ export const metricsServiceV2 = {
       let bodyweightKg = 70
       if (includeBodyweightLoads) {
         try {
-          const { data: profile } = await supabase
+          const { data } = await supabase
             .from('profiles')
             .select('bodyweight_kg')
             .eq('id', effectiveUserId)
             .single()
-          if (profile?.bodyweight_kg) bodyweightKg = profile.bodyweight_kg
+          const bw = (data as any)?.bodyweight_kg
+          if (typeof bw === 'number') bodyweightKg = bw
         } catch {
           /* ignore */
         }

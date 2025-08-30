@@ -19,7 +19,8 @@ export async function getMetricsV2(
     totals: { totalVolumeKg: 0, totalSets: 0, totalReps: 0, workouts: 0, durationMin: 0 },
     perWorkout: [],
     prs: [],
-    series: { volume: [], sets: [], reps: [], density: [], cvr: [] },
+    series: { volume: [], sets: [], reps: [], density: [], cvr: [], workouts: [], duration: [], avgRest: [], setEfficiency: [] },
+    metricKeys: [],
     meta: {
       generatedAt: new Date().toISOString(),
       version: 'v2',

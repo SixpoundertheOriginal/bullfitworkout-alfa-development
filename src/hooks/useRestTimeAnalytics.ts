@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { logRestTimeAnalytics, getSuggestedRestTime } from '@/services/restTimeAnalyticsService';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { SET_COMPLETE_NOTIFICATIONS_ENABLED } from '@/constants/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 export interface RestTimeLog {
   exerciseName: string;
@@ -33,7 +33,7 @@ export const useRestTimeAnalytics = () => {
           ? `You rested ${Math.round(difference)}s longer than planned for ${data.exerciseName}`
           : `You rested ${Math.round(Math.abs(difference))}s less than planned for ${data.exerciseName}`;
 
-        if (SET_COMPLETE_NOTIFICATIONS_ENABLED) {
+        if (FEATURE_FLAGS.SET_COMPLETE_NOTIFICATIONS_ENABLED) {
           toast({
             title: "Rest Time Insight",
             description: message,

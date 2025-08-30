@@ -43,7 +43,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     userId = undefined;
   }
 
-  const { flags, setFlag } = useConfig();
+  const [derivedEnabled, setDerivedEnabled] = React.useState<boolean>(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED);
   const [range, setRange] = React.useState<Range>(() => loadRange());
   const rangeIso = React.useMemo(
     () => ({ startISO: range.start.toISOString(), endISO: range.end.toISOString() }),
@@ -88,7 +88,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const { data: fetched, isLoading, error } = useMetricsV2(userId, {
     startISO: rangeIso.startISO,
     endISO: rangeIso.endISO,
-    includeBodyweightLoads: flags.derivedKpis,
+    includeBodyweightLoads: derivedEnabled,
   });
   const serviceData = data ?? fetched;
   const perWorkout = serviceData?.perWorkout ?? [];
@@ -96,18 +96,18 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const metricKeys = serviceData?.metricKeys ?? [];
 
   React.useEffect(() => {
-    console.debug('[AnalyticsPage] render, derivedKpis=', flags.derivedKpis);
-  }, [flags.derivedKpis]);
+    console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
+  }, [derivedEnabled]);
 
   const initOpts = React.useMemo(
-    () => buildMetricOptions(metricKeys, flags.derivedKpis),
-    [metricKeys, flags.derivedKpis]
+    () => buildMetricOptions(metricKeys, derivedEnabled),
+    [metricKeys, derivedEnabled]
   );
   const [options, setOptions] = React.useState(initOpts);
   const [metric, setMetric] = React.useState<string>(initOpts[0]?.key || '');
 
   React.useEffect(() => {
-    const next = buildMetricOptions(metricKeys, flags.derivedKpis);
+    const next = buildMetricOptions(metricKeys, derivedEnabled);
     setOptions(next);
     if (!next.some(o => o.key === metric) && next[0]) {
       setMetric(next[0].key);
@@ -118,7 +118,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         metricOptions: next,
       };
     }
-  }, [metricKeys, flags.derivedKpis]);
+  }, [metricKeys, derivedEnabled]);
 
   const series = React.useMemo(() => {
     return seriesData[metric] ?? [];
@@ -180,8 +180,11 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
-            checked={flags.derivedKpis}
-            onChange={e => setFlag('derivedKpis', e.target.checked)}
+            checked={derivedEnabled}
+            onChange={e => {
+              setDerivedEnabled(e.target.checked);
+              (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = e.target.checked;
+            }}
             title="Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2)."
           />
           <span>Show derived KPIs (beta)</span>

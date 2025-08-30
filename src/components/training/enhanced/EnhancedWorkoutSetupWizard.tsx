@@ -20,7 +20,7 @@ import {
 } from '@/utils/tokenUtils';
 import WizardProgress from './WizardProgress';
 import { useWorkoutSetupContext } from '@/context/WorkoutSetupContext';
-import { SETUP_CHOOSE_EXERCISES_ENABLED } from '@/constants/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import {
   TrainingFocus,
   TrainingGoals,
@@ -31,7 +31,7 @@ import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 // Dev-only feature flag exposure
 if (typeof window !== 'undefined') {
-  (window as any).__DEBUG_FLAGS__ = { SETUP_CHOOSE_EXERCISES_ENABLED };
+  (window as any).__DEBUG_FLAGS__ = { SETUP_CHOOSE_EXERCISES_ENABLED: FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED };
 }
 
 interface EnhancedWorkoutSetupWizardProps {
@@ -109,7 +109,7 @@ export function EnhancedWorkoutSetupWizard({
 
   useEffect(() => {
     if (open) {
-      console.info('[DEBUG] Wizard opened, flags:', { SETUP_CHOOSE_EXERCISES_ENABLED });
+      console.info('[DEBUG] Wizard opened, flags:', { SETUP_CHOOSE_EXERCISES_ENABLED: FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED });
       actions.reset();
       setIsGenerating(false);
       setIsSubmitting(false);
