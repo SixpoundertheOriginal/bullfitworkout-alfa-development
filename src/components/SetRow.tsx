@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CompactRestTimer } from '@/components/CompactRestTimer';
 import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
+import { SET_COMPLETE_NOTIFICATIONS_ENABLED } from '@/constants/featureFlags';
 import { getDisplayRestLabelByIndex, formatRestForDisplay } from '@/utils/restDisplay';
 import { useWorkoutStore } from '@/store/workoutStore';
 
@@ -164,9 +165,16 @@ export const SetRow = ({
   };
 
   const playCompleteAnimation = () => {
-    setJustCompleted(true);
     // Mark explicit set end time for duration tracking
     setSetEndTime(exerciseName, setNumber);
+
+    if (!SET_COMPLETE_NOTIFICATIONS_ENABLED) {
+      onComplete({ failurePoint, formScore });
+      if (onAutoAdvanceNext) setTimeout(onAutoAdvanceNext, 300);
+      return;
+    }
+
+    setJustCompleted(true);
     setTimeout(() => {
       setJustCompleted(false);
       onComplete({ failurePoint, formScore });
@@ -552,7 +560,7 @@ export const SetRow = ({
           </div>
         </div>
       )}
-      {justCompleted && (
+      {SET_COMPLETE_NOTIFICATIONS_ENABLED && justCompleted && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
           <div className="rounded-full bg-green-500/90 flex items-center justify-center px-10 py-3 shadow-xl animate-fade-in">
             <Check size={32} className="text-white animate-scale-in" />

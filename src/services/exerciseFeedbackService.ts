@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ExerciseFeedbackInput {
   workoutId: string;
   exerciseId: string;
-  perceivedDifficulty: number;
-  satisfaction: number;
+  perceivedDifficulty: number | null;
+  satisfaction: number | null;
 }
 
 export async function logExerciseFeedback(input: ExerciseFeedbackInput) {

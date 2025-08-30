@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { logRestTimeAnalytics, getSuggestedRestTime } from '@/services/restTimeAnalyticsService';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { SET_COMPLETE_NOTIFICATIONS_ENABLED } from '@/constants/featureFlags';
 
 export interface RestTimeLog {
   exerciseName: string;
@@ -28,15 +29,17 @@ export const useRestTimeAnalytics = () => {
       // Show insights if rest time significantly differs from planned
       const difference = data.actualRestTime - data.plannedRestTime;
       if (Math.abs(difference) > 30) { // 30 seconds threshold
-        const message = difference > 0 
+        const message = difference > 0
           ? `You rested ${Math.round(difference)}s longer than planned for ${data.exerciseName}`
           : `You rested ${Math.round(Math.abs(difference))}s less than planned for ${data.exerciseName}`;
-        
-        toast({
-          title: "Rest Time Insight",
-          description: message,
-          duration: 3000,
-        });
+
+        if (SET_COMPLETE_NOTIFICATIONS_ENABLED) {
+          toast({
+            title: "Rest Time Insight",
+            description: message,
+            duration: 3000,
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to log rest time analytics:', error);

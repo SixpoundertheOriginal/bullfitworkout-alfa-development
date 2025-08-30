@@ -25,6 +25,7 @@ import { TimingDebugPanel } from '@/components/TimingDebugPanel';
 import { AppBackground } from '@/components/ui/AppBackground';
 import { UniversalCard } from '@/components/ui/UniversalCard';
 import { logExerciseFeedback } from "@/services/exerciseFeedbackService";
+import { SET_COMPLETE_NOTIFICATIONS_ENABLED } from '@/constants/featureFlags';
 
 const TrainingSessionPage = () => {
   const navigate = useNavigate();
@@ -319,25 +320,27 @@ const TrainingSessionPage = () => {
     const allCompleted = setsAfter.every(s => s.completed);
 
     if (allCompleted) {
-      const difficultyStr = window.prompt(`Rate difficulty for ${getExerciseDisplayName(exerciseName)} (1-10)`);
-      const satisfactionStr = window.prompt(`Rate satisfaction for ${getExerciseDisplayName(exerciseName)} (1-10)`);
-      const perceivedDifficulty = Number(difficultyStr);
-      const satisfaction = Number(satisfactionStr);
+      let perceivedDifficulty: number | null = null;
+      let satisfaction: number | null = null;
+
+      if (SET_COMPLETE_NOTIFICATIONS_ENABLED) {
+        const difficultyStr = window.prompt(`Rate difficulty for ${getExerciseDisplayName(exerciseName)} (1-10)`);
+        const satisfactionStr = window.prompt(`Rate satisfaction for ${getExerciseDisplayName(exerciseName)} (1-10)`);
+        perceivedDifficulty = Number(difficultyStr);
+        satisfaction = Number(satisfactionStr);
+      }
+
       const workoutId = state.workoutId;
       const exerciseId = Array.isArray(exerciseDataAfter)
         ? (exerciseDataAfter[0] as any)?.exercise_id
         : (exerciseDataAfter.exercise?.id || (exerciseDataAfter.sets[0] as any)?.exercise_id);
-      if (
-        workoutId &&
-        exerciseId &&
-        !Number.isNaN(perceivedDifficulty) &&
-        !Number.isNaN(satisfaction)
-      ) {
+
+      if (workoutId && exerciseId) {
         logExerciseFeedback({
           workoutId,
           exerciseId,
-          perceivedDifficulty,
-          satisfaction,
+          perceivedDifficulty: Number.isNaN(perceivedDifficulty) ? null : perceivedDifficulty,
+          satisfaction: Number.isNaN(satisfaction) ? null : satisfaction,
         }).catch((err) => console.error('Failed to log exercise feedback', err));
       }
     }
