@@ -51,8 +51,16 @@ describe('AnalyticsPage KPI cards', () => {
         avg_rest_ms: 60000,
         set_efficiency_pct: 80,
       },
-      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
-      metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
+      series: {
+        tonnage_kg: [],
+        sets: [],
+        workouts: [],
+        duration: [],
+        reps: [],
+        density_kg_min: [],
+        avg_rest_ms: [],
+        set_efficiency_pct: [],
+      } as Record<string, TimeSeriesPoint[]>,
     };
     setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', true);
     const { container, getByTestId } = renderWithProviders(
@@ -73,8 +81,16 @@ describe('AnalyticsPage KPI cards', () => {
         avg_rest_ms: 60000,
         set_efficiency_pct: 80,
       },
-      series: { volume: [], sets: [], workouts: [], duration: [], reps: [], density_kg_min: [], avg_rest_ms: [], set_efficiency_pct: [] } as Record<string, TimeSeriesPoint[]>,
-      metricKeys: ['volume','sets','workouts','duration','reps','density','avgRest','setEfficiency'],
+      series: {
+        tonnage_kg: [],
+        sets: [],
+        workouts: [],
+        duration: [],
+        reps: [],
+        density_kg_min: [],
+        avg_rest_ms: [],
+        set_efficiency_pct: [],
+      } as Record<string, TimeSeriesPoint[]>,
     };
     setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', false);
     const { queryByTestId } = renderWithProviders(

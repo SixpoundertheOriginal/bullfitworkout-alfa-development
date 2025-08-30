@@ -2,7 +2,8 @@ import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
-import { buildMetricOptions } from './metricOptions';
+import { MEASURES } from './measureOptions';
+import { TONNAGE_ID, DENSITY_ID, AVG_REST_ID, EFF_ID, type MetricId } from './metricIds';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2 from '@/hooks/useMetricsV2';
 import { useAuth } from '@/context/AuthContext';
@@ -99,50 +100,48 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   });
   const serviceData = data ?? fetched;
   const seriesData = serviceData?.series ?? {};
-  const metricKeys = serviceData?.metricKeys ?? [];
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
   }, [derivedEnabled]);
 
-  const initOpts = React.useMemo(
-    () => buildMetricOptions(metricKeys, derivedEnabled),
-    [metricKeys, derivedEnabled]
-  );
-  const [options, setOptions] = React.useState(initOpts);
-  const [metric, setMetric] = React.useState<string>(initOpts[0]?.key || '');
+  const options = React.useMemo(() => (
+    derivedEnabled ? MEASURES : MEASURES.filter(m => m.id === TONNAGE_ID)
+  ), [derivedEnabled]);
+  const [metric, setMetric] = React.useState<MetricId>(TONNAGE_ID);
+  const [unavailable, setUnavailable] = React.useState(false);
 
   React.useEffect(() => {
-    const next = buildMetricOptions(metricKeys, derivedEnabled);
-    setOptions(next);
-    if (!next.some(o => o.key === metric) && next[0]) {
-      setMetric(next[0].key);
+    if (!options.some(o => o.id === metric)) {
+      setMetric(options[0]?.id || TONNAGE_ID);
     }
-    if (import.meta.env.DEV && typeof window !== 'undefined') {
-      (window as any).__BF_DEBUG__ = {
-        ...(window as any).__BF_DEBUG__,
-        metricOptions: next,
-      };
-    }
-  }, [metricKeys, derivedEnabled]);
+  }, [options, metric]);
 
-  const series = React.useMemo(() => {
-    // metric keys from selector may use legacy ids; map to v2 ids
-    const keyMap: Record<string, string> = {
-      density: 'density_kg_min',
-      avgRest: 'avg_rest_ms',
-      setEfficiency: 'set_efficiency_pct',
-    };
-    const resolved = keyMap[metric] || metric;
-    return seriesData[resolved] ?? [];
-  }, [metric, seriesData]);
+  React.useEffect(() => {
+    const available = options.map(o => o.id).filter(id => seriesData[id]);
+    if (!available.includes(metric) && available.length > 0) {
+      setMetric(available[0]);
+      setUnavailable(true);
+    } else {
+      setUnavailable(false);
+    }
+  }, [seriesData, options, metric]);
+
+  const series = seriesData[metric] ?? [];
 
   const kpiTotals = React.useMemo(() => ({
-    density: totals['density_kg_min'] ?? 0,
-    avgRestMs: totals['avg_rest_ms'] ?? 0,
-    efficiencyPct: totals['set_efficiency_pct'] ?? 0,
+    density: totals[DENSITY_ID] ?? 0,
+    avgRestMs: totals[AVG_REST_ID] ?? 0,
+    efficiencyPct: totals[EFF_ID] ?? 0,
   }), [totals]);
+
+  React.useEffect(() => {
+    console.debug('[Analytics] keys', {
+      totals: Object.keys(totals || {}),
+      series: Object.keys(seriesData || {}),
+    });
+  }, [totals, seriesData]);
 
   if (!data) {
     if (isLoading) {
@@ -197,53 +196,58 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         </div>
       </div>
 
-      {derivedEnabled && (
-        <div className="flex gap-4 mb-4">
-          <div data-testid="kpi-density">
-            <div>Density (kg/min)</div>
-            <div>{fmtKgPerMin(kpiTotals.density)}</div>
+        {derivedEnabled && (
+          <div className="flex gap-4 mb-4">
+            <div data-testid="kpi-density">
+              <div>Density (kg/min)</div>
+              <div>{fmtKgPerMin(kpiTotals.density)}</div>
+            </div>
+            <div data-testid="kpi-rest">
+              <div>Avg Rest</div>
+              <div>{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
+            </div>
+            <div data-testid="kpi-efficiency">
+              <div>Set Efficiency</div>
+              <div>{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
+            </div>
           </div>
-          <div data-testid="kpi-rest">
-            <div>Avg Rest</div>
-            <div>{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
-          </div>
-          <div data-testid="kpi-efficiency">
-            <div>Set Efficiency</div>
-            <div>{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
-          </div>
-        </div>
-      )}
+        )}
 
-      <select
-        value={metric}
-        onChange={e => setMetric(e.target.value)}
-        data-testid="metric-select"
-        disabled={metricKeys.length === 0}
-      >
-        {options.map(o => (
-          <option key={o.key} value={o.key}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      {metricKeys.length === 0 && (
-        <div data-testid="no-metrics">No metrics available</div>
-      )}
+        <select
+          value={metric}
+          onChange={e => setMetric(e.target.value as MetricId)}
+          data-testid="metric-select"
+          disabled={options.length === 0}
+        >
+          {options.map(o => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {unavailable && (
+          <div className="text-xs text-muted-foreground" data-testid="measure-note">
+            Selected measure unavailable for this range.
+          </div>
+        )}
+        {Object.keys(seriesData).length === 0 && (
+          <div data-testid="no-metrics">No metrics available</div>
+        )}
 
-      {series.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300} data-testid="chart">
-          <LineChart data={series}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="value" stroke="#8884d8" />
-          </LineChart>
-        </ResponsiveContainer>
-      ) : (
-        <div data-testid="empty-series">No data to display</div>
-      )}
-    </div>
-  );
-};
+        {series.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300} data-testid="chart">
+            <LineChart data={series}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div data-testid="empty-series">No data to display</div>
+        )}
+      </div>
+    );
+  };
 
 export default AnalyticsPage;

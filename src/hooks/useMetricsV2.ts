@@ -32,7 +32,7 @@ export default function useMetricsV2(
           includeBodyweightLoads: includeBodyweight,
         })
         .then((res: any) => {
-          const points = res?.series?.volume?.length || 0;
+          const points = res?.series?.tonnage_kg?.length || 0;
           console.debug('[MetricsV2][debug] series points:', points);
           return res as AnalyticsServiceData;
         });

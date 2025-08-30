@@ -103,44 +103,14 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
       data-testid="metric-select"
     >
       <option
-        value="volume"
+        value="tonnage_kg"
       >
         Tonnage (kg)
       </option>
       <option
-        value="sets"
-      >
-        Sets
-      </option>
-      <option
-        value="workouts"
-      >
-        Workouts
-      </option>
-      <option
-        value="duration"
-      >
-        Duration (min)
-      </option>
-      <option
-        value="reps"
-      >
-        Reps
-      </option>
-      <option
-        value="density"
+        value="density_kg_min"
       >
         Density (kg/min)
-      </option>
-      <option
-        value="avgRest"
-      >
-        Avg Rest / Session (sec)
-      </option>
-      <option
-        value="setEfficiency"
-      >
-        Set Efficiency (×)
       </option>
     </select>
     <div

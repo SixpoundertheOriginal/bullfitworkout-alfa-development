@@ -13,14 +13,14 @@ exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`]
   "perWorkout": [],
   "prs": [],
   "series": {
-    "avgRest": [],
+    "avg_rest_ms": [],
     "cvr": [],
-    "density": [],
+    "density_kg_min": [],
     "duration": [],
     "reps": [],
-    "setEfficiency": [],
+    "set_efficiency_pct": [],
     "sets": [],
-    "volume": [],
+    "tonnage_kg": [],
     "workouts": [],
   },
   "totals": {

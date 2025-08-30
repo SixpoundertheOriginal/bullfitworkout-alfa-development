@@ -182,8 +182,8 @@ export const metricsServiceV2 = {
       const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
       const out = await computeV2(adapter, effectiveUserId, range)
       console.log('[MetricsV2][debug] repoTotals -> workouts:', totalWorkouts, 'totalVolumeKg:', totalVolumeKg, 'totalSets:', totalSets)
-      if (Array.isArray(out.series.volume) && out.series.volume.length === 0 && repoVolumeSeries.length > 0) {
-        console.log('[MetricsV2][debug] No volume series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })
+      if (Array.isArray(out.series.tonnage_kg) && out.series.tonnage_kg.length === 0 && repoVolumeSeries.length > 0) {
+        console.log('[MetricsV2][debug] No tonnage series returned; this may indicate no sets in range or join filter too strict', { range, userId: effectiveUserId })
       }
 
       // Use new aggregators for enhanced metrics including KPIs
@@ -193,17 +193,17 @@ export const metricsServiceV2 = {
 
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       const metricKeys = [
-        'volume',
+        'tonnage_kg',
         'sets',
         'reps',
         'workouts',
         'duration',
-        'density',
-        'avgRest',
-        'setEfficiency',
+        'density_kg_min',
+        'avg_rest_ms',
+        'set_efficiency_pct',
       ]
 
-      return {
+      const result = {
         ...out,
         totals: {
           ...out.totals,
@@ -215,20 +215,22 @@ export const metricsServiceV2 = {
         },
         series: {
           ...out.series,
-          volume: repoVolumeSeries,
+          tonnage_kg: repoVolumeSeries,
           sets: repoSetsSeries,
           reps: repoRepsSeries,
           workouts: repoWorkoutsSeries,
-          density: out.series.density || [],
+          density_kg_min: out.series.density_kg_min || [],
           cvr: out.series.cvr || [],
           duration: repoDurationSeries,
-          avgRest: [],
-          setEfficiency: [],
+          avg_rest_ms: out.series.avg_rest_ms || [],
+          set_efficiency_pct: out.series.set_efficiency_pct || [],
         },
         metricKeys,
         perWorkout,
         totalsKpis,
       }
+      console.debug('[v2] keys', { totals: Object.keys(result.totals || {}), series: Object.keys(result.series || {}) })
+      return result
     } catch (error) {
       console.error('Error in getMetricsV2:', error)
       throw error
