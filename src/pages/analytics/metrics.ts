@@ -3,16 +3,16 @@ import type { ChartMetric, MetricOption } from './types';
 
 /** @deprecated Use metricKeys from service instead */
 export const BASE_METRICS: MetricOption[] = [
-  { key: 'volume',   label: 'Total Volume' },
-  { key: 'sets',     label: 'Total Sets' },
+  { key: 'volume',   label: 'Tonnage (kg)' },
+  { key: 'sets',     label: 'Sets' },
   { key: 'workouts', label: 'Workouts' },
-  { key: 'duration', label: 'Total Duration' },
-  { key: 'reps',     label: 'Total Reps' },
+  { key: 'duration', label: 'Duration (min)' },
+  { key: 'reps',     label: 'Reps' },
 ];
 
 /** @deprecated Use metricKeys from service instead */
 export const DERIVED_METRICS: MetricOption[] = [
-  { key: 'density',       label: 'Workout Density (kg/min)' },
+  { key: 'density',       label: 'Density (kg/min)' },
   { key: 'avgRest',       label: 'Avg Rest / Session (sec)' },
   { key: 'setEfficiency', label: 'Set Efficiency (×)' },
 ];

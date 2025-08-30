@@ -3,12 +3,41 @@
 exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
 <div>
   <div>
-    <div
-      class="flex gap-4 mb-4"
-    >
-      <div
-        data-testid="kpi-density"
-      >
+    <div class="flex items-center justify-between mb-4">
+      <label class="flex items-center gap-2">
+        <input
+          checked=""
+          title="Adds Density, Efficiency, PRs, and other computed metrics (Metrics v2)."
+          type="checkbox"
+        />
+        <span>
+          Show derived KPIs (beta)
+        </span>
+      </label>
+      <div class="flex items-center gap-2">
+        <select
+          data-testid="range-select"
+        >
+          <option value="last7">
+            Last 7 days
+          </option>
+          <option value="last14">
+            Last 14 days
+          </option>
+          <option value="last30">
+            Last 30 days
+          </option>
+          <option value="thisMonth">
+            This month
+          </option>
+          <option value="custom">
+            Custom
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-4 mb-4">
+      <div data-testid="kpi-density">
         <div>
           Density
         </div>
@@ -19,9 +48,7 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
           +10.00 kg/min
         </div>
       </div>
-      <div
-        data-testid="kpi-rest"
-      >
+      <div data-testid="kpi-rest">
         <div>
           Avg Rest
         </div>
@@ -32,9 +59,7 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
           -0m 30s
         </div>
       </div>
-      <div
-        data-testid="kpi-efficiency"
-      >
+      <div data-testid="kpi-efficiency">
         <div>
           Set Efficiency
         </div>
@@ -49,50 +74,32 @@ exports[`AnalyticsPage KPI cards > renders KPI cards when enabled 1`] = `
     <select
       data-testid="metric-select"
     >
-      <option
-        value="volume"
-      >
-        Total Volume
+      <option value="volume">
+        Tonnage (kg)
       </option>
-      <option
-        value="sets"
-      >
-        Total Sets
+      <option value="sets">
+        Sets
       </option>
-      <option
-        value="workouts"
-      >
+      <option value="workouts">
         Workouts
       </option>
-      <option
-        value="duration"
-      >
-        Total Duration
+      <option value="duration">
+        Duration (min)
       </option>
-      <option
-        value="reps"
-      >
-        Total Reps
+      <option value="reps">
+        Reps
       </option>
-      <option
-        value="density"
-      >
-        Workout Density (kg/min)
+      <option value="density">
+        Density (kg/min)
       </option>
-      <option
-        value="avgRest"
-      >
+      <option value="avgRest">
         Avg Rest / Session (sec)
       </option>
-      <option
-        value="setEfficiency"
-      >
+      <option value="setEfficiency">
         Set Efficiency (×)
       </option>
     </select>
-    <div
-      data-testid="empty-series"
-    >
+    <div data-testid="empty-series">
       No data to display
     </div>
   </div>

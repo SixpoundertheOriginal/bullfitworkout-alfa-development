@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { metricsServiceV2 } from '../service';
-import { FEATURE_FLAGS } from '@/config/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 // Mock feature flag
 const originalFlag = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;

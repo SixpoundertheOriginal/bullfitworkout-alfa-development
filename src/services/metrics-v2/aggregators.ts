@@ -7,7 +7,7 @@ import {
   calcSetEfficiency, 
   getTargetRestSecForWorkout 
 } from './calculators/derivedKpis';
-import { FEATURE_FLAGS } from '@/config/featureFlags';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 export function aggregatePerWorkout(
   workouts: WorkoutRaw[], 

@@ -4,6 +4,7 @@ import type { DateRange } from './types'
 import { getMetricsV2 as computeV2 } from './index'
 import type { MetricsRepository as ComputeRepo, DateRange as ComputeRange } from './repository'
 import { supabase } from '@/integrations/supabase/client'
+import { isBodyweightExercise, getExerciseLoadFactor } from '@/utils/exerciseUtils'
 
 // Try to initialize Supabase repository, fallback to in-memory if it fails
 let repository
@@ -19,12 +20,19 @@ export const metricsServiceV2 = {
     dateRange,
     userId,
     exerciseId,
+    includeBodyweightLoads = false,
   }: {
     dateRange: DateRange;
     userId: string;
     exerciseId?: string;
+    includeBodyweightLoads?: boolean;
   }) => {
     try {
+      console.debug('[MetricsV2][debug] params', {
+        startISO: dateRange.start,
+        endISO: dateRange.end,
+        includeBodyweightLoads,
+      })
       const {
         data: sessionData,
         error: sessionError,
@@ -47,6 +55,20 @@ export const metricsServiceV2 = {
 
       const effectiveUserId = sessionUserId
 
+      let bodyweightKg = 70
+      if (includeBodyweightLoads) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('bodyweight_kg')
+            .eq('id', effectiveUserId)
+            .single()
+          if (profile?.bodyweight_kg) bodyweightKg = profile.bodyweight_kg
+        } catch {
+          /* ignore */
+        }
+      }
+
       // Fetch raw data first via repository (with built-in fallbacks)
       const rawWorkouts = await repository.getWorkouts(dateRange, effectiveUserId)
       const workoutIds = rawWorkouts.map(w => w.id)
@@ -56,14 +78,11 @@ export const metricsServiceV2 = {
         : rawSets
 
       // Compute simple totals directly from repository data (authoritative)
-      const totalSets = sets.length
-      const totalReps = sets.reduce((a, s) => a + (Number(s.reps) || 0), 0)
-      const totalWorkouts = rawWorkouts.length
-      const durationMin = rawWorkouts.reduce((a, w) => a + (Number(w.duration) || 0), 0)
-      const totalVolumeKg = sets.reduce(
-        (a, s) => a + (Number(s.weightKg) || 0) * (Number(s.reps) || 0),
-        0
-      )
+      let totalSets = 0
+      let totalReps = 0
+      let totalWorkouts = rawWorkouts.length
+      let durationMin = rawWorkouts.reduce((a, w) => a + (Number(w.duration) || 0), 0)
+      let totalVolumeKg = 0
 
       // Convert repository data to aggregator types
       const setsForAggregator = rawSets.map(s => ({
@@ -95,14 +114,27 @@ export const metricsServiceV2 = {
         const w = rawWorkouts.find(w => w.id === s.workoutId)
         if (!w) continue
         const day = new Date(w.startedAt).toISOString().split('T')[0]
-        const inc = (Number(s.weightKg) || 0) * (Number(s.reps) || 0)
+        let weight = Number(s.weightKg) || 0
+        if (
+          includeBodyweightLoads &&
+          weight <= 0 &&
+          isBodyweightExercise(s.exerciseName || '')
+        ) {
+          weight = bodyweightKg * getExerciseLoadFactor(s.exerciseName || '')
+        }
+        const reps = Number(s.reps) || 0
+        const inc = weight * reps
+        totalVolumeKg += inc
+        totalSets += 1
+        totalReps += reps
         volByDay.set(day, (volByDay.get(day) || 0) + inc)
         setsCountByDay.set(day, (setsCountByDay.get(day) || 0) + 1)
-        repsByDay.set(day, (repsByDay.get(day) || 0) + (Number(s.reps) || 0))
+        repsByDay.set(day, (repsByDay.get(day) || 0) + reps)
       }
       const repoVolumeSeries = Array.from(volByDay.entries())
         .map(([date, value]) => ({ date, value }))
         .sort((a, b) => a.date.localeCompare(b.date))
+      console.debug('[MetricsV2][debug] series points:', repoVolumeSeries.length)
       const repoSetsSeries = Array.from(setsCountByDay.entries())
         .map(([date, value]) => ({ date, value }))
         .sort((a, b) => a.date.localeCompare(b.date))

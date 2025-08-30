@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { getFlag as getFeatureFlag, setFlagOverride } from '@/constants/featureFlags';
 
 export type Flags = {
   derivedKpis: boolean;
@@ -10,42 +11,15 @@ const FLAG_PATHS: Record<keyof Flags, string> = {
 
 const isBrowser = typeof window !== 'undefined';
 
-function readLocal(): Record<string, unknown> {
-  if (!isBrowser) return {};
-  try {
-    const raw = window.localStorage.getItem('bf.flags');
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+interface ConfigCtxValue {
+  flags: Flags;
+  setFlag: (name: keyof Flags, value: boolean) => void;
 }
 
-function readWindow(): Record<string, unknown> {
-  if (!isBrowser) return {};
-  return (window as any).__FLAGS__ || {};
-}
-
-function readEnv(key: string): unknown {
-  const envKey = `VITE_${key.replace(/\./g, '_').toUpperCase()}`;
-  // import.meta may not exist in some test contexts
-  const env = (import.meta as any)?.env;
-  return env ? env[envKey] : undefined;
-}
-
-export function getFlag(name: keyof Flags, defaults: Flags): boolean {
-  const path = FLAG_PATHS[name];
-  const winVal = readWindow()[path];
-  if (typeof winVal === 'boolean') return winVal;
-  const localVal = readLocal()[path];
-  if (typeof localVal === 'boolean') return localVal;
-  const envVal = readEnv(path);
-  if (typeof envVal === 'string') {
-    return envVal === 'true';
-  }
-  return defaults[name];
-}
-
-const ConfigCtx = createContext<{ flags: Flags }>({ flags: { derivedKpis: false } });
+const ConfigCtx = createContext<ConfigCtxValue>({
+  flags: { derivedKpis: false },
+  setFlag: () => {},
+});
 
 export interface ConfigProviderProps {
   children: React.ReactNode;
@@ -53,27 +27,37 @@ export interface ConfigProviderProps {
 }
 
 export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children, initialFlags }) => {
-  const flags = useMemo<Flags>(() => {
-    const defaults: Flags = { derivedKpis: import.meta.env.MODE !== 'production' };
+  const [flags, setFlags] = useState<Flags>(() => {
+    const defaultDerived = getFeatureFlag('ANALYTICS_DERIVED_KPIS_ENABLED', import.meta.env.MODE !== 'production');
     return {
       derivedKpis:
-        typeof initialFlags?.derivedKpis === 'boolean'
-          ? initialFlags.derivedKpis
-          : getFlag('derivedKpis', defaults),
+        typeof initialFlags?.derivedKpis === 'boolean' ? initialFlags.derivedKpis : defaultDerived,
     };
-  }, [initialFlags?.derivedKpis]);
+  });
 
-  if (isBrowser) {
-    (window as any).__FLAGS__ = {
-      ...(window as any).__FLAGS__,
-      [FLAG_PATHS.derivedKpis]: flags.derivedKpis,
-    };
-  }
+  const setFlag = (name: keyof Flags, value: boolean) => {
+    setFlags(prev => ({ ...prev, [name]: value }));
+    if (name === 'derivedKpis') {
+      setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', value);
+    }
+  };
 
-  return React.createElement(ConfigCtx.Provider, { value: { flags } }, children);
+  useEffect(() => {
+    if (isBrowser) {
+      (window as any).__FLAGS__ = {
+        ...(window as any).__FLAGS__,
+        [FLAG_PATHS.derivedKpis]: flags.derivedKpis,
+      };
+    }
+  }, [flags.derivedKpis]);
+
+  return (
+    <ConfigCtx.Provider value={{ flags, setFlag }}>
+      {children}
+    </ConfigCtx.Provider>
+  );
 };
 
 export function useConfig() {
   return useContext(ConfigCtx);
 }
-
