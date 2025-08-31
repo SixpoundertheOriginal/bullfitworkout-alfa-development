@@ -54,6 +54,7 @@ export type ServiceOutput = {
   metricKeys: string[];
   totalsKpis?: TotalsKpis;
   timePeriodAverages?: import('./calculators/timePeriodAveragesCalculator').TimePeriodAveragesOutput;
+  timingMetadata?: { coveragePct: number; quality: 'high' | 'medium' | 'low' };
   meta: {
     generatedAt: string;
     version: 'v2';

@@ -20,6 +20,7 @@ describe('metric selector and KPI gating', () => {
     perWorkout: [],
     series: {} as Record<string, TimeSeriesPoint[]>,
     totals: baseTotals,
+    timingMetadata: { coveragePct: 100, quality: 'high' as const },
   };
 
   it('toggle OFF → base cards, no measures available', () => {
@@ -72,7 +73,7 @@ describe('metric selector and KPI gating', () => {
     render(
       <QueryClientProvider client={client}>
         <TooltipProvider>
-          <AnalyticsPage data={{ perWorkout: [], series, totals }} />
+          <AnalyticsPage data={{ perWorkout: [], series, totals, timingMetadata: { coveragePct: 100, quality: 'high' } }} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -95,7 +96,7 @@ describe('metric selector and KPI gating', () => {
     render(
       <QueryClientProvider client={client}>
         <TooltipProvider>
-          <AnalyticsPage data={{ perWorkout: [], series, totals }} />
+          <AnalyticsPage data={{ perWorkout: [], series, totals, timingMetadata: { coveragePct: 100, quality: 'high' } }} />
         </TooltipProvider>
       </QueryClientProvider>
     );

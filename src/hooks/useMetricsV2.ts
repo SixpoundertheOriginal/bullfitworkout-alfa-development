@@ -63,6 +63,7 @@ export type MetricsV2Data = {
     avgRestSec?: { timestamp: string; value: number }[];
     setEfficiencyKgPerMin?: { timestamp: string; value: number }[];
   };
+  timingMetadata?: { coveragePct: number; quality: 'high' | 'medium' | 'low' };
   error?: string;
 };
 
@@ -167,8 +168,29 @@ export function useMetricsV2Analytics(
         const densityKgPerMin = durationMin > 0
           ? Math.round((tonnageKg / durationMin) * 100) / 100
           : 0;
-        const avgRestSec = Math.round((response.totals?.[AVG_REST_ID] ?? 0) * 100) / 100;
-        const setEfficiencyKgPerMin = Math.round((response.totals?.[EFF_ID] ?? 0) * 100) / 100;
+        const timingMetadata = response.timingMetadata;
+        const derivedFlag = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
+        const includeRest = derivedFlag && timingMetadata?.quality === 'high';
+        const avgRestSec = includeRest
+          ? Math.round((response.totals?.[AVG_REST_ID] ?? 0) * 100) / 100
+          : undefined;
+        const setEfficiencyKgPerMin = derivedFlag
+          ? Math.round((response.totals?.[EFF_ID] ?? 0) * 100) / 100
+          : undefined;
+
+        const series = {
+          sets: (response.series?.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          reps: (response.series?.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          durationMin: (response.series?.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          tonnageKg: (response.series?.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          densityKgPerMin: (response.series?.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          avgRestSec: includeRest
+            ? (response.series?.[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            : undefined,
+          setEfficiencyKgPerMin: derivedFlag
+            ? (response.series?.[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            : undefined,
+        };
 
         const result: MetricsV2Data = {
           meta: {
@@ -190,18 +212,11 @@ export function useMetricsV2Analytics(
             durationMin,
             tonnageKg,
             densityKgPerMin,
-            avgRestSec,
-            setEfficiencyKgPerMin,
+            ...(includeRest ? { avgRestSec } : {}),
+            ...(derivedFlag ? { setEfficiencyKgPerMin } : {}),
           },
-          series: {
-            sets: (response.series?.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            reps: (response.series?.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            durationMin: (response.series?.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            tonnageKg: (response.series?.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            densityKgPerMin: (response.series?.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            avgRestSec: (response.series?.[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-            setEfficiencyKgPerMin: (response.series?.[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          },
+          series,
+          timingMetadata,
         };
 
         // Structured logging
@@ -241,6 +256,7 @@ export function useMetricsV2Analytics(
           status: 'error',
         });
 
+        const derivedFlag = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
         return {
           meta: {
             version: 'v2',
@@ -261,8 +277,7 @@ export function useMetricsV2Analytics(
             durationMin: 0,
             tonnageKg: 0,
             densityKgPerMin: 0,
-            avgRestSec: 0,
-            setEfficiencyKgPerMin: 0,
+            ...(derivedFlag ? { avgRestSec: 0, setEfficiencyKgPerMin: 0 } : {}),
           },
           error: errorMessage,
         };
