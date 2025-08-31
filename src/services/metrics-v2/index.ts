@@ -1,5 +1,6 @@
 // Public surface for v2 + DI-friendly façade
-import type { ServiceOutput, PerWorkoutMetrics, TimeSeriesPoint } from './dto';
+import type { ServiceOutput, PerWorkoutMetrics } from './dto';
+import type { TimeSeriesPoint } from './types';
 import type { MetricsRepository, DateRange } from './repository';
 import {
   calcDensityKgPerMin,
@@ -194,3 +195,4 @@ export * from './dto';
 export * from './repository';
 export * from './flags';
 export * from './chartAdapter';
+export * from './types';

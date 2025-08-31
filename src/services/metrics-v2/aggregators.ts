@@ -1,6 +1,6 @@
 // Aggregation functions for workout metrics
-import { PerWorkoutMetrics, Totals, TimeSeriesPoint, TotalsKpis } from './dto';
-import { WorkoutRaw, SetRaw } from './types';
+import { PerWorkoutMetrics, Totals, TotalsKpis } from './dto';
+import { TimeSeriesPoint, WorkoutRaw, SetRaw } from './types';
 import {
   calcWorkoutDensityKgPerMin,
   calcAvgRestPerSession,
@@ -104,7 +104,7 @@ export function rollingWindows(
   // Group by date and aggregate values
   // For most kinds we simply sum the daily values, but for density we need to
   // compute a weighted average based on total tonnage and duration for the day.
-  const byDate = new Map<string, any>();
+  const byDate = new Map<string, number | { tonnage: number; duration: number }>();
 
   perWorkout.forEach(workout => {
     const date = new Date(workout.startedAt).toISOString().split('T')[0];
@@ -143,12 +143,11 @@ export function rollingWindows(
 
   return Array.from(byDate.entries())
     .map(([date, value]) => {
-      if (kind === 'density') {
-        const { tonnage, duration } = value as { tonnage: number; duration: number };
-        const density = tonnage / Math.max(duration, 1e-9);
-        return { date, value: duration === 0 ? 0 : +density.toFixed(2) };
+      if (kind === 'density' && typeof value !== 'number') {
+        const density = value.tonnage / Math.max(value.duration, 1e-9);
+        return { date, value: value.duration === 0 ? 0 : +density.toFixed(2) };
       }
-      return { date, value: value as number };
+      return { date, value: typeof value === 'number' ? value : 0 };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
 }

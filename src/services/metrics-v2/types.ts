@@ -1,4 +1,7 @@
 // Canonical types for metrics repository
+export type SeriesMap = Record<string, number[] | (number | null)[]>;
+export interface TimeSeriesPoint { date: string; value: number | null; }
+
 export interface DateRange {
   start: string;
   end: string;
