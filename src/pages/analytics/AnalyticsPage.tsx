@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
-import { fmtKgPerMin, fmtSeconds, fmtRatio } from './formatters';
+import { fmtKgPerMin, fmtSeconds } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import {
   TONNAGE_ID,
@@ -169,10 +169,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const series = seriesData[currentMeasure] ?? [];
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(() => {
-    if (v2Enabled) return availableMeasures;
-    const ids = derivedEnabled ? [...baseIds, DENSITY_ID] : baseIds;
+    const derivedIds = [DENSITY_ID, AVG_REST_ID, EFF_ID];
+    const ids = derivedEnabled ? [...baseIds, ...derivedIds] : baseIds;
     return ids.filter(id => availableMeasures.includes(id));
-  }, [availableMeasures, v2Enabled, derivedEnabled, baseIds]);
+  }, [availableMeasures, derivedEnabled, baseIds]);
 
   const baseTotals = React.useMemo(
     () => {
@@ -199,14 +199,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       if (v2Enabled && v2Data) {
         return {
           density: v2Data.kpis.densityKgPerMin,
-          avgRestMs: 0, // Not in V2 core KPIs
-          efficiencyPct: 0, // Not in V2 core KPIs
+          avgRestSec: v2Data.kpis.avgRestSec ?? 0,
+          efficiencyKgPerMin: v2Data.kpis.setEfficiencyKgPerMin ?? 0,
         };
       }
       return {
         density: totals[DENSITY_ID] ?? 0,
-        avgRestMs: totals[AVG_REST_ID] ?? 0,
-        efficiencyPct: totals[EFF_ID] ?? 0,
+        avgRestSec: totals[AVG_REST_ID] ?? 0,
+        efficiencyKgPerMin: totals[EFF_ID] ?? 0,
       };
     },
     [v2Enabled, v2Data, totals]
@@ -344,12 +344,12 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             </div>
           </div>
           <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{fmtSeconds(kpiTotals.avgRestMs / 1000)}</div>
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{fmtSeconds(kpiTotals.avgRestSec)}</div>
           </div>
           <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{fmtRatio(kpiTotals.efficiencyPct / 100)}</div>
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency (kg/min)</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{fmtKgPerMin(kpiTotals.efficiencyKgPerMin)}</div>
           </div>
         </div>
       )}

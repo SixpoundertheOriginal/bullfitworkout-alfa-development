@@ -4,7 +4,7 @@ import { metricsServiceV2 } from '@/services/metrics-v2/service';
 import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
-import { TONNAGE_ID } from '@/pages/analytics/metricIds';
+import { TONNAGE_ID, AVG_REST_ID, EFF_ID } from '@/pages/analytics/metricIds';
 
 // Factory for stable params
 function buildMetricsParams(opts: {
@@ -50,6 +50,8 @@ export type MetricsV2Data = {
     durationMin: number;
     tonnageKg: number;
     densityKgPerMin: number;
+    avgRestSec?: number;
+    setEfficiencyKgPerMin?: number | null;
   };
   // per-day time series used by charts (camelCase keys, timestamps)
   series?: {
@@ -58,6 +60,8 @@ export type MetricsV2Data = {
     durationMin?: { timestamp: string; value: number }[];
     tonnageKg?: { timestamp: string; value: number }[];
     densityKgPerMin?: { timestamp: string; value: number }[];
+    avgRestSec?: { timestamp: string; value: number }[];
+    setEfficiencyKgPerMin?: { timestamp: string; value: number }[];
   };
   error?: string;
 };
@@ -160,9 +164,11 @@ export function useMetricsV2Analytics(
         const reps = response.totals?.reps_total ?? 0;
         const durationMin = Math.round((response.totals?.duration_min ?? 0) * 100) / 100;
         const tonnageKg = Math.round((response.totals?.tonnage_kg ?? 0) * 100) / 100;
-        const densityKgPerMin = durationMin > 0 
-          ? Math.round((tonnageKg / durationMin) * 100) / 100 
+        const densityKgPerMin = durationMin > 0
+          ? Math.round((tonnageKg / durationMin) * 100) / 100
           : 0;
+        const avgRestSec = Math.round((response.totals?.[AVG_REST_ID] ?? 0) * 100) / 100;
+        const setEfficiencyKgPerMin = Math.round((response.totals?.[EFF_ID] ?? 0) * 100) / 100;
 
         const result: MetricsV2Data = {
           meta: {
@@ -184,6 +190,8 @@ export function useMetricsV2Analytics(
             durationMin,
             tonnageKg,
             densityKgPerMin,
+            avgRestSec,
+            setEfficiencyKgPerMin,
           },
           series: {
             sets: (response.series?.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
@@ -191,6 +199,8 @@ export function useMetricsV2Analytics(
             durationMin: (response.series?.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
             tonnageKg: (response.series?.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
             densityKgPerMin: (response.series?.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            avgRestSec: (response.series?.[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+            setEfficiencyKgPerMin: (response.series?.[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
           },
         };
 
@@ -251,6 +261,8 @@ export function useMetricsV2Analytics(
             durationMin: 0,
             tonnageKg: 0,
             densityKgPerMin: 0,
+            avgRestSec: 0,
+            setEfficiencyKgPerMin: 0,
           },
           error: errorMessage,
         };

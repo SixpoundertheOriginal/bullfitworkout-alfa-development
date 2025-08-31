@@ -6,7 +6,7 @@ import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/dto';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { TONNAGE_ID, DENSITY_ID, SETS_ID, REPS_ID, DURATION_ID } from '../metricIds';
+import { TONNAGE_ID, DENSITY_ID, SETS_ID, REPS_ID, DURATION_ID, AVG_REST_ID, EFF_ID } from '../metricIds';
 
 describe('metric selector and KPI gating', () => {
   const baseTotals = {
@@ -52,5 +52,27 @@ describe('metric selector and KPI gating', () => {
     const select = screen.getByTestId('metric-select') as HTMLSelectElement;
     expect(select.options.length).toBe(0);
     expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
+  });
+
+  it('shows rest and efficiency options when data available', () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
+    const client = new QueryClient();
+    const series = {
+      [TONNAGE_ID]: [{ date: '2024-01-01', value: 1 }],
+      [AVG_REST_ID]: [{ date: '2024-01-01', value: 30 }],
+      [EFF_ID]: [{ date: '2024-01-01', value: 1 }],
+    } as Record<string, TimeSeriesPoint[]>;
+    const totals = { ...baseTotals, [AVG_REST_ID]: 30, [EFF_ID]: 1 };
+    render(
+      <QueryClientProvider client={client}>
+        <TooltipProvider>
+          <AnalyticsPage data={{ perWorkout: [], series, totals }} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+    const trigger = screen.getByTestId('metric-select');
+    fireEvent.click(trigger);
+    expect(screen.getByText('Avg Rest (sec)')).toBeInTheDocument();
+    expect(screen.getByText('Set Efficiency (kg/min)')).toBeInTheDocument();
   });
 });

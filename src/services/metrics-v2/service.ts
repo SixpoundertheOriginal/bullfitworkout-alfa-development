@@ -237,6 +237,8 @@ export const metricsServiceV2 = {
           [REPS_ID]: totalReps,
           workouts: totalWorkouts,
           [DURATION_ID]: durationMin,
+          [AVG_REST_ID]: (out.totals as any)[AVG_REST_ID] ?? (out.totals as any).avgRestSec ?? 0,
+          [EFF_ID]: (out.totals as any)[EFF_ID] ?? (out.totals as any).setEfficiencyKgPerMin ?? 0,
         },
         series: {
           ...out.series,
