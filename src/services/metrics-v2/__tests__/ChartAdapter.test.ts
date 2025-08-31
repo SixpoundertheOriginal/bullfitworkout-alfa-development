@@ -14,4 +14,14 @@ describe('chartAdapter', () => {
       { date: '2024-05-01', value: 5 },
     ]);
   });
+
+  it('maps rest and efficiency metrics with Warsaw date conversion', () => {
+    const out = toChartSeries(v2Payload);
+    expect(out.series.avg_rest_sec).toEqual([
+      { date: '2024-05-02', value: 90 },
+    ]);
+    expect(out.series.set_efficiency_kg_per_min).toEqual([
+      { date: '2024-05-01', value: 1.5 },
+    ]);
+  });
 });
