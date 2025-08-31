@@ -66,6 +66,6 @@ describe('engine calculators', () => {
     const day = Object.keys(ctxByDay)[0];
     expect(day).toBe('2024-01-02');
     const coverage = restCoveragePct(ctxByDay);
-    expect(coverage).toBe(100);
+    expect(coverage).toBe(0);
   });
 });

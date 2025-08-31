@@ -37,6 +37,12 @@ describe('featureFlags precedence', () => {
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);
   });
 
+  it('localStorage overrides derived KPI flag', async () => {
+    localStorage.setItem('bf_flag_ANALYTICS_DERIVED_KPIS_ENABLED', 'true');
+    const { FEATURE_FLAGS } = await import(modulePath);
+    expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(true);
+  });
+
   it('setFlagOverride overrides all', async () => {
     localStorage.setItem('bf_flag_KPI_ANALYTICS_ENABLED', 'true');
     const { FEATURE_FLAGS, setFlagOverride } = await import(modulePath);

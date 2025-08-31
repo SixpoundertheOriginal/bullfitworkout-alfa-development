@@ -3,6 +3,7 @@ import { describe, test, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { WorkoutDetailsEnhanced } from '@/components/workouts/WorkoutDetailsEnhanced';
 import { WeightUnitProvider } from '@/context/WeightUnitContext';
+import { formatTime } from '@/utils/formatTime';
 
 function renderWithWeightUnit(ui: React.ReactNode) {
   return render(
@@ -49,8 +50,8 @@ describe('Details page rest rendering (failing first)', () => {
     // - Second set shows 70s
     // - Third set shows Pending (NOT 60s)
     // These assertions will FAIL with current `|| 60` logic.
-    expect(screen.getByText('30s')).toBeInTheDocument();
-    expect(screen.getByText('70s')).toBeInTheDocument();
+    expect(screen.getByText(formatTime(30))).toBeInTheDocument();
+    expect(screen.getByText(formatTime(70))).toBeInTheDocument();
     expect(screen.getByText(/Pending|—/i)).toBeInTheDocument();
   });
 });
