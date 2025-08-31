@@ -25,6 +25,25 @@ try {
   repository = new InMemoryMetricsRepository()
 }
 
+function computePctOfSetsWithNonNullRest(
+  sets: Array<{ workoutId: string; restTimeSec?: number | null }>
+): number {
+  const byWorkout = new Map<string, { withRest: number; total: number }>()
+  for (const s of sets) {
+    const rec = byWorkout.get(s.workoutId) || { withRest: 0, total: 0 }
+    rec.total += 1
+    if (s.restTimeSec !== null && s.restTimeSec !== undefined) rec.withRest += 1
+    byWorkout.set(s.workoutId, rec)
+  }
+  let explicit = 0
+  let possible = 0
+  for (const { withRest, total } of byWorkout.values()) {
+    explicit += withRest
+    if (total > 1) possible += total - 1
+  }
+  return possible > 0 ? +((explicit / possible) * 100).toFixed(2) : 0
+}
+
 export const metricsServiceV2 = {
   getMetricsV2: async ({
     dateRange,
@@ -256,6 +275,17 @@ export const metricsServiceV2 = {
         perWorkout,
         totalsKpis,
       }
+      const restCoveragePct = computePctOfSetsWithNonNullRest(rawSets)
+      console.debug('[v2.audit.rest_eff]', {
+        hasKpi: typeof totalsKpis?.setEfficiencyKgPerMin === 'number',
+        hasSeries: Array.isArray(result.series[EFF_ID]) && result.series[EFF_ID].length > 0,
+        restCoveragePct,
+      })
+      console.log('[v2.build.rest_eff]', {
+        restCoveragePct,
+        avgRestSec: result.totals[AVG_REST_ID],
+        setEfficiencyKgPerMin: result.totals[EFF_ID],
+      })
       console.debug('[v2] keys', {
         totals: Object.keys(result.totals || {}),
         series: Object.fromEntries(Object.entries(result.series || {}).map(([k, v]) => [k, v.length])),
@@ -271,3 +301,5 @@ export const metricsServiceV2 = {
     return repository
   }
 }
+
+export { computePctOfSetsWithNonNullRest }
