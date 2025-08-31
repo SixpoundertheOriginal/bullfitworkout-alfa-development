@@ -60,4 +60,25 @@ describe('AnalyticsPage chart', () => {
     const after = within(chart).getAllByText(/kg\/min/).length;
     expect(after).toBeGreaterThan(before);
   });
+
+  it('renders gap when series contains null', () => {
+    const data = {
+      series: {
+        tonnage_kg: [
+          { date: '2024-01-01', value: 5 },
+          { date: '2024-01-02', value: null },
+          { date: '2024-01-03', value: 7 },
+        ],
+      },
+      metricKeys: ['tonnage_kg'],
+    };
+    const { getByTestId } = renderWithProviders(
+      <TooltipProvider>
+        <AnalyticsPage data={data} />
+      </TooltipProvider>
+    );
+    const path = getByTestId('chart').querySelector('.recharts-line-curve');
+    const d = path?.getAttribute('d') || '';
+    expect(d.split('M').length).toBeGreaterThan(2);
+  });
 });
