@@ -13,7 +13,7 @@ const mkV1 = (over: any = {}) => ({
 
 describe('getMetricsShadow', () => {
   const fetchV1 = async () => mkV1();
-  const range = { from: new Date('2025-08-01'), to: new Date('2025-08-31') };
+  const range = { start: '2025-08-01', end: '2025-08-31' };
 
   it('returns v1 by default (no flags)', async () => {
     const out = await getMetricsShadow('u1', range, { fetchV1, repoV2: InMemoryRepoStub });

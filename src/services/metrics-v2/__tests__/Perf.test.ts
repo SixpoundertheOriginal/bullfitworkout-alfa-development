@@ -39,7 +39,7 @@ describe('metrics-v2 perf', () => {
     let total = 0;
     for (let i = 0; i < attempts; i++) {
       const t0 = performance.now();
-      await getMetricsV2(InMemoryRepoStub as any, 'u1', { from: new Date(), to: new Date() });
+      await getMetricsV2(InMemoryRepoStub as any, 'u1', { start: '2025-01-01', end: '2025-12-31' });
       const t1 = performance.now();
       total += (t1 - t0);
     }

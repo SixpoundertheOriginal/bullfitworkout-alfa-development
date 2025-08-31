@@ -1,7 +1,7 @@
 // Public surface for v2 + DI-friendly façade
 import type { ServiceOutput, PerWorkoutMetrics } from './dto';
 import type { TimeSeriesPoint } from './types';
-import type { MetricsRepository, DateRange } from './repository';
+import type { DateRange, MetricsRepository } from './types';
 import {
   calcDensityKgPerMin,
   calcAvgRestSec,
@@ -190,6 +190,11 @@ export async function getMetricsV2(
     },
   };
 }
+
+// Export the fixed rest timing calculator
+export { deriveRestMs } from './engine/restCalculatorsFixed';
+export { RestTimingService } from './restTimingService';
+export { WorkoutTimingEnhancer } from '../workout/workoutTimingEnhancer';
 
 export * from './dto';
 export * from './flags';
