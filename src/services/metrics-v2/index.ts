@@ -88,9 +88,9 @@ export async function getMetricsV2(
           isBodyweight: s.isBodyweight,
           performedAt: s.created_at || s.performedAt,
           restMs: typeof s.restTime === 'number' ? s.restTime * 1000 : undefined,
-          startedAt: undefined,
-          completedAt: undefined,
-          hasActualTiming: false,
+          startedAt: s.started_at || s.startedAt,
+          completedAt: s.completed_at || s.completedAt,
+          hasActualTiming: Boolean((s.started_at || s.startedAt) && (s.completed_at || s.completedAt)),
         });
       });
     });
@@ -171,6 +171,16 @@ export async function getMetricsV2(
 
   const metricKeys = Object.keys(series);
 
+  const timingMetadata = {
+    coveragePct: restRes.totals.timingCoveragePct,
+    quality:
+      restRes.totals.timingCoveragePct >= 80
+        ? 'high'
+        : restRes.totals.timingCoveragePct >= 50
+          ? 'medium'
+          : 'low',
+  } as const;
+
   // Step 4: Calculate time period averages if requested
   let timePeriodAverages: TimePeriodAveragesOutput | undefined;
   if (config.includeTimePeriodAverages) {
@@ -204,6 +214,7 @@ export async function getMetricsV2(
     series,
     metricKeys,
     timePeriodAverages,
+    timingMetadata,
     meta: {
       generatedAt: new Date().toISOString(),
       version: 'v2',

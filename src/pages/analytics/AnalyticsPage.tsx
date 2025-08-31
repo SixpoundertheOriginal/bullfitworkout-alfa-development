@@ -32,6 +32,7 @@ export type AnalyticsServiceData = {
   metricKeys?: string[];
   totals?: Record<string, number>;
   timePeriodAverages?: import('@/services/metrics-v2/calculators/timePeriodAveragesCalculator').TimePeriodAveragesOutput;
+  timingMetadata?: { coveragePct: number; quality: 'high' | 'medium' | 'low' };
 };
 
 export type AnalyticsPageProps = { data?: AnalyticsServiceData };
@@ -130,19 +131,27 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const serviceData = data ?? fetched;
   const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
+  const timingQuality = React.useMemo(
+    () => {
+      if (v2Enabled && v2Data?.timingMetadata) return v2Data.timingMetadata.quality;
+      if (!v2Enabled && serviceData?.timingMetadata) return serviceData.timingMetadata.quality;
+      return 'low';
+    },
+    [v2Enabled, v2Data?.timingMetadata, serviceData?.timingMetadata]
+  );
+
   // Initialize currentMeasure state early
   const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
     if (v2Enabled && v2Data) {
-      // Use V2 DTO series via adapter (camelCase keys, timestamps)
-      return toChartSeries(v2Data, derivedEnabled);
+      return toChartSeries(v2Data, derivedEnabled && timingQuality === 'high');
     }
-    // Legacy fallback (already in snake_case {date,value})
-    const raw = serviceData?.series ?? {};
+    const raw = { ...(serviceData?.series ?? {}) };
+    if (timingQuality !== 'high') delete raw[AVG_REST_ID];
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
-  }, [v2Enabled, v2Data, serviceData, derivedEnabled]);
+  }, [v2Enabled, v2Data, serviceData, derivedEnabled, timingQuality]);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
@@ -173,10 +182,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }, [seriesData, currentMeasure]);
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(() => {
-    const derivedIds = [AVG_REST_ID, EFF_ID];
+    const derivedIds = timingQuality === 'high' ? [AVG_REST_ID, EFF_ID] : [EFF_ID];
     const ids = derivedEnabled ? [...baseIds, ...derivedIds] : baseIds;
     return ids.filter(id => availableMeasures.includes(id));
-  }, [availableMeasures, derivedEnabled, baseIds]);
+  }, [availableMeasures, derivedEnabled, baseIds, timingQuality]);
 
   const formatValue = React.useCallback(
     (n: number) => {
@@ -216,17 +225,17 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       if (v2Enabled && v2Data) {
         return {
           density: v2Data.kpis.densityKgPerMin,
-          avgRestSec: derivedEnabled ? v2Data.kpis.avgRestSec ?? 0 : 0,
+          avgRestSec: derivedEnabled && timingQuality === 'high' ? v2Data.kpis.avgRestSec ?? 0 : 0,
           efficiencyKgPerMin: derivedEnabled ? v2Data.kpis.setEfficiencyKgPerMin ?? 0 : 0,
         };
       }
       return {
         density: totals[DENSITY_ID] ?? 0,
-        avgRestSec: derivedEnabled ? totals[AVG_REST_ID] ?? 0 : 0,
+        avgRestSec: derivedEnabled && timingQuality === 'high' ? totals[AVG_REST_ID] ?? 0 : 0,
         efficiencyKgPerMin: derivedEnabled ? totals[EFF_ID] ?? 0 : 0,
       };
     },
-    [v2Enabled, v2Data, totals, derivedEnabled]
+    [v2Enabled, v2Data, totals, derivedEnabled, timingQuality]
   );
 
   React.useEffect(() => {
@@ -360,10 +369,18 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
               {formatKgPerMin(kpiTotals.density)}
             </div>
           </div>
-          <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{formatSeconds(kpiTotals.avgRestSec)}</div>
-          </div>
+          {timingQuality === 'high' ? (
+            <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
+              <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{formatSeconds(kpiTotals.avgRestSec)}</div>
+              <div data-testid="rest-confidence" className="text-xs text-muted-foreground mt-1">High timing confidence</div>
+            </div>
+          ) : (
+            <div data-testid="kpi-rest-fallback" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 opacity-70">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
+              <div className="text-sm text-muted-foreground">Low timing quality</div>
+            </div>
+          )}
           <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency (kg/min)</div>
             <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{formatKgPerMin(kpiTotals.efficiencyKgPerMin)}</div>
