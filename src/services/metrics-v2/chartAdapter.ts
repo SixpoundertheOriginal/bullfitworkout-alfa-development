@@ -66,7 +66,10 @@ export type ChartSeriesOutput = {
 };
 
 // Convert Metrics v2 payload to chart-friendly series keyed by canonical measure ids
-export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }): ChartSeriesOutput {
+export function toChartSeries(
+  payload: { series?: Record<string, RawPoint[]> },
+  includeDerived = true
+): ChartSeriesOutput {
   console.debug('[adapter.in]', {
     hasSeries: Boolean(payload?.series),
     seriesKeys: payload?.series ? Object.keys(payload.series) : [],
@@ -78,6 +81,11 @@ export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }):
   for (const [k, points] of Object.entries(raw) as [string, RawPoint[]][]) {
     const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (!CANONICAL_KEYS.has(canonical)) continue;
+    if (
+      !includeDerived &&
+      (canonical === 'avg_rest_sec' || canonical === 'set_efficiency_kg_per_min')
+    )
+      continue;
     
     const mapped = (points || []).map((p): TimeSeriesPoint => {
       const ts = p.timestamp ?? p.ts ?? '';
@@ -106,7 +114,12 @@ export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }):
     out['density_kg_per_min'] = entries.map(([date], idx) => ({ date, value: values[idx] }));
   }
 
-  if (!out['set_efficiency_kg_per_min'] && out['tonnage_kg'] && out['duration_min']) {
+  if (
+    includeDerived &&
+    !out['set_efficiency_kg_per_min'] &&
+    out['tonnage_kg'] &&
+    out['duration_min']
+  ) {
     const byDate = new Map<string, { tonnage: number | null; duration: number | null }>();
     for (const p of out['tonnage_kg']) byDate.set(p.date, { tonnage: p.value, duration: null });
     for (const p of out['duration_min']) {
@@ -128,8 +141,8 @@ export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }):
     len: density?.length ?? 0,
     sample: density?.[0],
   });
-  const rest = out['avg_rest_sec'];
-  const eff = out['set_efficiency_kg_per_min'];
+  const rest = includeDerived ? out['avg_rest_sec'] : undefined;
+  const eff = includeDerived ? out['set_efficiency_kg_per_min'] : undefined;
   console.debug('[adapter.out.rest_eff]', {
     rest: { has: Boolean(rest), len: rest?.length ?? 0 },
     eff: { has: Boolean(eff), len: eff?.length ?? 0 },
