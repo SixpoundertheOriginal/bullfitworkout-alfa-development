@@ -19,24 +19,27 @@ export const v2Payload = {
   },
 };
 
+const tonnageSeries = [
+  { date: '2024-05-01', value: 1000 },
+  { date: '2024-05-02', value: 1100 },
+];
+const durationSeries = [{ date: '2024-05-01', value: 60 }];
+const densitySeries = [{ date: '2024-05-01', value: 5 }];
+const restSeries = [{ date: '2024-05-02', value: 90 }];
+const efficiencySeries = [{ date: '2024-05-01', value: 1.5 }];
+
 export const expectedChartSeries = {
   series: {
-    tonnage_kg: [
-      { date: '2024-05-01', value: 1000 },
-      { date: '2024-05-02', value: 1100 },
-    ],
-    duration_min: [
-      { date: '2024-05-01', value: 60 },
-    ],
-    density_kg_per_min: [
-      { date: '2024-05-01', value: 5 },
-    ],
-    avg_rest_sec: [
-      { date: '2024-05-02', value: 90 },
-    ],
-    set_efficiency_kg_per_min: [
-      { date: '2024-05-01', value: 1.5 },
-    ],
+    tonnage_kg: tonnageSeries,
+    tonnageKg: tonnageSeries,
+    duration_min: durationSeries,
+    durationMin: durationSeries,
+    density_kg_per_min: densitySeries,
+    densityKgPerMin: densitySeries,
+    avg_rest_sec: restSeries,
+    avgRestSec: restSeries,
+    set_efficiency_kg_per_min: efficiencySeries,
+    setEfficiencyKgPerMin: efficiencySeries,
   },
   availableMeasures: [
     'tonnage_kg',
