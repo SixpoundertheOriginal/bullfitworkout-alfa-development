@@ -195,9 +195,13 @@ export const metricsServiceV2 = {
         .sort((a, b) => a.date.localeCompare(b.date))
 
       // Adapter: bridge our Supabase repository (string dates + RLS user) to compute's repo
-      const adapter: ComputeRepo = {
-        getWorkouts: async (range: ComputeRange, uid: string) => {
-          const r: DateRange = { start: range.from.toISOString(), end: range.to.toISOString() }
+      const adapter: any = {
+        getWorkouts: async (range: any, uid: string) => {
+          // Handle both DateRange formats
+          const r: DateRange = { 
+            start: range.start || range.from?.toISOString().split('T')[0] || '2025-01-01', 
+            end: range.end || range.to?.toISOString().split('T')[0] || '2025-12-31'
+          }
           const ws = await repository.getWorkouts(r, uid)
           return ws.map(w => ({ id: w.id, startedAt: w.startedAt }))
         },
@@ -218,7 +222,10 @@ export const metricsServiceV2 = {
         },
       }
 
-      const range: ComputeRange = { from: new Date(dateRange.start), to: new Date(dateRange.end) }
+      const range: any = { 
+        start: dateRange.start, 
+        end: dateRange.end 
+      }
       const out = await computeV2(adapter, effectiveUserId, range, {
         tz: 'Europe/Warsaw',
         units: 'kg|min',

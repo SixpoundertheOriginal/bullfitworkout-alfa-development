@@ -1,4 +1,4 @@
-import type { DateRange, LegacyMetricsRepository as MetricsRepository } from '../metrics-v2/types';
+import type { DateRange } from '../metrics-v2/types';
 import { getMetricsV2, type ServiceOutput } from '../metrics-v2';
 import { summarizeParityDiff } from './parity';
 import { emitMetricsTelemetry, type ParityEvent } from './telemetry';
@@ -12,7 +12,7 @@ export type ShadowFlags = {
 
 export type GetMetricsShadowOptions<TV1> = {
   fetchV1: FetchV1<TV1>;
-  repoV2: MetricsRepository;
+  repoV2: any;
   flags?: ShadowFlags;
   userIdHashFn?: (userId: string) => string; // optional, to avoid PII
 };
@@ -26,7 +26,7 @@ export async function getMetricsShadow<TV1>(
 
   // Cutover path: return v2
   if (flags.v2) {
-    return getMetricsV2(repoV2, userId, range);
+    return getMetricsV2(repoV2, userId, range as any);
   }
 
   // Default path: return v1
@@ -36,7 +36,7 @@ export async function getMetricsShadow<TV1>(
   if (flags.shadow) {
     void (async () => {
       try {
-        const v2 = await getMetricsV2(repoV2, userId, range);
+        const v2 = await getMetricsV2(repoV2, userId, range as any);
         const diff = summarizeParityDiff(v1, v2);
         if (diff) {
           const event: ParityEvent = {

@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { getMetricsShadow } from '../getMetricsFacade';
 import { InMemoryMetricsRepository } from '../../metrics-v2';
 
-const InMemoryRepoStub = new InMemoryMetricsRepository();
+// Create a compatible stub for tests
+const InMemoryRepoStub: any = {
+  getWorkouts: async () => [],
+  getSets: async () => []
+};
 import * as Telemetry from '../telemetry';
 
 const mkV1 = (over: any = {}) => ({
