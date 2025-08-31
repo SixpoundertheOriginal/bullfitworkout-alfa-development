@@ -106,4 +106,19 @@ describe('chartAdapter', () => {
     const values = out.series.set_efficiency_kg_per_min.map(p => p.value);
     expect(values.some(v => Number.isNaN(v as any) || v === Infinity || v === -Infinity)).toBe(false);
   });
+
+  it('skips rest and efficiency when includeDerived is false', () => {
+    const payload = {
+      series: {
+        tonnage_kg: [{ timestamp: '2024-05-01T06:00:00Z', value: 200 }],
+        duration_min: [{ timestamp: '2024-05-01T06:00:00Z', value: 20 }],
+        avg_rest_sec: [{ timestamp: '2024-05-01T06:00:00Z', value: 30 }],
+      },
+    };
+    const out = toChartSeries(payload, false);
+    expect(out.series).not.toHaveProperty('avg_rest_sec');
+    expect(out.series).not.toHaveProperty('set_efficiency_kg_per_min');
+    expect(out.availableMeasures).not.toContain('avg_rest_sec');
+    expect(out.availableMeasures).not.toContain('set_efficiency_kg_per_min');
+  });
 });

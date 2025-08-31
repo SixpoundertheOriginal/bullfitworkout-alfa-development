@@ -136,13 +136,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
     if (v2Enabled && v2Data) {
       // Use V2 DTO series via adapter (camelCase keys, timestamps)
-      return toChartSeries(v2Data);
+      return toChartSeries(v2Data, derivedEnabled);
     }
     // Legacy fallback (already in snake_case {date,value})
     const raw = serviceData?.series ?? {};
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
-  }, [v2Enabled, v2Data, serviceData]);
+  }, [v2Enabled, v2Data, serviceData, derivedEnabled]);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
@@ -216,17 +216,17 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       if (v2Enabled && v2Data) {
         return {
           density: v2Data.kpis.densityKgPerMin,
-          avgRestSec: v2Data.kpis.avgRestSec ?? 0,
-          efficiencyKgPerMin: v2Data.kpis.setEfficiencyKgPerMin ?? 0,
+          avgRestSec: derivedEnabled ? v2Data.kpis.avgRestSec ?? 0 : 0,
+          efficiencyKgPerMin: derivedEnabled ? v2Data.kpis.setEfficiencyKgPerMin ?? 0 : 0,
         };
       }
       return {
         density: totals[DENSITY_ID] ?? 0,
-        avgRestSec: totals[AVG_REST_ID] ?? 0,
-        efficiencyKgPerMin: totals[EFF_ID] ?? 0,
+        avgRestSec: derivedEnabled ? totals[AVG_REST_ID] ?? 0 : 0,
+        efficiencyKgPerMin: derivedEnabled ? totals[EFF_ID] ?? 0 : 0,
       };
     },
-    [v2Enabled, v2Data, totals]
+    [v2Enabled, v2Data, totals, derivedEnabled]
   );
 
   React.useEffect(() => {

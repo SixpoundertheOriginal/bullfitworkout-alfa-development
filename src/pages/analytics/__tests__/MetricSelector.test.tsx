@@ -38,6 +38,8 @@ describe('metric selector and KPI gating', () => {
     expect(screen.getByTestId('kpi-sets')).toBeInTheDocument();
     expect(screen.getByTestId('kpi-tonnage')).toBeInTheDocument();
     expect(screen.queryByTestId('kpi-density')).toBeNull();
+    expect(screen.queryByTestId('kpi-rest')).toBeNull();
+    expect(screen.queryByTestId('kpi-efficiency')).toBeNull();
   });
 
   it('toggle ON → derived cards allowed', () => {
@@ -54,6 +56,8 @@ describe('metric selector and KPI gating', () => {
     fireEvent.click(trigger);
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-rest')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-efficiency')).toBeInTheDocument();
   });
 
   it('hides rest and efficiency when flag off', () => {
