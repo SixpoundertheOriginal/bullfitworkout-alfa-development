@@ -41,6 +41,7 @@ describe('getMetricsShadow', () => {
     });
     // v2 stub returns canonical ServiceOutput with zeroed fields
     expect((out as any).meta?.version).toBe('v2');
+    expect((out as any).totalsKpis?.setEfficiencyKgPerMin ?? 0).toBe(0);
   });
 });
 

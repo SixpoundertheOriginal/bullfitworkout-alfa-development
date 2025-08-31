@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import AnalyticsPage from '../AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
@@ -32,8 +32,9 @@ describe('metric selector and KPI gating', () => {
         </TooltipProvider>
       </QueryClientProvider>
     );
-    const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(select.options.length).toBe(0);
+    const trigger = screen.getByTestId('metric-select');
+    fireEvent.click(trigger);
+    expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.getByTestId('kpi-sets')).toBeInTheDocument();
     expect(screen.getByTestId('kpi-tonnage')).toBeInTheDocument();
     expect(screen.queryByTestId('kpi-density')).toBeNull();
@@ -49,8 +50,9 @@ describe('metric selector and KPI gating', () => {
         </TooltipProvider>
       </QueryClientProvider>
     );
-    const select = screen.getByTestId('metric-select') as HTMLSelectElement;
-    expect(select.options.length).toBe(0);
+    const trigger = screen.getByTestId('metric-select');
+    fireEvent.click(trigger);
+    expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.getByTestId('kpi-density')).toBeInTheDocument();
   });
 
@@ -72,8 +74,9 @@ describe('metric selector and KPI gating', () => {
     );
     const trigger = screen.getByTestId('metric-select');
     fireEvent.click(trigger);
-    expect(screen.queryByText('Avg Rest (sec)')).toBeNull();
-    expect(screen.queryByText('Set Efficiency (kg/min)')).toBeNull();
+    const content = screen.getByRole('listbox');
+    expect(within(content).queryByText('Avg Rest (sec)')).toBeNull();
+    expect(within(content).queryByText('Set Efficiency (kg/min)')).toBeNull();
   });
 
   it('shows rest and efficiency options when data available', () => {
@@ -94,7 +97,8 @@ describe('metric selector and KPI gating', () => {
     );
     const trigger = screen.getByTestId('metric-select');
     fireEvent.click(trigger);
-    expect(screen.getByText('Avg Rest (sec)')).toBeInTheDocument();
-    expect(screen.getByText('Set Efficiency (kg/min)')).toBeInTheDocument();
+    const content = screen.getByRole('listbox');
+    expect(within(content).getByText('Avg Rest (sec)')).toBeInTheDocument();
+    expect(within(content).getByText('Set Efficiency (kg/min)')).toBeInTheDocument();
   });
 });

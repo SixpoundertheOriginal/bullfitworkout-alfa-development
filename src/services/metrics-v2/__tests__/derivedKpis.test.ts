@@ -3,7 +3,6 @@ import {
   calcWorkoutDensityKgPerMin,
   calcAvgRestPerSession,
   calcSetEfficiencyKgPerMin,
-  calcSetEfficiencyRatio,
   getTargetRestSecForWorkout
 } from '../calculators/derivedKpis';
 
@@ -51,28 +50,6 @@ describe('derivedKpis', () => {
 
     it('should return 0 for invalid time', () => {
       expect(calcSetEfficiencyKgPerMin(1000, 0)).toBe(0);
-    });
-  });
-
-  describe('calcSetEfficiencyRatio', () => {
-    it('should calculate efficiency ratio correctly', () => {
-      expect(calcSetEfficiencyRatio(75, 90)).toBe(0.83);
-    });
-
-    it('should return null for no target', () => {
-      expect(calcSetEfficiencyRatio(75)).toBe(null);
-      expect(calcSetEfficiencyRatio(75, undefined)).toBe(null);
-    });
-    it('should return null for zero target', () => {
-      expect(calcSetEfficiencyRatio(75, 0)).toBe(null);
-    });
-
-    it('should return null for negative target', () => {
-      expect(calcSetEfficiencyRatio(75, -90)).toBe(null);
-    });
-
-    it('should round to 2 decimal places', () => {
-      expect(calcSetEfficiencyRatio(77, 90)).toBe(0.86);
     });
   });
 

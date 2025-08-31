@@ -62,9 +62,13 @@ describe('chartAdapter', () => {
     ]);
   });
 
-  it('aliases rest and efficiency metrics to camelCase', () => {
+  it('exposes rest and efficiency metrics with camel+snake keys', () => {
     const out = toChartSeries(v2Payload);
+    expect(out.series).toHaveProperty('avg_rest_sec');
+    expect(out.series).toHaveProperty('avgRestSec');
     expect(out.series.avgRestSec).toBe(out.series.avg_rest_sec);
+    expect(out.series).toHaveProperty('set_efficiency_kg_per_min');
+    expect(out.series).toHaveProperty('setEfficiencyKgPerMin');
     expect(out.series.setEfficiencyKgPerMin).toBe(out.series.set_efficiency_kg_per_min);
   });
 
@@ -99,5 +103,7 @@ describe('chartAdapter', () => {
       { date: '2024-05-02', value: null },
     ]);
     expect(out.series.setEfficiencyKgPerMin).toBe(out.series.set_efficiency_kg_per_min);
+    const values = out.series.set_efficiency_kg_per_min.map(p => p.value);
+    expect(values.some(v => Number.isNaN(v as any) || v === Infinity || v === -Infinity)).toBe(false);
   });
 });
