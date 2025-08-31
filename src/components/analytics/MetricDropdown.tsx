@@ -7,6 +7,8 @@ const LABELS: Record<string, string> = {
   density_kg_per_min: 'Density (kg/min)',
   reps: 'Reps',
   sets: 'Sets',
+  avg_rest_sec: 'Avg Rest (sec)',
+  set_efficiency_kg_per_min: 'Set Efficiency (kg/min)',
 };
 
 export type MetricDropdownProps = {

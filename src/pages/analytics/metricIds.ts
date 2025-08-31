@@ -4,13 +4,13 @@ export type MetricId =
   | 'reps'
   | 'duration_min'
   | 'density_kg_per_min'
-  | 'avgRestSec'
-  | 'setEfficiencyKgPerMin';
+  | 'avg_rest_sec'
+  | 'set_efficiency_kg_per_min';
 
 export const TONNAGE_ID: MetricId = 'tonnage_kg';
 export const SETS_ID: MetricId = 'sets';
 export const REPS_ID: MetricId = 'reps';
 export const DURATION_ID: MetricId = 'duration_min';
 export const DENSITY_ID: MetricId = 'density_kg_per_min';
-export const AVG_REST_ID: MetricId = 'avgRestSec';
-export const EFF_ID: MetricId = 'setEfficiencyKgPerMin';
+export const AVG_REST_ID: MetricId = 'avg_rest_sec';
+export const EFF_ID: MetricId = 'set_efficiency_kg_per_min';
