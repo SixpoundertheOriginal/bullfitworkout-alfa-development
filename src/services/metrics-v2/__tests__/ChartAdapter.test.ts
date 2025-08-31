@@ -61,4 +61,43 @@ describe('chartAdapter', () => {
       { date: '2024-05-01', value: 1.5 },
     ]);
   });
+
+  it('aliases rest and efficiency metrics to camelCase', () => {
+    const out = toChartSeries(v2Payload);
+    expect(out.series.avgRestSec).toBe(out.series.avg_rest_sec);
+    expect(out.series.setEfficiencyKgPerMin).toBe(out.series.set_efficiency_kg_per_min);
+  });
+
+  it('preserves null values without coercion', () => {
+    const payload = {
+      series: {
+        tonnageKg: [{ timestamp: '2024-05-03T06:00:00Z', value: null }],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.tonnage_kg).toEqual([
+      { date: '2024-05-03', value: null },
+    ]);
+  });
+
+  it('computes set efficiency when missing and normalizes keys', () => {
+    const payload = {
+      series: {
+        tonnageKg: [
+          { timestamp: '2024-05-01T06:00:00Z', value: 2000 },
+          { timestamp: '2024-05-02T06:00:00Z', value: 100 },
+        ],
+        durationMin: [
+          { timestamp: '2024-05-01T06:00:00Z', value: 40 },
+          { timestamp: '2024-05-02T06:00:00Z', value: 0 },
+        ],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.set_efficiency_kg_per_min).toEqual([
+      { date: '2024-05-01', value: 50 },
+      { date: '2024-05-02', value: null },
+    ]);
+    expect(out.series.setEfficiencyKgPerMin).toBe(out.series.set_efficiency_kg_per_min);
+  });
 });

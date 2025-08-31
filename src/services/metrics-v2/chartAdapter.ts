@@ -1,4 +1,4 @@
-import type { TimeSeriesPoint } from './types';
+import type { TimeSeriesPoint, SeriesMap } from './types';
 
 type RawPoint = { timestamp?: string; ts?: string; value: number | null };
 
@@ -18,6 +18,38 @@ const KEY_MAP: Record<string, string> = {
   avgRestSec: 'avg_rest_sec',
   setEfficiencyKgPerMin: 'set_efficiency_kg_per_min',
 };
+
+// Mirror camelCase/snake_case keys so consumers can access either form
+export function normalizeSeriesKeys(series: SeriesMap): SeriesMap;
+export function normalizeSeriesKeys<T>(series: Record<string, T>): Record<string, T>;
+export function normalizeSeriesKeys(series: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...series };
+  for (const key of Object.keys(series)) {
+    if (key.includes('_')) {
+      const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      if (!(camel in out)) out[camel] = series[key];
+    } else {
+      const snake = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      if (!(snake in out)) out[snake] = series[key];
+    }
+  }
+  return out;
+}
+
+// Compute element-wise metric from tonnage and duration arrays
+export function computePerRow(
+  tKg: (number | null)[],
+  dMin: (number | null)[]
+): (number | null)[] {
+  const len = Math.max(tKg.length, dMin.length);
+  const result: (number | null)[] = [];
+  for (let i = 0; i < len; i++) {
+    const t = tKg[i];
+    const d = dMin[i];
+    result[i] = t != null && d != null && d > 0 ? Math.round((t / d) * 100) / 100 : null;
+  }
+  return result;
+}
 
 function toWarsawDate(ts: string): string {
   return new Intl.DateTimeFormat('en-CA', {
@@ -58,7 +90,7 @@ export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }):
     
     if (mapped.length > 0) out[canonical] = mapped;
   }
-  
+
   if (!out['density_kg_per_min'] && out['tonnage_kg'] && out['duration_min']) {
     const byDate = new Map<string, { tonnage: number | null; duration: number | null }>();
     for (const p of out['tonnage_kg']) byDate.set(p.date, { tonnage: p.value, duration: null });
@@ -67,20 +99,29 @@ export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }):
       cur.duration = p.value;
       byDate.set(p.date, cur);
     }
-    out['density_kg_per_min'] = Array.from(byDate.entries())
-      .map(([date, { tonnage, duration }]) => ({
-        date,
-        value: duration && duration > 0 && tonnage !== null ? +(tonnage / duration).toFixed(2) : null,
-      }));
+    const entries = Array.from(byDate.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const tKg = entries.map(([, v]) => v.tonnage);
+    const dMin = entries.map(([, v]) => v.duration);
+    const values = computePerRow(tKg, dMin);
+    out['density_kg_per_min'] = entries.map(([date], idx) => ({ date, value: values[idx] }));
   }
 
-  const aliasOut: Record<string, TimeSeriesPoint[]> = { ...out };
-  for (const k of Object.keys(out)) {
-    const camel = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    aliasOut[camel] = out[k];
+  if (!out['set_efficiency_kg_per_min'] && out['tonnage_kg'] && out['duration_min']) {
+    const byDate = new Map<string, { tonnage: number | null; duration: number | null }>();
+    for (const p of out['tonnage_kg']) byDate.set(p.date, { tonnage: p.value, duration: null });
+    for (const p of out['duration_min']) {
+      const cur = byDate.get(p.date) || { tonnage: null, duration: null };
+      cur.duration = p.value;
+      byDate.set(p.date, cur);
+    }
+    const entries = Array.from(byDate.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const tKg = entries.map(([, v]) => v.tonnage);
+    const dMin = entries.map(([, v]) => v.duration);
+    const values = computePerRow(tKg, dMin);
+    out['set_efficiency_kg_per_min'] = entries.map(([date], idx) => ({ date, value: values[idx] }));
   }
-
   const availableMeasures = Object.keys(out);
+  const aliasOut = normalizeSeriesKeys(out);
   const density = out['density_kg_per_min'];
   console.debug('[adapter.out.density]', {
     has: Boolean(density),
