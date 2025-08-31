@@ -25,6 +25,9 @@ export interface SetLike {
   isBodyweight?: boolean;
   exerciseId?: string;
   performedAt?: string; // ISO timestamp
+  startedAt?: string;
+  completedAt?: string;
+  hasActualTiming: boolean;
   workMs?: number;
 }
 
@@ -62,6 +65,9 @@ export interface DayContext {
   activeMinutes: number; // minutes of work (duration - rest)
   restMs?: number[]; // optional precomputed rest durations
   workMsTotal?: number; // optional precomputed work time
+  startedAt?: string;
+  completedAt?: string;
+  hasActualTiming: boolean;
 }
 
 export interface CalcResult {
