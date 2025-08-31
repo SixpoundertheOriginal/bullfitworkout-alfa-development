@@ -151,4 +151,116 @@ describe('engine calculators', () => {
     const ctxByDay = buildDayContexts(workouts as any, sets as any);
     expect(ctxByDay['2024-01-01'].hasActualTiming).toBe(true);
   });
+
+  describe('calcAvgRestSec', () => {
+    it('uses actual timing when available', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [
+            {
+              startedAt: '2024-01-01T10:00:00Z',
+              completedAt: '2024-01-01T10:00:30Z',
+              hasActualTiming: true,
+            },
+            {
+              startedAt: '2024-01-01T10:02:00Z',
+              completedAt: '2024-01-01T10:02:30Z',
+              hasActualTiming: true,
+            },
+            {
+              startedAt: '2024-01-01T10:05:00Z',
+              completedAt: '2024-01-01T10:05:30Z',
+              hasActualTiming: true,
+            },
+          ],
+          activeMinutes: 0,
+          hasActualTiming: true,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      expect(res.totals.avgRestSec).toBeCloseTo(120);
+      expect(res.totals.timingCoveragePct).toBe(100);
+    });
+
+    it('falls back to legacy calculation without timing', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [{ hasActualTiming: false }, { hasActualTiming: false }, { hasActualTiming: false }],
+          activeMinutes: 0,
+          restMs: [60000, 120000],
+          hasActualTiming: false,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      expect(res.totals.avgRestSec).toBe(90);
+      expect(res.totals.timingCoveragePct).toBe(0);
+    });
+
+    it('handles single set', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [{ hasActualTiming: true, startedAt: '2024-01-01T10:00:00Z', completedAt: '2024-01-01T10:00:30Z' }],
+          activeMinutes: 0,
+          hasActualTiming: true,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      expect(res.totals.avgRestSec).toBe(0);
+      expect(res.totals.timingCoveragePct).toBe(0);
+    });
+
+    it('skips intervals with missing timestamps', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [
+            {
+              startedAt: '2024-01-01T10:00:00Z',
+              completedAt: '2024-01-01T10:00:30Z',
+              hasActualTiming: true,
+            },
+            { hasActualTiming: false },
+            {
+              startedAt: '2024-01-01T10:05:00Z',
+              completedAt: '2024-01-01T10:05:30Z',
+              hasActualTiming: true,
+            },
+          ],
+          activeMinutes: 0,
+          hasActualTiming: false,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      expect(res.totals.avgRestSec).toBe(0);
+      expect(res.totals.timingCoveragePct).toBe(0);
+    });
+
+    it('discards extreme rests over 30 min', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [
+            {
+              startedAt: '2024-01-01T10:00:00Z',
+              completedAt: '2024-01-01T10:00:30Z',
+              hasActualTiming: true,
+            },
+            {
+              startedAt: '2024-01-01T11:00:00Z',
+              completedAt: '2024-01-01T11:00:30Z',
+              hasActualTiming: true,
+            },
+          ],
+          activeMinutes: 0,
+          hasActualTiming: true,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      expect(res.totals.avgRestSec).toBe(0);
+      expect(res.totals.timingCoveragePct).toBe(100);
+    });
+  });
 });

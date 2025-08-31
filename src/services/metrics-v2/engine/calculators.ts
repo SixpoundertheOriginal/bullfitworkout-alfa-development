@@ -160,23 +160,67 @@ export function calcSetEfficiencyPct(
   };
 }
 
+const MAX_REST_MS = 30 * 60 * 1000; // 30 minutes
+
+interface RestCalcResult {
+  secs: number[];
+  intervalsWithTiming: number;
+  possibleIntervals: number;
+}
+
+function calculateWithActualTiming(sets: SetLike[]): RestCalcResult {
+  const rests: number[] = [];
+  const possible = sets.length > 1 ? sets.length - 1 : 0;
+  let intervals = 0;
+  for (let i = 0; i < sets.length - 1; i++) {
+    const cur = sets[i];
+    const next = sets[i + 1];
+    if (cur.completedAt && next.startedAt) {
+      intervals++;
+      const diff =
+        new Date(next.startedAt).getTime() - new Date(cur.completedAt).getTime();
+      if (!isNaN(diff) && diff >= 0 && diff <= MAX_REST_MS) {
+        rests.push(clampSec(diff / 1000));
+      }
+    }
+  }
+  return { secs: rests, intervalsWithTiming: intervals, possibleIntervals: possible };
+}
+
+function legacyRestCalculation(restMs: number[] | undefined, setCount: number): RestCalcResult {
+  const secs = (restMs ?? []).map(ms => clampSec(ms / 1000));
+  const possible = setCount > 1 ? setCount - 1 : 0;
+  return { secs, intervalsWithTiming: 0, possibleIntervals: possible };
+}
+
 export function calcAvgRestSec(
   ctxByDay: Record<string, DayContext>
 ): CalcResult {
   const series: TimeSeriesPoint[] = [];
   let sum = 0;
   let count = 0;
+  let totalIntervals = 0;
+  let totalPossible = 0;
   for (const day of Object.keys(ctxByDay).sort()) {
     const ctx = ctxByDay[day];
-    const secs = (ctx.restMs ?? []).map(ms => clampSec(ms / 1000));
+    const hasActual = ctx.sets.some(s => s.startedAt && s.completedAt);
+    const { secs, intervalsWithTiming, possibleIntervals } = hasActual
+      ? calculateWithActualTiming(ctx.sets)
+      : legacyRestCalculation(ctx.restMs, ctx.sets.length);
     const avg = secs.length ? secs.reduce((a, b) => a + b, 0) / secs.length : 0;
     series.push({ date: day, value: +avg.toFixed(2) });
     sum += secs.reduce((a, b) => a + b, 0);
     count += secs.length;
+    totalIntervals += intervalsWithTiming;
+    totalPossible += possibleIntervals;
   }
   const total = count ? sum / count : 0;
+  const coverage = totalPossible > 0 ? (100 * totalIntervals) / totalPossible : 0;
   return {
-    totals: { avgRestSec: +total.toFixed(2) },
+    totals: {
+      avgRestSec: +total.toFixed(2),
+      timingCoveragePct: +coverage.toFixed(2),
+    },
     series: { avgRestSec: series },
   };
 }
