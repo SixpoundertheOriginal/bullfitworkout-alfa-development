@@ -6,9 +6,13 @@ const CANONICAL_KEYS = new Set([
   'duration_min',
   'tonnage_kg',
   'density_kg_per_min',
+  'avg_rest_sec',
+  'set_efficiency_kg_per_min',
 ]);
 const KEY_MAP: Record<string, string> = {
   densityKgPerMin: 'density_kg_per_min',
+  avgRestSec: 'avg_rest_sec',
+  setEfficiencyKgPerMin: 'set_efficiency_kg_per_min',
 };
 
 function toWarsawDate(ts: string): string {
@@ -26,7 +30,7 @@ export type ChartSeriesOutput = {
 };
 
 // Convert Metrics v2 payload to chart-friendly series keyed by canonical measure ids
-export function toChartSeries(payload: { series?: Record<string, { timestamp: string; value: number }[]> }): ChartSeriesOutput {
+export function toChartSeries(payload: { series?: Record<string, { timestamp?: string; ts?: string; value: number }[]> }): ChartSeriesOutput {
   console.debug('[adapter.in]', {
     hasSeries: Boolean(payload?.series),
     seriesKeys: payload?.series ? Object.keys(payload.series) : [],
@@ -40,12 +44,13 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp: st
     if (!CANONICAL_KEYS.has(canonical)) continue;
     
     const mapped = (points || []).map(p => {
+      const ts = (p as any).timestamp ?? (p as any).ts;
       let value = p.value;
       // Apply 2-decimal rounding for duration, tonnage, and density
       if (canonical === 'duration_min' || canonical === 'tonnage_kg' || canonical === 'density_kg_per_min') {
         value = Math.round(value * 100) / 100;
       }
-      return { date: toWarsawDate(p.timestamp), value };
+      return { date: toWarsawDate(ts), value };
     });
     
     if (mapped.length > 0) out[canonical] = mapped;
@@ -57,6 +62,12 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp: st
     has: Boolean(density),
     len: density?.length ?? 0,
     sample: density?.[0],
+  });
+  const rest = out['avg_rest_sec'];
+  const eff = out['set_efficiency_kg_per_min'];
+  console.debug('[adapter.out.rest_eff]', {
+    rest: { has: Boolean(rest), len: rest?.length ?? 0 },
+    eff: { has: Boolean(eff), len: eff?.length ?? 0 },
   });
   console.debug('[adapter.out]', {
     keys: availableMeasures,
