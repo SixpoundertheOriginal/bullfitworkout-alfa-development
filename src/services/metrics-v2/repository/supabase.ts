@@ -89,7 +89,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       // Primary RLS-safe join query
       let { data: sets, error } = await this.client
         .from('exercise_sets')
-        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, workout_sessions!inner(id,user_id)')
+        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality, workout_sessions!inner(id,user_id)')
         .in('workout_id', ownedIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
@@ -99,7 +99,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         // Fallback: non-join query (still constrained to ownedIds)
         const alt = await this.client
           .from('exercise_sets')
-          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time')
+          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality')
           .in('workout_id', ownedIds)
         if (alt.error || !alt.data) {
           console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
@@ -123,6 +123,9 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         failurePoint: s.failure_point ?? null,
         formScore: s.form_quality ?? null,
         restTimeSec: s.rest_time ?? null,
+        startedAt: s.started_at ?? undefined,
+        completedAt: s.completed_at ?? undefined,
+        timingQuality: s.timing_quality ?? undefined,
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)

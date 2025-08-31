@@ -7,6 +7,7 @@ import {
   calcSetEfficiencyKgPerMin,
   restCoveragePct,
 } from '../engine/calculators';
+import { deriveRestMs as deriveRestMsFixed } from '../engine/restCalculatorsFixed';
 import { buildDayContexts } from '../engine/dayContextBuilder';
 
 const ctx = { includeBodyweight: true, bodyweightKg: 80 };
@@ -25,6 +26,36 @@ describe('engine calculators', () => {
       { performedAt: '2024-01-01T10:03:00Z' },
     ];
     expect(deriveRestMs(sets)).toEqual([90000, 90000]);
+  });
+
+  it('deriveRestMsFixed uses start and completion times when available', () => {
+    const sets = [
+      {
+        workoutId: 'w1',
+        exerciseName: 'bench',
+        startedAt: '2024-01-01T10:00:00Z',
+        completedAt: '2024-01-01T10:00:30Z',
+        reps: 5,
+        weightKg: 50,
+      },
+      {
+        workoutId: 'w1',
+        exerciseName: 'bench',
+        startedAt: '2024-01-01T10:02:00Z',
+        completedAt: '2024-01-01T10:02:30Z',
+        reps: 5,
+        weightKg: 50,
+      },
+    ];
+    expect(deriveRestMsFixed(sets)).toEqual([90000]);
+  });
+
+  it('deriveRestMsFixed returns empty array with missing timing', () => {
+    const sets = [
+      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50 },
+      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50 },
+    ];
+    expect(deriveRestMsFixed(sets as any)).toEqual([]);
   });
 
   it('calculators return totals and series', () => {
