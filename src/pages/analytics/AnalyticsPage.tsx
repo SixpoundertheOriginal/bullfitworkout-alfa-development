@@ -169,7 +169,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   // Use currentMeasure after it's properly initialized
   const series = React.useMemo(() => {
     const raw = seriesData[currentMeasure] ?? [];
-    return raw.map(p => ({ date: p.date, value: (p as any).value ?? null }));
+    return raw.map(p => ({ date: p.date, value: p?.value ?? null }));
   }, [seriesData, currentMeasure]);
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(() => {
