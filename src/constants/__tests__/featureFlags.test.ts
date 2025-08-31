@@ -20,6 +20,7 @@ describe('featureFlags precedence', () => {
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);
     expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(false);
+    expect(FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED).toBe(true);
   });
 
   it.skip('env overrides defaults', async () => {
