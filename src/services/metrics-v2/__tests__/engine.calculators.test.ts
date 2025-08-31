@@ -38,7 +38,7 @@ describe('engine calculators', () => {
       },
     };
     const density = calcDensityKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 80 });
-    expect(density.totals.density_kg_min).toBeGreaterThan(0);
+    expect(density.totals.density_kg_per_min).toBeGreaterThan(0);
     const avgRest = calcAvgRestSec(ctxByDay);
     expect(avgRest.totals.avgRestSec).toBe(60);
     const eff = calcSetEfficiencyKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 0 });

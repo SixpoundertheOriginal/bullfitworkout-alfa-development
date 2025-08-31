@@ -23,6 +23,14 @@ describe('chartAdapter', () => {
     ]);
   });
 
+  it('maps legacy density_kg_min to density_kg_per_min', () => {
+    const payload = { series: { density_kg_min: [{ timestamp: '2024-05-01T06:00:00Z', value: 9 }] } };
+    const out = toChartSeries(payload);
+    expect(out.series.density_kg_per_min).toEqual([
+      { date: '2024-05-01', value: 9 },
+    ]);
+  });
+
   it('maps rest and efficiency metrics with Warsaw date conversion', () => {
     const out = toChartSeries(v2Payload);
     expect(out.series.avg_rest_sec).toEqual([

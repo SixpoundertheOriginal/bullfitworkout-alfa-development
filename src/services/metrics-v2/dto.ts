@@ -31,7 +31,7 @@ export type Totals = {
   reps_total: number;
   workouts: number;
   duration_min: number;
-  density_kg_min?: number;
+  density_kg_per_min?: number;
   avgRestSec?: number;
   setEfficiencyKgPerMin?: number;
 };
