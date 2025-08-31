@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
-import { formatKgPerMin, fmtSeconds } from './formatters';
+import { formatKgPerMin, formatSeconds } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import {
   TONNAGE_ID,
@@ -184,7 +184,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
         return formatKgPerMin(n);
       }
       if (currentMeasure === AVG_REST_ID) {
-        return fmtSeconds(n);
+        return formatSeconds(n);
       }
       return n.toString();
     },
@@ -362,7 +362,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           </div>
           <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{fmtSeconds(kpiTotals.avgRestSec)}</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{formatSeconds(kpiTotals.avgRestSec)}</div>
           </div>
           <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency (kg/min)</div>
