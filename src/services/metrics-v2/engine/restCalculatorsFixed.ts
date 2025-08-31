@@ -10,6 +10,7 @@ export interface SetLike {
   restMs?: number;
   reps: number;
   weightKg: number;
+  hasActualTiming: boolean;
 }
 
 /**

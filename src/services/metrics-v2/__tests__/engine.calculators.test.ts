@@ -21,9 +21,9 @@ describe('engine calculators', () => {
 
   it('deriveRestMs computes rests between sets', () => {
     const sets = [
-      { performedAt: '2024-01-01T10:00:00Z' },
-      { performedAt: '2024-01-01T10:01:30Z' },
-      { performedAt: '2024-01-01T10:03:00Z' },
+      { performedAt: '2024-01-01T10:00:00Z', hasActualTiming: false },
+      { performedAt: '2024-01-01T10:01:30Z', hasActualTiming: false },
+      { performedAt: '2024-01-01T10:03:00Z', hasActualTiming: false },
     ];
     expect(deriveRestMs(sets)).toEqual([90000, 90000]);
   });
@@ -37,6 +37,7 @@ describe('engine calculators', () => {
         completedAt: '2024-01-01T10:00:30Z',
         reps: 5,
         weightKg: 50,
+        hasActualTiming: true,
       },
       {
         workoutId: 'w1',
@@ -45,6 +46,7 @@ describe('engine calculators', () => {
         completedAt: '2024-01-01T10:02:30Z',
         reps: 5,
         weightKg: 50,
+        hasActualTiming: true,
       },
     ];
     expect(deriveRestMsFixed(sets)).toEqual([90000]);
@@ -52,8 +54,8 @@ describe('engine calculators', () => {
 
   it('deriveRestMsFixed returns empty array with missing timing', () => {
     const sets = [
-      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50 },
-      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50 },
+      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50, hasActualTiming: false },
+      { workoutId: 'w1', exerciseName: 'bench', reps: 5, weightKg: 50, hasActualTiming: false },
     ];
     expect(deriveRestMsFixed(sets as any)).toEqual([]);
   });
@@ -62,7 +64,7 @@ describe('engine calculators', () => {
     const day = '2024-01-01';
     const ctxByDay = {
       [day]: {
-        sets: [{ weight: 20, reps: 5 }],
+        sets: [{ weight: 20, reps: 5, hasActualTiming: false }],
         activeMinutes: 10,
         restMs: [60000],
         workMsTotal: 30000,
@@ -79,7 +81,7 @@ describe('engine calculators', () => {
   it('clamps negative rest and applies epsilon', () => {
     const ctxByDay = {
       '2024-01-01': {
-        sets: [{ weight: 50, reps: 5, workMs: 0 }],
+        sets: [{ weight: 50, reps: 5, workMs: 0, hasActualTiming: false }],
         activeMinutes: 0,
         restMs: [-1000],
       },
@@ -92,11 +94,61 @@ describe('engine calculators', () => {
 
   it('handles Warsaw day bucketing', () => {
     const workouts = [{ id: 'w1', startedAt: '2024-01-01T23:30:00Z' }];
-    const sets = [{ workoutId: 'w1', weightKg: 20, reps: 5, seconds: 30, restMs: 30000 }];
+    const sets = [{ workoutId: 'w1', weightKg: 20, reps: 5, seconds: 30, restMs: 30000, hasActualTiming: false }];
     const ctxByDay = buildDayContexts(workouts as any, sets as any);
     const day = Object.keys(ctxByDay)[0];
     expect(day).toBe('2024-01-02');
     const coverage = restCoveragePct(ctxByDay);
     expect(coverage).toBe(0);
+  });
+
+  it('buildDayContexts flags hasActualTiming correctly', () => {
+    const workouts = [{ id: 'w1', startedAt: '2024-01-01T10:00:00Z' }];
+    const sets = [
+      {
+        workoutId: 'w1',
+        weightKg: 50,
+        reps: 5,
+        seconds: 30,
+        startedAt: '2024-01-01T10:00:00Z',
+        completedAt: '2024-01-01T10:00:30Z',
+        performedAt: '2024-01-01T10:00:30Z',
+        restMs: 30000,
+        hasActualTiming: true,
+      },
+      {
+        workoutId: 'w1',
+        weightKg: 40,
+        reps: 5,
+        seconds: 30,
+        performedAt: '2024-01-01T10:02:00Z',
+        restMs: 30000,
+        hasActualTiming: false,
+      },
+    ];
+    const ctxByDay = buildDayContexts(workouts as any, sets as any);
+    const dayCtx = ctxByDay['2024-01-01'];
+    expect(dayCtx.sets[0].hasActualTiming).toBe(true);
+    expect(dayCtx.sets[1].hasActualTiming).toBe(false);
+    expect(dayCtx.hasActualTiming).toBe(false);
+  });
+
+  it('buildDayContexts marks day as accurate when all sets have timing', () => {
+    const workouts = [{ id: 'w1', startedAt: '2024-01-01T10:00:00Z' }];
+    const sets = [
+      {
+        workoutId: 'w1',
+        weightKg: 50,
+        reps: 5,
+        seconds: 30,
+        startedAt: '2024-01-01T10:00:00Z',
+        completedAt: '2024-01-01T10:00:30Z',
+        performedAt: '2024-01-01T10:00:30Z',
+        restMs: 30000,
+        hasActualTiming: true,
+      },
+    ];
+    const ctxByDay = buildDayContexts(workouts as any, sets as any);
+    expect(ctxByDay['2024-01-01'].hasActualTiming).toBe(true);
   });
 });

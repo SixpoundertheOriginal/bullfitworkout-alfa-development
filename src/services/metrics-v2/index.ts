@@ -45,6 +45,7 @@ export async function getMetricsV2(
     startedAt?: string;
     completedAt?: string;
     timingQuality?: 'actual' | 'estimated' | 'missing';
+    hasActualTiming: boolean;
   }> = [];
 
   if (typeof (repo as any).getWorkouts === 'function') {
@@ -65,6 +66,7 @@ export async function getMetricsV2(
       startedAt: s.startedAt,
       completedAt: s.completedAt,
       timingQuality: s.timingQuality,
+      hasActualTiming: Boolean(s.startedAt && s.completedAt),
     }));
   } else if (typeof (repo as any).fetchWorkoutsForUser === 'function') {
     // Legacy repository used in perf tests.  Each workout already contains sets.
@@ -86,6 +88,9 @@ export async function getMetricsV2(
           isBodyweight: s.isBodyweight,
           performedAt: s.created_at || s.performedAt,
           restMs: typeof s.restTime === 'number' ? s.restTime * 1000 : undefined,
+          startedAt: undefined,
+          completedAt: undefined,
+          hasActualTiming: false,
         });
       });
     });
