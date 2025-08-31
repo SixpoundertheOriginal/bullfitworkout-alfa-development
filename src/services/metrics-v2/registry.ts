@@ -14,7 +14,7 @@ export interface MetricDef {
 
 export const METRIC_DEFS: MetricDef[] = [
   {
-    id: 'density_kg_min',
+    id: 'density_kg_per_min',
     units: 'kg/min',
     category: 'efficiency',
     aggregation: 'timeseries/day',

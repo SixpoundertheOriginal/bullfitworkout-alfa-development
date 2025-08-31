@@ -8,9 +8,9 @@ describe('engine integration', () => {
     const sets = [{ isBodyweight: true, reps: 10, performedAt: `${day}T10:00:00Z` }];
     const ctxByDay = { [day]: { sets, activeMinutes: 10 } } as any;
     const off = calcDensityKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 80 });
-    expect(off.totals.density_kg_min).toBe(0);
+    expect(off.totals.density_kg_per_min).toBe(0);
     const on = calcDensityKgPerMin(ctxByDay, { includeBodyweight: true, bodyweightKg: 80 });
-    expect(on.totals.density_kg_min).toBeGreaterThan(0);
+    expect(on.totals.density_kg_per_min).toBeGreaterThan(0);
   });
 
   it('returns series points when sets produce volume', () => {

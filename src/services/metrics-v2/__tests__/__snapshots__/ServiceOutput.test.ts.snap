@@ -15,7 +15,7 @@ exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`]
   "series": {
     "avgRestSec": [],
     "cvr": [],
-    "density_kg_min": [],
+    "density_kg_per_min": [],
     "duration_min": [],
     "reps_total": [],
     "setEfficiencyKgPerMin": [],

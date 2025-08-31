@@ -12,6 +12,7 @@ const CANONICAL_KEYS = new Set([
 const KEY_MAP: Record<string, string> = {
   densityKgPerMin: 'density_kg_per_min',
   density: 'density_kg_per_min',
+  density_kg_min: 'density_kg_per_min',
   avgRestSec: 'avg_rest_sec',
   setEfficiencyKgPerMin: 'set_efficiency_kg_per_min',
 };

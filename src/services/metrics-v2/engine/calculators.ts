@@ -104,8 +104,8 @@ export function calcDensityKgPerMin(
   }
   const totalDensity = totalActive > 0 ? totalVolume / totalActive : 0;
   return {
-    totals: { density_kg_min: +totalDensity.toFixed(2) },
-    series: { density_kg_min: series },
+    totals: { density_kg_per_min: +totalDensity.toFixed(2) },
+    series: { density_kg_per_min: series },
   };
 }
 
