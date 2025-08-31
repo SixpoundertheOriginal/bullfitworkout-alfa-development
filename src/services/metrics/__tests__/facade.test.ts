@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getMetricsShadow } from '../getMetricsFacade';
-import { InMemoryRepoStub } from '../../metrics-v2';
+import { InMemoryMetricsRepository } from '../../metrics-v2';
+
+const InMemoryRepoStub = new InMemoryMetricsRepository();
 import * as Telemetry from '../telemetry';
 
 const mkV1 = (over: any = {}) => ({

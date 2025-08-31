@@ -389,7 +389,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           <h3 className="text-lg font-semibold text-foreground">Performance Trends</h3>
           <MetricDropdown
             value={currentMeasure}
-            onChange={setCurrentMeasure}
+            onChange={(value) => setCurrentMeasure(value as MetricId)}
             options={dropdownOptions}
             disabled={dropdownOptions.length === 0}
           />

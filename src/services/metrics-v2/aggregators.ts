@@ -112,21 +112,25 @@ export function rollingWindows(
     switch (kind) {
       case 'volume': {
         const value = workout.totalVolumeKg;
-        byDate.set(date, (byDate.get(date) || 0) + value);
+        const current = byDate.get(date);
+        byDate.set(date, (typeof current === 'number' ? current : 0) + value);
         break;
       }
       case 'sets': {
         const value = workout.totalSets;
-        byDate.set(date, (byDate.get(date) || 0) + value);
+        const current = byDate.get(date);
+        byDate.set(date, (typeof current === 'number' ? current : 0) + value);
         break;
       }
       case 'reps': {
         const value = workout.totalReps;
-        byDate.set(date, (byDate.get(date) || 0) + value);
+        const current = byDate.get(date);
+        byDate.set(date, (typeof current === 'number' ? current : 0) + value);
         break;
       }
       case 'density': {
-        const cur = byDate.get(date) || { tonnage: 0, duration: 0 };
+        const current = byDate.get(date);
+        const cur = (typeof current === 'object' && current !== null) ? current : { tonnage: 0, duration: 0 };
         cur.tonnage += workout.totalVolumeKg || 0;
         cur.duration += workout.durationMin || 0;
         byDate.set(date, cur);
@@ -135,7 +139,8 @@ export function rollingWindows(
       case 'cvr': {
         // Placeholder for completion rate
         const value = 1;
-        byDate.set(date, (byDate.get(date) || 0) + value);
+        const current = byDate.get(date);
+        byDate.set(date, (typeof current === 'number' ? current : 0) + value);
         break;
       }
     }

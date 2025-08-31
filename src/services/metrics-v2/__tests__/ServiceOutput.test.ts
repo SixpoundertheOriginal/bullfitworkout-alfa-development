@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getMetricsV2, InMemoryRepoStub } from '../index';
+import { getMetricsV2, InMemoryMetricsRepository } from '../index';
+
+const InMemoryRepoStub = new InMemoryMetricsRepository();
 import { withoutVolatile } from '../../../../tests/helpers/stableSnapshot';
 import { TONNAGE_ID } from '@/pages/analytics/metricIds';
 

@@ -192,7 +192,7 @@ export async function getMetricsV2(
 }
 
 export * from './dto';
-export * from './repository';
 export * from './flags';
 export * from './chartAdapter';
 export * from './types';
+export { InMemoryMetricsRepository } from './types';

@@ -1,4 +1,4 @@
-import type { DateRange, MetricsRepository } from '../metrics-v2/repository';
+import type { DateRange, LegacyMetricsRepository as MetricsRepository } from '../metrics-v2/types';
 import { getMetricsV2, type ServiceOutput } from '../metrics-v2';
 import { summarizeParityDiff } from './parity';
 import { emitMetricsTelemetry, type ParityEvent } from './telemetry';

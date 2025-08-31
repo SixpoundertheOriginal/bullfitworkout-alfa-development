@@ -31,6 +31,25 @@ export interface MetricsRepository {
   getSets(workoutIds: string[], userId: string, exerciseId?: string): Promise<SetRaw[]>;
 }
 
+// Legacy interface for compatibility 
+export interface LegacyMetricsRepository {
+  getWorkouts(
+    range: { from: Date; to: Date },
+    userId: string
+  ): Promise<{ id: string; startedAt: string }[]>;
+  getSets(
+    workoutIds: string[],
+    exerciseId?: string
+  ): Promise<{
+    workoutId: string;
+    exerciseName: string;
+    weightKg?: number;
+    reps?: number;
+    seconds?: number;
+    isBodyweight?: boolean;
+  }[]>;
+}
+
 // In-memory implementation for development/testing
 export class InMemoryMetricsRepository implements MetricsRepository {
   async getWorkouts(): Promise<WorkoutRaw[]> {
