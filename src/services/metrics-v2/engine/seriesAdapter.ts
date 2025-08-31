@@ -1,5 +1,5 @@
 import type { SetLike } from './calculators';
-import { TimeSeriesPoint } from '../dto';
+import { TimeSeriesPoint } from '../types';
 import { getVolumeKg } from '../calculators';
 
 export interface LoadCtx {

@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import AnalyticsPage from '../AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
-import type { TimeSeriesPoint } from '@/services/metrics-v2/dto';
+import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TONNAGE_ID, DENSITY_ID, SETS_ID, REPS_ID, DURATION_ID, AVG_REST_ID, EFF_ID } from '../metricIds';

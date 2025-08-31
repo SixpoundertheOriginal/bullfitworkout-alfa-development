@@ -1,5 +1,6 @@
 import React from 'react';
-import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
+import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
+import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 import { formatKgPerMin, fmtSeconds } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import {

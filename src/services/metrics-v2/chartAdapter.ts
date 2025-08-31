@@ -1,4 +1,6 @@
-import type { TimeSeriesPoint } from './dto';
+import type { TimeSeriesPoint } from './types';
+
+type RawPoint = { timestamp?: string; ts?: string; value: number | null };
 
 const CANONICAL_KEYS = new Set([
   'sets',
@@ -32,7 +34,7 @@ export type ChartSeriesOutput = {
 };
 
 // Convert Metrics v2 payload to chart-friendly series keyed by canonical measure ids
-export function toChartSeries(payload: { series?: Record<string, { timestamp?: string; ts?: string; value: number | null }[]> }): ChartSeriesOutput {
+export function toChartSeries(payload: { series?: Record<string, RawPoint[]> }): ChartSeriesOutput {
   console.debug('[adapter.in]', {
     hasSeries: Boolean(payload?.series),
     seriesKeys: payload?.series ? Object.keys(payload.series) : [],
@@ -40,18 +42,18 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp?: s
   });
   const out: Record<string, TimeSeriesPoint[]> = {};
   const raw = payload.series ?? {};
-  
-  for (const [k, points] of Object.entries(raw)) {
+
+  for (const [k, points] of Object.entries(raw) as [string, RawPoint[]][]) {
     const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (!CANONICAL_KEYS.has(canonical)) continue;
     
-    const mapped = (points || []).map(p => {
-      const ts = (p as any).timestamp ?? (p as any).ts;
-      let value = p.value as number | null;
+    const mapped = (points || []).map((p): TimeSeriesPoint => {
+      const ts = p.timestamp ?? p.ts ?? '';
+      let value = p.value;
       if (value !== null && value !== undefined && (canonical === 'duration_min' || canonical === 'tonnage_kg' || canonical === 'density_kg_per_min')) {
         value = Math.round(value * 100) / 100;
       }
-      return { date: toWarsawDate(ts), value } as any;
+      return { date: toWarsawDate(ts), value };
     });
     
     if (mapped.length > 0) out[canonical] = mapped;
@@ -72,7 +74,7 @@ export function toChartSeries(payload: { series?: Record<string, { timestamp?: s
       }));
   }
 
-  const aliasOut: Record<string, TimeSeriesPoint[]> = { ...out } as any;
+  const aliasOut: Record<string, TimeSeriesPoint[]> = { ...out };
   for (const k of Object.keys(out)) {
     const camel = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
     aliasOut[camel] = out[k];

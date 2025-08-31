@@ -1,5 +1,5 @@
 // Metrics v2 engine calculators and helpers
-import { TimeSeriesPoint } from '../dto';
+import { TimeSeriesPoint } from '../types';
 
 // Simple unit converter
 function convertToKg(weight?: number, unit: string = 'kg'): number {

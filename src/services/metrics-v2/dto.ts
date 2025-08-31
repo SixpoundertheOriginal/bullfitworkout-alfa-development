@@ -1,5 +1,6 @@
+import type { TimeSeriesPoint } from './types';
+
 // Canonical, versioned DTOs for Metrics Service v2 (units: kg, min; dates: ISO YYYY-MM-DD)
-export type TimeSeriesPoint = { date: string; value: number };
 
 export type PerWorkoutKpis = {
   density: number; // kg/min
