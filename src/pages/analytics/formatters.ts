@@ -1,9 +1,11 @@
 // Formatting helpers for analytics metrics
 
-export function fmtKgPerMin(n: number): string {
-  const v = Number.isFinite(n) ? n : 0;
-  return `${v.toFixed(2)} kg/min`;
-}
+export const toFinite = (n: number) => (Number.isFinite(n) ? n : 0);
+
+const numberFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const formatNumber = (n: number) => numberFmt.format(n);
+
+export const formatKgPerMin = (v: number) => `${formatNumber(toFinite(v))} kg/min`;
 
 export function fmtSeconds(n: number): string {
   const v = Number.isFinite(n) ? Math.max(0, n) : 0;
