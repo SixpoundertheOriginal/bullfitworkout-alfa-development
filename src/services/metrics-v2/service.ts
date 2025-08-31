@@ -235,6 +235,23 @@ export const metricsServiceV2 = {
       const perWorkout = aggregatePerWorkout(workoutsForAggregator, setsForAggregator);
       const totalsKpis = aggregateTotalsKpis(perWorkout);
 
+      // Build daily density series from per-workout aggregates (SSOT with KPI)
+      const densityByDay = new Map<string, { tonnage: number; duration: number }>()
+      for (const w of perWorkout) {
+        const day = new Date(w.startedAt).toISOString().split('T')[0]
+        const entry = densityByDay.get(day) || { tonnage: 0, duration: 0 }
+        entry.tonnage += w.totalVolumeKg || 0
+        entry.duration += w.durationMin || 0
+        densityByDay.set(day, entry)
+      }
+      const densitySeries = Array.from(densityByDay.entries())
+        .map(([date, { tonnage, duration }]) => ({
+          date,
+          value: duration > 0 ? tonnage / duration : null,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      console.debug('[v2.series.density]', { sample: densitySeries.slice(0, 5) })
+
       // Prefer repository-derived totals/series to avoid zeros when compute pipeline returns empty
       const metricKeys = [
         TONNAGE_ID,
@@ -265,7 +282,7 @@ export const metricsServiceV2 = {
           [SETS_ID]: repoSetsSeries,
           [REPS_ID]: repoRepsSeries,
           workouts: repoWorkoutsSeries,
-          [DENSITY_ID]: out.series[DENSITY_ID] || [],
+          [DENSITY_ID]: densitySeries,
           cvr: out.series.cvr || [],
           [DURATION_ID]: repoDurationSeries,
           [AVG_REST_ID]: out.series[AVG_REST_ID] || [],

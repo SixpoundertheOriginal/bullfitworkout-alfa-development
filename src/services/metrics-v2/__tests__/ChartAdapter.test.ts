@@ -31,6 +31,27 @@ describe('chartAdapter', () => {
     ]);
   });
 
+  it('recomputes density when missing and exposes camel+snake keys', () => {
+    const payload = {
+      series: {
+        tonnage_kg: [
+          { timestamp: '2024-05-01T06:00:00Z', value: 2000 },
+          { timestamp: '2024-05-02T06:00:00Z', value: 100 },
+        ],
+        duration_min: [
+          { timestamp: '2024-05-01T06:00:00Z', value: 40 },
+          { timestamp: '2024-05-02T06:00:00Z', value: 0 },
+        ],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.density_kg_per_min).toEqual([
+      { date: '2024-05-01', value: 50 },
+      { date: '2024-05-02', value: null },
+    ]);
+    expect(out.series.densityKgPerMin).toBe(out.series.density_kg_per_min);
+  });
+
   it('maps rest and efficiency metrics with Warsaw date conversion', () => {
     const out = toChartSeries(v2Payload);
     expect(out.series.avg_rest_sec).toEqual([

@@ -86,6 +86,7 @@ export function restCoveragePct(ctxByDay: Record<string, DayContext>): number {
   return possible > 0 ? +(100 * explicit / possible).toFixed(2) : 0;
 }
 
+// Future path when per-set seconds are reliable
 export function calcDensityKgPerMin(
   ctxByDay: Record<string, DayContext>,
   loadCtx: LoadCtx

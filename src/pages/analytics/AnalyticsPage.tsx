@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PerWorkoutMetrics, TimeSeriesPoint } from '@/services/metrics-v2/dto';
-import { fmtKgPerMin, fmtSeconds } from './formatters';
+import { formatKgPerMin, fmtSeconds } from './formatters';
 import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import {
   TONNAGE_ID,
@@ -147,7 +147,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
   }, [derivedEnabled]);
 
-  const baseIds = React.useMemo(() => ['tonnage_kg', 'sets', 'reps', 'duration_min'], []);
+  const baseIds = React.useMemo(() => ['tonnage_kg', 'sets', 'reps', 'duration_min', 'density_kg_per_min'], []);
 
   React.useEffect(() => {
     if (!derivedEnabled && !baseIds.includes(currentMeasure)) {
@@ -166,10 +166,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }, [availableMeasures, currentMeasure]);
 
   // Use currentMeasure after it's properly initialized
-  const series = seriesData[currentMeasure] ?? [];
+  const series = React.useMemo(() => {
+    const raw = seriesData[currentMeasure] ?? [];
+    return raw.map(p => ({ date: p.date, value: (p as any).value ?? null }));
+  }, [seriesData, currentMeasure]);
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(() => {
-    const derivedIds = [DENSITY_ID, AVG_REST_ID, EFF_ID];
+    const derivedIds = [AVG_REST_ID, EFF_ID];
     const ids = derivedEnabled ? [...baseIds, ...derivedIds] : baseIds;
     return ids.filter(id => availableMeasures.includes(id));
   }, [availableMeasures, derivedEnabled, baseIds]);
@@ -177,7 +180,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const formatValue = React.useCallback(
     (n: number) => {
       if (currentMeasure === DENSITY_ID || currentMeasure === EFF_ID) {
-        return fmtKgPerMin(n);
+        return formatKgPerMin(n);
       }
       if (currentMeasure === AVG_REST_ID) {
         return fmtSeconds(n);
@@ -353,7 +356,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           <div data-testid="kpi-density" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min)</div>
             <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
-              {fmtKgPerMin(kpiTotals.density)}
+              {formatKgPerMin(kpiTotals.density)}
             </div>
           </div>
           <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
@@ -362,7 +365,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           </div>
           <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency (kg/min)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{fmtKgPerMin(kpiTotals.efficiencyKgPerMin)}</div>
+            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{formatKgPerMin(kpiTotals.efficiencyKgPerMin)}</div>
           </div>
         </div>
       )}
@@ -373,7 +376,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           <div data-testid="kpi-density-v2" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min) - V2</div>
             <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
-              {kpiTotals.density.toFixed(2)}
+              {formatKgPerMin(kpiTotals.density)}
             </div>
           </div>
         </div>
@@ -430,13 +433,14 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
                   }}
                   formatter={(value: number) => formatValue(value)}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(var(--primary))" 
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, stroke: 'hsl(var(--primary))', strokeWidth: 2, fill: 'hsl(var(--background))' }}
+                  connectNulls={false}
                 />
               </LineChart>
             </ResponsiveContainer>
