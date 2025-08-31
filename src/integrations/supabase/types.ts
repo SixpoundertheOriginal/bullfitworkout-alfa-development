@@ -564,7 +564,9 @@ export type Database = {
       }
       exercise_sets: {
         Row: {
+          actual_rest_ms: number | null
           completed: boolean
+          completed_at: string | null
           created_at: string
           exercise_id: string | null
           exercise_name: string
@@ -575,13 +577,17 @@ export type Database = {
           rest_time: number | null
           rpe: number | null
           set_number: number
+          started_at: string | null
+          timing_source: Database["public"]["Enums"]["timing_source"] | null
           user_feedback: string | null
           variant_id: string | null
           weight: number
           workout_id: string
         }
         Insert: {
+          actual_rest_ms?: number | null
           completed?: boolean
+          completed_at?: string | null
           created_at?: string
           exercise_id?: string | null
           exercise_name: string
@@ -592,13 +598,17 @@ export type Database = {
           rest_time?: number | null
           rpe?: number | null
           set_number: number
+          started_at?: string | null
+          timing_source?: Database["public"]["Enums"]["timing_source"] | null
           user_feedback?: string | null
           variant_id?: string | null
           weight: number
           workout_id: string
         }
         Update: {
+          actual_rest_ms?: number | null
           completed?: boolean
+          completed_at?: string | null
           created_at?: string
           exercise_id?: string | null
           exercise_name?: string
@@ -609,6 +619,8 @@ export type Database = {
           rest_time?: number | null
           rpe?: number | null
           set_number?: number
+          started_at?: string | null
+          timing_source?: Database["public"]["Enums"]["timing_source"] | null
           user_feedback?: string | null
           variant_id?: string | null
           weight?: number
@@ -1716,6 +1728,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_rest_times: {
+        Args: { p_workout_id: string }
+        Returns: undefined
+      }
       delete_workout: {
         Args: { workout_id: string }
         Returns: undefined
@@ -1764,6 +1780,7 @@ export type Database = {
     Enums: {
       task_priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
       task_status: "BACKLOG" | "TODO" | "IN_PROGRESS" | "DONE" | "ARCHIVED"
+      timing_source: "actual" | "estimated" | "manual"
       training_type:
         | "Strength"
         | "Hypertrophy"
@@ -1900,6 +1917,7 @@ export const Constants = {
     Enums: {
       task_priority: ["LOW", "MEDIUM", "HIGH", "URGENT"],
       task_status: ["BACKLOG", "TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
+      timing_source: ["actual", "estimated", "manual"],
       training_type: [
         "Strength",
         "Hypertrophy",
