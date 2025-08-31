@@ -42,14 +42,30 @@ export async function getMetricsV2(
     isBodyweight?: boolean;
     performedAt?: string;
     restMs?: number;
+    startedAt?: string;
+    completedAt?: string;
+    timingQuality?: 'actual' | 'estimated' | 'missing';
   }> = [];
 
   if (typeof (repo as any).getWorkouts === 'function') {
     workouts = await (repo as any).getWorkouts(range, userId);
     const workoutIds = workouts.map(w => w.id);
-    sets = workoutIds.length
-      ? await (repo as any).getSets(workoutIds, exerciseId)
+    const rawSets = workoutIds.length
+      ? await (repo as any).getSets(workoutIds, userId, exerciseId)
       : [];
+    sets = (rawSets as any[]).map(s => ({
+      workoutId: s.workoutId,
+      exerciseName: s.exerciseName ?? '',
+      weightKg: s.weightKg,
+      reps: s.reps,
+      seconds: s.seconds,
+      isBodyweight: s.isBodyweight,
+      performedAt: s.completedAt || s.startedAt,
+      restMs: typeof s.restTimeSec === 'number' ? s.restTimeSec * 1000 : s.restMs,
+      startedAt: s.startedAt,
+      completedAt: s.completedAt,
+      timingQuality: s.timingQuality,
+    }));
   } else if (typeof (repo as any).fetchWorkoutsForUser === 'function') {
     // Legacy repository used in perf tests.  Each workout already contains sets.
     const wks = await (repo as any).fetchWorkoutsForUser(userId, range);

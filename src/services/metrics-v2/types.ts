@@ -24,6 +24,9 @@ export interface SetRaw {
   failurePoint?: 'none'|'technical'|'muscular' | null;
   formScore?: number | null;
   restTimeSec?: number;
+  startedAt?: string;
+  completedAt?: string;
+  timingQuality?: 'actual' | 'estimated' | 'missing';
 }
 
 export interface MetricsRepository {
