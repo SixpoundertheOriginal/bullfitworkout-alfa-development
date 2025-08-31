@@ -146,15 +146,15 @@ describe.skip('metrics-v2 integration', () => {
         userId: 'test-user-123'
       });
 
-      // Workout 1: avgRest = 150s, target = 90s, efficiency = 150/90 = 1.67
+      // Workout 1: volume 1140kg in 60min -> 19kg/min
       const workout1 = result.perWorkout.find(w => w.totalSets === 2);
       expect(workout1!.kpis!.avgRestSec).toBe(150); // (120+180)/2
-      expect(workout1!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(1.67);
+      expect(workout1!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(19);
 
-      // Workout 2: avgRest = 90s, target = 90s, efficiency = 90/90 = 1.0
+      // Workout 2: volume 720kg in 45min -> 16kg/min
       const workout2 = result.perWorkout.find(w => w.totalSets === 1);
       expect(workout2!.kpis!.avgRestSec).toBe(90);
-      expect(workout2!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(1.0);
+      expect(workout2!.kpis!.setEfficiencyKgPerMin).toBeCloseTo(16);
     });
 
     it('should handle zero duration workouts gracefully', async () => {

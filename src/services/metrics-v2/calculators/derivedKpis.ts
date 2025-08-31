@@ -27,12 +27,23 @@ export function calcAvgRestPerSession(restSecTotal: number, setCount: number): n
 }
 
 /**
- * Calculate set efficiency ratio
+ * Calculate set efficiency as kg lifted per minute
+ * @param volumeKg Total lifted volume in kilograms
+ * @param totalMinutes Total time in minutes (active + rest)
+ * @returns Efficiency in kg/min, 0 if time invalid
+ */
+export function calcSetEfficiencyKgPerMin(volumeKg: number, totalMinutes: number): number {
+  if (totalMinutes <= 0) return 0;
+  return Math.round((volumeKg / totalMinutes) * 100) / 100; // 2 decimal places
+}
+
+/**
+ * Calculate set efficiency ratio (average rest vs target)
  * @param avgRestSec Average rest time in seconds
  * @param targetRestSec Target rest time in seconds (optional)
  * @returns Efficiency ratio (<1 good, >1 over-resting), null if no target
  */
-export function calcSetEfficiency(avgRestSec: number, targetRestSec?: number): number | null {
+export function calcSetEfficiencyRatio(avgRestSec: number, targetRestSec?: number): number | null {
   if (!targetRestSec || targetRestSec <= 0) return null;
   return Math.round((avgRestSec / targetRestSec) * 100) / 100; // 2 decimal places
 }

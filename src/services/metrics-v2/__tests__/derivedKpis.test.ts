@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { 
-  calcWorkoutDensityKgPerMin, 
-  calcAvgRestPerSession, 
-  calcSetEfficiency,
+import {
+  calcWorkoutDensityKgPerMin,
+  calcAvgRestPerSession,
+  calcSetEfficiencyKgPerMin,
+  calcSetEfficiencyRatio,
   getTargetRestSecForWorkout
 } from '../calculators/derivedKpis';
 
@@ -43,26 +44,35 @@ describe('derivedKpis', () => {
     });
   });
 
-  describe('calcSetEfficiency', () => {
+  describe('calcSetEfficiencyKgPerMin', () => {
+    it('should calculate kg per minute correctly', () => {
+      expect(calcSetEfficiencyKgPerMin(1000, 50)).toBe(20);
+    });
+
+    it('should return 0 for invalid time', () => {
+      expect(calcSetEfficiencyKgPerMin(1000, 0)).toBe(0);
+    });
+  });
+
+  describe('calcSetEfficiencyRatio', () => {
     it('should calculate efficiency ratio correctly', () => {
-      expect(calcSetEfficiency(75, 90)).toBe(0.83);
+      expect(calcSetEfficiencyRatio(75, 90)).toBe(0.83);
     });
 
     it('should return null for no target', () => {
-      expect(calcSetEfficiency(75)).toBe(null);
-      expect(calcSetEfficiency(75, undefined)).toBe(null);
+      expect(calcSetEfficiencyRatio(75)).toBe(null);
+      expect(calcSetEfficiencyRatio(75, undefined)).toBe(null);
     });
-
     it('should return null for zero target', () => {
-      expect(calcSetEfficiency(75, 0)).toBe(null);
+      expect(calcSetEfficiencyRatio(75, 0)).toBe(null);
     });
 
     it('should return null for negative target', () => {
-      expect(calcSetEfficiency(75, -90)).toBe(null);
+      expect(calcSetEfficiencyRatio(75, -90)).toBe(null);
     });
 
     it('should round to 2 decimal places', () => {
-      expect(calcSetEfficiency(77, 90)).toBe(0.86);
+      expect(calcSetEfficiencyRatio(77, 90)).toBe(0.86);
     });
   });
 
@@ -76,7 +86,7 @@ describe('derivedKpis', () => {
         totalReps: 100,
         durationMin: 45,
       };
-      
+
       expect(getTargetRestSecForWorkout(workout)).toBe(90);
     });
   });

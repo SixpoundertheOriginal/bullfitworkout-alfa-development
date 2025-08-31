@@ -90,7 +90,7 @@ describe('aggregators', () => {
       expect(result[0].kpis).toMatchObject({
         density: 33.78, // 1520/45
         avgRestSec: 150, // (120+180)/2
-        setEfficiencyKgPerMin: 1.67, // 150/90
+        setEfficiencyKgPerMin: 33.78, // 1520/45
       });
     });
 
@@ -186,7 +186,7 @@ describe('aggregators', () => {
           kpis: {
             density: 50,
             avgRestSec: 30,
-            setEfficiencyKgPerMin: 0.8,
+            setEfficiencyKgPerMin: 50,
           },
         },
         {
@@ -200,7 +200,7 @@ describe('aggregators', () => {
           kpis: {
             density: 50,
             avgRestSec: 40,
-            setEfficiencyKgPerMin: 1.2,
+            setEfficiencyKgPerMin: 50,
           },
         },
       ];
@@ -210,7 +210,7 @@ describe('aggregators', () => {
       expect(result).toEqual({
         density: 50, // 5000/100
         avgRestSec: 36, // (5*60 + 10*60) / 25 sets
-        setEfficiencyKgPerMin: 1, // (0.8 + 1.2) / 2
+        setEfficiencyKgPerMin: 50, // 5000/100
       });
     });
   });
