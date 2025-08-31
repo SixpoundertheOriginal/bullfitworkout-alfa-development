@@ -139,7 +139,7 @@ export async function getMetricsV2(
     tonnage_kg: mapSeries(w => w.totalVolumeKg),
     sets_count: mapSeries(w => w.totalSets),
     reps_total: mapSeries(w => w.totalReps),
-    density_kg_min: densityRes.series.density_kg_min,
+    density_kg_per_min: densityRes.series.density_kg_per_min,
     cvr: [],
     workouts: mapSeries(() => 1),
     duration_min: mapSeries(w => w.durationMin),

@@ -174,6 +174,19 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     return ids.filter(id => availableMeasures.includes(id));
   }, [availableMeasures, derivedEnabled, baseIds]);
 
+  const formatValue = React.useCallback(
+    (n: number) => {
+      if (currentMeasure === DENSITY_ID || currentMeasure === EFF_ID) {
+        return fmtKgPerMin(n);
+      }
+      if (currentMeasure === AVG_REST_ID) {
+        return fmtSeconds(n);
+      }
+      return n.toString();
+    },
+    [currentMeasure]
+  );
+
   const baseTotals = React.useMemo(
     () => {
       if (v2Enabled && v2Data) {
@@ -401,12 +414,13 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
                   fontSize={12}
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 />
-                <YAxis 
+                <YAxis
                   stroke="hsl(var(--muted-foreground))"
                   fontSize={12}
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={formatValue}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
@@ -414,6 +428,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
                     color: 'hsl(var(--foreground))',
                     fontSize: '14px'
                   }}
+                  formatter={(value: number) => formatValue(value)}
                 />
                 <Line 
                   type="monotone" 
