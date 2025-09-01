@@ -5,6 +5,7 @@ import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 import { TONNAGE_ID, AVG_REST_ID, EFF_ID } from '@/pages/analytics/metricIds';
+import { normalizeSeriesKeys } from '@/services/metrics-v2/chartAdapter';
 
 // Factory for stable params
 function buildMetricsParams(opts: {
@@ -188,17 +189,36 @@ export function useMetricsV2Analytics(
           ? Math.round((response.totals?.[EFF_ID] ?? 0) * 100) / 100
           : undefined;
 
+        const keyMap: Record<string, string> = {
+          densityKgPerMin: 'density_kg_per_min',
+          density: 'density_kg_per_min',
+          density_kg_min: 'density_kg_per_min',
+          avgRestSec: 'avg_rest_sec',
+          setEfficiencyKgPerMin: 'set_efficiency_kg_per_min',
+          set_count: 'sets',
+          sets_count: 'sets',
+          total_sets: 'sets',
+          rep_count: 'reps',
+          reps_total: 'reps',
+          total_reps: 'reps',
+        };
+        const normalized = normalizeSeriesKeys(
+          Object.fromEntries(
+            Object.entries(response.series || {}).map(([k, v]) => [keyMap[k] || k, v])
+          )
+        );
+
         const series = {
-          sets: (response.series?.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          reps: (response.series?.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          durationMin: (response.series?.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          tonnageKg: (response.series?.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          densityKgPerMin: (response.series?.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          sets: (normalized.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          reps: (normalized.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          durationMin: (normalized.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          tonnageKg: (normalized.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          densityKgPerMin: (normalized.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
           avgRestSec: includeRest
-            ? (response.series?.[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            ? (normalized[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
             : undefined,
           setEfficiencyKgPerMin: derivedFlag
-            ? (response.series?.[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            ? (normalized[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
             : undefined,
         };
 
