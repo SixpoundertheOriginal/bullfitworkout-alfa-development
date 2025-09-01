@@ -20,34 +20,85 @@ exports[`ServiceOutput shape (v2) > returns a versioned, canonical structure 1`]
     "avgRestSec",
     "setEfficiencyKgPerMin",
   ],
-  "perWorkout": [],
+  "perWorkout": [
+    {
+      "activeMin": 0,
+      "durationMin": 0,
+      "restMin": 0,
+      "startedAt": "2025-06-01T10:00:00Z",
+      "totalReps": 10,
+      "totalSets": 2,
+      "totalVolumeKg": 500,
+      "workoutId": "w1",
+    },
+  ],
   "prs": [],
   "series": {
-    "avgRestSec": [],
+    "avgRestSec": [
+      {
+        "date": "2025-06-01",
+        "value": 90,
+      },
+    ],
     "cvr": [],
-    "density_kg_per_min": [],
-    "duration_min": [],
-    "reps_total": [],
-    "setEfficiencyKgPerMin": [],
-    "sets_count": [],
-    "tonnage_kg": [],
-    "workouts": [],
+    "density_kg_per_min": [
+      {
+        "date": "2025-06-01",
+        "value": 0,
+      },
+    ],
+    "duration_min": [
+      {
+        "date": "2025-06-01",
+        "value": 0,
+      },
+    ],
+    "reps_total": [
+      {
+        "date": "2025-06-01",
+        "value": 10,
+      },
+    ],
+    "setEfficiencyKgPerMin": [
+      {
+        "date": "2025-06-01",
+        "value": 0,
+      },
+    ],
+    "sets_count": [
+      {
+        "date": "2025-06-01",
+        "value": 2,
+      },
+    ],
+    "tonnage_kg": [
+      {
+        "date": "2025-06-01",
+        "value": 500,
+      },
+    ],
+    "workouts": [
+      {
+        "date": "2025-06-01",
+        "value": 1,
+      },
+    ],
   },
   "timePeriodAverages": undefined,
   "timingMetadata": {
-    "coveragePct": 0,
-    "quality": "low",
+    "coveragePct": 100,
+    "quality": "high",
   },
   "totals": {
-    "avgRestSec": 0,
+    "avgRestSec": 90,
     "density_kg_per_min": 0,
     "duration_min": 0,
-    "reps_total": 0,
+    "reps_total": 10,
     "setEfficiencyKgPerMin": 0,
-    "sets_count": 0,
-    "timingCoveragePct": 0,
-    "tonnage_kg": 0,
-    "workouts": 0,
+    "sets_count": 2,
+    "timingCoveragePct": 100,
+    "tonnage_kg": 500,
+    "workouts": 1,
   },
 }
 `;

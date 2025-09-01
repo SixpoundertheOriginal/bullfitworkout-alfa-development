@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { metricsServiceV2 } from '../service';
+import { getMetricsV2 } from '../index';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 // Mock feature flag
@@ -162,5 +163,85 @@ describe.skip('metrics-v2 integration', () => {
       // For now, verify existing logic handles edge cases in calculator functions
       expect(true).toBe(true); // Placeholder - specific test would require mock data injection
     });
+  });
+});
+
+describe('timing propagation', () => {
+  const restoreFlag = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
+
+  afterEach(() => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = restoreFlag;
+  });
+
+  it('threads high-quality timing from repository to calculators', async () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = true;
+    const repo = {
+      async getWorkouts() {
+        return [{ id: 'w1', startedAt: '2024-01-01T10:00:00Z', duration: 600 }];
+      },
+      async getSets() {
+        return [
+          {
+            workoutId: 'w1',
+            exerciseId: 'e1',
+            weightKg: 50,
+            reps: 5,
+            startedAt: '2024-01-01T10:00:00Z',
+            completedAt: '2024-01-01T10:00:30Z',
+            timingQuality: 'actual',
+          },
+          {
+            workoutId: 'w1',
+            exerciseId: 'e1',
+            weightKg: 50,
+            reps: 5,
+            startedAt: '2024-01-01T10:01:20Z',
+            completedAt: '2024-01-01T10:01:50Z',
+            timingQuality: 'actual',
+          },
+        ];
+      },
+    };
+    const res = await getMetricsV2(repo as any, 'u1', {
+      start: '2024-01-01',
+      end: '2024-01-02',
+    });
+    expect(res.totals.avgRestSec).toBe(50);
+    expect(res.timingMetadata.quality).toBe('high');
+  });
+
+  it('falls back to stored rest when timing is low quality and flag is off', async () => {
+    (FEATURE_FLAGS as any).ANALYTICS_DERIVED_KPIS_ENABLED = false;
+    const repo = {
+      async getWorkouts() {
+        return [{ id: 'w1', startedAt: '2024-01-01T10:00:00Z', duration: 600 }];
+      },
+      async getSets() {
+        return [
+          {
+            workoutId: 'w1',
+            exerciseId: 'e1',
+            weightKg: 50,
+            reps: 5,
+            timingQuality: 'missing',
+          },
+          {
+            workoutId: 'w1',
+            exerciseId: 'e1',
+            weightKg: 50,
+            reps: 5,
+            restTimeSec: 90,
+            timingQuality: 'missing',
+          },
+        ];
+      },
+    };
+    const res = await getMetricsV2(repo as any, 'u1', {
+      start: '2024-01-01',
+      end: '2024-01-02',
+    });
+    expect(res.totals.avgRestSec).toBe(90);
+    expect(res.timingMetadata.quality).toBe('low');
+    expect(res.perWorkout[0].kpis).toBeUndefined();
   });
 });
