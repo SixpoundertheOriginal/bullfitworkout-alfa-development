@@ -16,6 +16,14 @@ export const v2Payload = {
     setEfficiencyKgPerMin: [
       { ts: '2024-05-01T21:00:00Z', value: 1.5 },
     ],
+    sets_count: [
+      { timestamp: '2024-05-01T06:00:00Z', value: 3 },
+      { timestamp: '2024-05-02T06:00:00Z', value: 4 },
+    ],
+    reps_total: [
+      { timestamp: '2024-05-01T06:00:00Z', value: 30 },
+      { timestamp: '2024-05-02T06:00:00Z', value: 40 },
+    ],
   },
 };
 
@@ -27,6 +35,14 @@ const durationSeries = [{ date: '2024-05-01', value: 60 }];
 const densitySeries = [{ date: '2024-05-01', value: 5 }];
 const restSeries = [{ date: '2024-05-02', value: 90 }];
 const efficiencySeries = [{ date: '2024-05-01', value: 1.5 }];
+const setsSeries = [
+  { date: '2024-05-01', value: 3 },
+  { date: '2024-05-02', value: 4 },
+];
+const repsSeries = [
+  { date: '2024-05-01', value: 30 },
+  { date: '2024-05-02', value: 40 },
+];
 
 export const expectedChartSeries = {
   series: {
@@ -40,6 +56,8 @@ export const expectedChartSeries = {
     avgRestSec: restSeries,
     set_efficiency_kg_per_min: efficiencySeries,
     setEfficiencyKgPerMin: efficiencySeries,
+    sets: setsSeries,
+    reps: repsSeries,
   },
   availableMeasures: [
     'tonnage_kg',
@@ -47,5 +65,7 @@ export const expectedChartSeries = {
     'density_kg_per_min',
     'avg_rest_sec',
     'set_efficiency_kg_per_min',
+    'sets',
+    'reps',
   ],
 };
