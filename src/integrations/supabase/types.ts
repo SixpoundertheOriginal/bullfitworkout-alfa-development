@@ -574,10 +574,15 @@ export type Database = {
           form_quality: number | null
           id: string
           reps: number
+          rest_frozen_at: string | null
+          rest_ms: number | null
           rest_time: number | null
           rpe: number | null
+          set_completed_at: string | null
           set_number: number
+          set_started_at: string | null
           started_at: string | null
+          timing_quality: string | null
           timing_source: Database["public"]["Enums"]["timing_source"] | null
           user_feedback: string | null
           variant_id: string | null
@@ -595,10 +600,15 @@ export type Database = {
           form_quality?: number | null
           id?: string
           reps: number
+          rest_frozen_at?: string | null
+          rest_ms?: number | null
           rest_time?: number | null
           rpe?: number | null
+          set_completed_at?: string | null
           set_number: number
+          set_started_at?: string | null
           started_at?: string | null
+          timing_quality?: string | null
           timing_source?: Database["public"]["Enums"]["timing_source"] | null
           user_feedback?: string | null
           variant_id?: string | null
@@ -616,10 +626,15 @@ export type Database = {
           form_quality?: number | null
           id?: string
           reps?: number
+          rest_frozen_at?: string | null
+          rest_ms?: number | null
           rest_time?: number | null
           rpe?: number | null
+          set_completed_at?: string | null
           set_number?: number
+          set_started_at?: string | null
           started_at?: string | null
+          timing_quality?: string | null
           timing_source?: Database["public"]["Enums"]["timing_source"] | null
           user_feedback?: string | null
           variant_id?: string | null
@@ -1705,6 +1720,102 @@ export type Database = {
           tablename: unknown | null
         }
         Relationships: []
+      }
+      v_exercise_sets_analytics: {
+        Row: {
+          actual_rest_ms: number | null
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          exercise_id: string | null
+          exercise_name: string | null
+          failure_point: string | null
+          form_quality: number | null
+          id: string | null
+          reps: number | null
+          rest_frozen_at: string | null
+          rest_ms: number | null
+          rest_time: number | null
+          rpe: number | null
+          set_completed_at: string | null
+          set_number: number | null
+          set_started_at: string | null
+          started_at: string | null
+          timing_quality: string | null
+          timing_source: Database["public"]["Enums"]["timing_source"] | null
+          user_feedback: string | null
+          variant_id: string | null
+          weight: number | null
+          workout_id: string | null
+        }
+        Insert: {
+          actual_rest_ms?: number | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          exercise_id?: string | null
+          exercise_name?: string | null
+          failure_point?: string | null
+          form_quality?: number | null
+          id?: string | null
+          reps?: number | null
+          rest_frozen_at?: string | null
+          rest_ms?: number | null
+          rest_time?: number | null
+          rpe?: number | null
+          set_completed_at?: string | null
+          set_number?: number | null
+          set_started_at?: string | null
+          started_at?: string | null
+          timing_quality?: never
+          timing_source?: Database["public"]["Enums"]["timing_source"] | null
+          user_feedback?: string | null
+          variant_id?: string | null
+          weight?: number | null
+          workout_id?: string | null
+        }
+        Update: {
+          actual_rest_ms?: number | null
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          exercise_id?: string | null
+          exercise_name?: string | null
+          failure_point?: string | null
+          form_quality?: number | null
+          id?: string | null
+          reps?: number | null
+          rest_frozen_at?: string | null
+          rest_ms?: number | null
+          rest_time?: number | null
+          rpe?: number | null
+          set_completed_at?: string | null
+          set_number?: number | null
+          set_started_at?: string | null
+          started_at?: string | null
+          timing_quality?: never
+          timing_source?: Database["public"]["Enums"]["timing_source"] | null
+          user_feedback?: string | null
+          variant_id?: string | null
+          weight?: number | null
+          workout_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercise_sets_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_exercise_sets_exercise_id"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workout_time_preferences: {
         Row: {

@@ -5,7 +5,7 @@ import { toVolumeSeries } from '../engine/seriesAdapter';
 describe('engine integration', () => {
   it('computes density for bodyweight sets when included', () => {
     const day = '2024-02-01';
-    const sets = [{ isBodyweight: true, reps: 10, performedAt: `${day}T10:00:00Z` }];
+    const sets = [{ isBodyweight: true, reps: 10, performedAt: `${day}T10:00:00Z`, hasActualTiming: false }];
     const ctxByDay = { [day]: { sets, activeMinutes: 10 } } as any;
     const off = calcDensityKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 80 });
     expect(off.totals.density_kg_per_min).toBe(0);
@@ -14,7 +14,7 @@ describe('engine integration', () => {
   });
 
   it('returns series points when sets produce volume', () => {
-    const sets = [{ isBodyweight: true, reps: 10, performedAt: '2024-02-01T10:00:00Z' }];
+    const sets = [{ isBodyweight: true, reps: 10, performedAt: '2024-02-01T10:00:00Z', hasActualTiming: false }];
     const series = toVolumeSeries(sets, { includeBodyweightLoads: true, bodyweightKg: 80 });
     expect(series.length).toBeGreaterThan(0);
   });

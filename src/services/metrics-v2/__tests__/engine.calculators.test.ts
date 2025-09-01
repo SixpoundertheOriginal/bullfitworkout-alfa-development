@@ -14,9 +14,9 @@ const ctx = { includeBodyweight: true, bodyweightKg: 80 };
 
 describe('engine calculators', () => {
   it('getSetLoadKg handles weighted, bodyweight and mixed', () => {
-    expect(getSetLoadKg({ weight: 50, unit: 'kg' }, ctx)).toBeCloseTo(50);
-    expect(getSetLoadKg({ isBodyweight: true }, ctx)).toBeCloseTo(80);
-    expect(getSetLoadKg({ weight: 20, unit: 'kg', isBodyweight: true }, ctx)).toBeCloseTo(100);
+    expect(getSetLoadKg({ weight: 50, unit: 'kg', hasActualTiming: false }, ctx)).toBeCloseTo(50);
+    expect(getSetLoadKg({ isBodyweight: true, hasActualTiming: false }, ctx)).toBeCloseTo(80);
+    expect(getSetLoadKg({ weight: 20, unit: 'kg', isBodyweight: true, hasActualTiming: false }, ctx)).toBeCloseTo(100);
   });
 
   it('deriveRestMs computes rests between sets', () => {
@@ -68,6 +68,7 @@ describe('engine calculators', () => {
         activeMinutes: 10,
         restMs: [60000],
         workMsTotal: 30000,
+        hasActualTiming: false,
       },
     };
     const density = calcDensityKgPerMin(ctxByDay, { includeBodyweight: false, bodyweightKg: 80 });
@@ -84,6 +85,7 @@ describe('engine calculators', () => {
         sets: [{ weight: 50, reps: 5, workMs: 0, hasActualTiming: false }],
         activeMinutes: 0,
         restMs: [-1000],
+        hasActualTiming: false,
       },
     };
     const avg = calcAvgRestSec(ctxByDay);

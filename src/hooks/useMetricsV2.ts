@@ -75,7 +75,7 @@ interface RangeParams {
   bodyweightKg?: number;
 }
 
-// Legacy useMetricsV2 (unchanged)
+// Legacy useMetricsV2 with stable query key
 export default function useMetricsV2(
   userId?: string,
   range?: RangeParams
@@ -85,8 +85,17 @@ export default function useMetricsV2(
   const bodyweightKg = range?.bodyweightKg ?? 75;
   const startISO = range?.startISO;
   const endISO = range?.endISO;
+  
+  // Create stable day boundaries from ISO strings to prevent query key churn
+  const queryKey = React.useMemo(() => {
+    if (!startISO || !endISO) return ['metricsV2', null];
+    const startDay = startISO.split('T')[0];
+    const endDay = endISO.split('T')[0];
+    return ['metricsV2', startDay, endDay, includeBodyweight, includeTimePeriodAverages, bodyweightKg, DEFS_VERSION];
+  }, [startISO, endISO, includeBodyweight, includeTimePeriodAverages, bodyweightKg]);
+  
   return useQuery<AnalyticsServiceData>({
-    queryKey: ['metricsV2', startISO, endISO, includeBodyweight, includeTimePeriodAverages, bodyweightKg, DEFS_VERSION],
+    queryKey,
     queryFn: () => {
       console.debug('[MetricsV2][debug] params', {
         startISO,
@@ -120,7 +129,8 @@ export default function useMetricsV2(
         });
     },
     enabled: !!userId && !!startISO && !!endISO,
-    staleTime: 60000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
     refetchOnWindowFocus: false,
   });
 }

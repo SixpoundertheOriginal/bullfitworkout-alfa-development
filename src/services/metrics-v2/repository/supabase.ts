@@ -5,8 +5,39 @@ import { MetricsRepository, DateRange, WorkoutRaw, SetRaw } from '../types'
 export class SupabaseMetricsRepository implements MetricsRepository {
   private client: SupabaseClient | null = sharedClient
   private isInitialized: boolean = true
+  private timingColumnsAvailable: boolean | null = null
 
   constructor() {}
+
+  private async probeTimingColumns(): Promise<boolean> {
+    if (!this.client) return false
+    
+    try {
+      // Try to query with timing columns to detect their existence
+      const { error } = await this.client
+        .from('exercise_sets')
+        .select('timing_quality, rest_ms')
+        .limit(1)
+      
+      if (error) {
+        // Check if error is specifically about missing columns
+        const isColumnError = error.message?.includes('column') && error.code === '42703'
+        if (isColumnError) {
+          console.log('[MetricsV2] Timing columns not available, using legacy mode')
+          return false
+        }
+        // Other errors don't indicate missing columns
+        console.warn('[MetricsV2] Timing column probe failed with non-column error:', error)
+        return false
+      }
+      
+      console.log('[MetricsV2] Enhanced timing columns detected')
+      return true
+    } catch (error) {
+      console.warn('[MetricsV2] Timing column probe exception:', error)
+      return false
+    }
+  }
 
   async getWorkouts(range: DateRange, userId: string): Promise<WorkoutRaw[]> {
     if (!this.isInitialized || !this.client) {
@@ -86,10 +117,19 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       const ownedIds = (ownedW || []).map(w => w.id)
       if (ownedIds.length === 0) return []
 
-      // Primary RLS-safe join query
+      // Check timing columns availability on first call
+      if (this.timingColumnsAvailable === null) {
+        this.timingColumnsAvailable = await this.probeTimingColumns()
+      }
+
+      // Primary RLS-safe join query with timing column availability check
+      const selectFields = this.timingColumnsAvailable 
+        ? 'id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality, rest_ms, set_started_at, set_completed_at, workout_sessions!inner(id,user_id)'
+        : 'id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, workout_sessions!inner(id,user_id)'
+      
       let { data: sets, error } = await this.client
         .from('exercise_sets')
-        .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality, workout_sessions!inner(id,user_id)')
+        .select(selectFields)
         .in('workout_id', ownedIds)
         .eq('workout_sessions.user_id', userId)
         .or('completed.is.null,completed.eq.true')
@@ -97,9 +137,13 @@ export class SupabaseMetricsRepository implements MetricsRepository {
       if (error) {
         console.error('[MetricsV2] Error fetching sets (joined):', error)
         // Fallback: non-join query (still constrained to ownedIds)
+        const fallbackFields = this.timingColumnsAvailable 
+          ? 'id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality, rest_ms, set_started_at, set_completed_at'
+          : 'id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at'
+        
         const alt = await this.client
           .from('exercise_sets')
-          .select('id, workout_id, exercise_id, exercise_name, weight, reps, completed, failure_point, form_quality, rest_time, started_at, completed_at, timing_quality')
+          .select(fallbackFields)
           .in('workout_id', ownedIds)
         if (alt.error || !alt.data) {
           console.error('[MetricsV2] Fallback sets query also failed:', alt.error)
@@ -125,7 +169,7 @@ export class SupabaseMetricsRepository implements MetricsRepository {
         restTimeSec: s.rest_time ?? null,
         startedAt: s.started_at ?? undefined,
         completedAt: s.completed_at ?? undefined,
-        timingQuality: s.timing_quality ?? undefined,
+        timingQuality: this.timingColumnsAvailable ? (s.timing_quality ?? 'legacy') : 'legacy',
       }))
     } catch (error) {
       console.error('[MetricsV2] Error in getSets:', error)
