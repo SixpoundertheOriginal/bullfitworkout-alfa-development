@@ -129,4 +129,52 @@ describe('chartAdapter', () => {
     expect(out.availableMeasures).toContain('sets');
     expect(out.availableMeasures).toContain('reps');
   });
+
+  it('accepts alternative time/value fields (t|time|date and v|count|n)', () => {
+    const payload = {
+      series: {
+        total_sets: [
+          { t: '2024-06-01', count: 0 },
+          { time: '2024-06-02T06:00:00Z', v: 4 },
+        ],
+        reps_total: [
+          { date: '2024-06-01', n: 0 },
+          { timestamp: '2024-06-02T06:00:00Z', value: 40 },
+        ],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.sets).toEqual([
+      { date: '2024-06-01', value: 0 },
+      { date: '2024-06-02', value: 4 },
+    ]);
+    expect(out.series.reps).toEqual([
+      { date: '2024-06-01', value: 0 },
+      { date: '2024-06-02', value: 40 },
+    ]);
+  });
+
+  it('does not drop zero-only arrays for base counts', () => {
+    const payload = {
+      series: {
+        sets_count: [
+          { t: '2024-07-01', v: 0 },
+          { t: '2024-07-02', v: 0 },
+        ],
+        rep_count: [
+          { t: '2024-07-01', v: 0 },
+          { t: '2024-07-02', v: 0 },
+        ],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.sets).toEqual([
+      { date: '2024-07-01', value: 0 },
+      { date: '2024-07-02', value: 0 },
+    ]);
+    expect(out.series.reps).toEqual([
+      { date: '2024-07-01', value: 0 },
+      { date: '2024-07-02', value: 0 },
+    ]);
+  });
 });

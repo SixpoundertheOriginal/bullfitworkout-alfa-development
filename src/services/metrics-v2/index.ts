@@ -169,6 +169,19 @@ export async function getMetricsV2(
     setEfficiencyKgPerMin: effRes.series.setEfficiencyKgPerMin,
   };
 
+  // Engine fallback for daily counts if missing
+  if (!series.sets_count || series.sets_count.length === 0) {
+    const days = Object.keys(ctxByDay).sort();
+    series.sets_count = days.map((day) => ({ date: day, value: ctxByDay[day].sets.length }));
+  }
+  if (!series.reps_total || series.reps_total.length === 0) {
+    const days = Object.keys(ctxByDay).sort();
+    series.reps_total = days.map((day) => ({
+      date: day,
+      value: ctxByDay[day].sets.reduce((s, set) => s + (set.reps ?? 0), 0),
+    }));
+  }
+
   const metricKeys = Object.keys(series);
 
   const timingMetadata = {

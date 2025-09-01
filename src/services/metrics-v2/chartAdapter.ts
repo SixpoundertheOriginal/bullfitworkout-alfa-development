@@ -1,6 +1,16 @@
 import type { TimeSeriesPoint, SeriesMap } from './types';
 
-type RawPoint = { timestamp?: string; ts?: string; value: number | null };
+type RawPoint = {
+  timestamp?: string;
+  ts?: string;
+  t?: string;
+  time?: string;
+  date?: string;
+  value?: number | null;
+  v?: number | null;
+  count?: number | null;
+  n?: number | null;
+};
 
 const CANONICAL_KEYS = new Set([
   'sets',
@@ -33,10 +43,10 @@ export function normalizeSeriesKeys(series: Record<string, unknown>): Record<str
   for (const key of Object.keys(series)) {
     if (key.includes('_')) {
       const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-      if (!(camel in out)) out[camel] = series[key];
+      if (!(camel in out)) out[camel] = (series as any)[key];
     } else {
       const snake = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      if (!(snake in out)) out[snake] = series[key];
+      if (!(snake in out)) out[snake] = (series as any)[key];
     }
   }
   return out;
@@ -57,13 +67,30 @@ export function computePerRow(
   return result;
 }
 
+function isYYYYMMDD(x: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(x);
+}
+
 function toWarsawDate(ts: string): string {
+  if (!ts) return '';
+  if (isYYYYMMDD(ts)) return ts; // already a day string
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Europe/Warsaw',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).format(new Date(ts));
+}
+
+function toCanonicalPoint(p: RawPoint): { t: string; value: number | null } {
+  const rawTs = p.timestamp ?? p.ts ?? p.t ?? p.time ?? p.date ?? '';
+  const value = p.value ?? p.v ?? p.count ?? p.n ?? null;
+  const t = toWarsawDate(rawTs);
+  return { t, value };
+}
+
+function mapPoints(points: RawPoint[] | undefined): { t: string; value: number | null }[] {
+  return (points || []).map(toCanonicalPoint);
 }
 
 export type ChartSeriesOutput = {
@@ -76,33 +103,51 @@ export function toChartSeries(
   payload: { series?: Record<string, RawPoint[]> },
   includeDerived = true
 ): ChartSeriesOutput {
-  console.debug('[adapter.in]', {
-    hasSeries: Boolean(payload?.series),
-    seriesKeys: payload?.series ? Object.keys(payload.series) : [],
-    rawKeys: Object.keys(payload || {}),
-  });
+  const inKeys = payload?.series ? Object.keys(payload.series) : [];
+  const inSampleKey = inKeys[0];
+  const inSampleVal = inSampleKey ? payload!.series![inSampleKey]?.[0] : undefined;
+  console.debug('[diag.adapter.in.keys]', inKeys);
+  console.debug('[diag.in.sample]', inSampleVal);
+
   const out: Record<string, TimeSeriesPoint[]> = {};
   const raw = payload.series ?? {};
 
+  // Normalize key names and point shapes first, then filter/round as needed
+  const normalizedEntries: Array<[string, { t: string; value: number | null }[]]> = [];
   for (const [k, points] of Object.entries(raw) as [string, RawPoint[]][]) {
     const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
+    normalizedEntries.push([canonical, mapPoints(points)]);
+  }
+
+  const normKeys = normalizedEntries.map(([k]) => k);
+  const normSample = normalizedEntries[0]?.[1]?.[0];
+  console.debug('[diag.adapter.norm.keys]', normKeys);
+  console.debug('[diag.norm.sample]', normSample);
+
+  for (const [canonical, points] of normalizedEntries) {
     if (!CANONICAL_KEYS.has(canonical)) continue;
     if (
       !includeDerived &&
       (canonical === 'avg_rest_sec' || canonical === 'set_efficiency_kg_per_min')
     )
       continue;
-    
+
     const mapped = (points || []).map((p): TimeSeriesPoint => {
-      const ts = p.timestamp ?? p.ts ?? '';
       let value = p.value;
-      if (value !== null && value !== undefined && (canonical === 'duration_min' || canonical === 'tonnage_kg' || canonical === 'density_kg_per_min')) {
+      if (
+        value !== null &&
+        value !== undefined &&
+        (canonical === 'duration_min' ||
+          canonical === 'tonnage_kg' ||
+          canonical === 'density_kg_per_min')
+      ) {
         value = Math.round(value * 100) / 100;
       }
-      return { date: toWarsawDate(ts), value };
+      return { date: p.t, value };
     });
-    
-    if (mapped.length > 0) out[canonical] = mapped;
+
+    // Keep zero-only arrays; only skip if truly empty
+    if (mapped.length >= 0) out[canonical] = mapped;
   }
 
   if (!out['density_kg_per_min'] && out['tonnage_kg'] && out['duration_min']) {
