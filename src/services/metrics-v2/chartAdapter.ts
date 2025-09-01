@@ -187,22 +187,22 @@ export function toChartSeries(
   const availableMeasures = Object.keys(out);
   const aliasOut = normalizeSeriesKeys(out);
   const density = out['density_kg_per_min'];
-  console.debug('[adapter.out.density]', {
+  console.debug('[diag.adapter.out.density]', {
     has: Boolean(density),
     len: density?.length ?? 0,
     sample: density?.[0],
   });
   const rest = includeDerived ? out['avg_rest_sec'] : undefined;
   const eff = includeDerived ? out['set_efficiency_kg_per_min'] : undefined;
-  console.debug('[adapter.out.rest_eff]', {
+  console.debug('[diag.adapter.out.rest_eff]', {
     rest: { has: Boolean(rest), len: rest?.length ?? 0 },
     eff: { has: Boolean(eff), len: eff?.length ?? 0 },
   });
-  console.debug('[adapter.out]', {
-    keys: availableMeasures,
-    lengths: Object.fromEntries(availableMeasures.map(k => [k, out[k].length])),
-    sample: availableMeasures[0] ? out[availableMeasures[0]][0] : undefined,
-  });
+  console.debug('[diag.adapter.out.keys]', availableMeasures);
+  console.debug(
+    '[diag.adapter.out.sample]',
+    Object.fromEntries(availableMeasures.map(k => [k, out[k][0]]))
+  );
 
   return { series: aliasOut, availableMeasures };
 }
