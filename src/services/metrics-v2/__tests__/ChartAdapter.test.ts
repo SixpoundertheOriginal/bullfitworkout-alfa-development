@@ -122,16 +122,10 @@ describe('chartAdapter', () => {
     expect(out.availableMeasures).not.toContain('set_efficiency_kg_per_min');
   });
 
-  it('maps sets_count and reps_total to canonical keys', () => {
-    const payload = {
-      series: {
-        sets_count: [{ timestamp: '2024-05-01T06:00:00Z', value: 3 }],
-        reps_total: [{ timestamp: '2024-05-01T06:00:00Z', value: 30 }],
-      },
-    };
-    const out = toChartSeries(payload);
-    expect(out.series.sets).toEqual([{ date: '2024-05-01', value: 3 }]);
-    expect(out.series.reps).toEqual([{ date: '2024-05-01', value: 30 }]);
+  it('includes sets and reps series and measures', () => {
+    const out = toChartSeries(v2Payload);
+    expect(out.series.sets).toEqual(expectedChartSeries.series.sets);
+    expect(out.series.reps).toEqual(expectedChartSeries.series.reps);
     expect(out.availableMeasures).toContain('sets');
     expect(out.availableMeasures).toContain('reps');
   });
