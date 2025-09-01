@@ -12,7 +12,7 @@ vi.mock('@/services/metrics-v2/service', () => ({
   },
 }));
 
-import useMetricsV2 from '../useMetricsV2';
+import useMetricsV2, { useMetricsV2Analytics } from '../useMetricsV2';
 import { metricsServiceV2 } from '@/services/metrics-v2/service';
 
 const client = new QueryClient();
@@ -39,4 +39,38 @@ describe('useMetricsV2', () => {
   });
 
   // Series key mapping covered in adapter tests
+});
+
+describe('useMetricsV2Analytics', () => {
+  it('maps snake_case series keys to camelCase outputs', async () => {
+    vi.mocked(metricsServiceV2.getMetricsV2).mockResolvedValue({
+      series: {
+        sets_count: [{ date: '2024-01-01', value: 2 }],
+        reps_total: [{ date: '2024-01-01', value: 10 }],
+      },
+    } as any);
+    const client = new QueryClient();
+    const localWrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result, unmount } = renderHook(
+      () =>
+        useMetricsV2Analytics('u1', {
+          startISO: '2024-01-01',
+          endISO: '2024-01-07',
+        }),
+      { wrapper: localWrapper }
+    );
+    const res = await result.current.refetch();
+    expect(res.data?.series?.sets?.[0]).toEqual({
+      timestamp: '2024-01-01T00:00:00.000Z',
+      value: 2,
+    });
+    expect(res.data?.series?.reps?.[0]).toEqual({
+      timestamp: '2024-01-01T00:00:00.000Z',
+      value: 10,
+    });
+    client.clear();
+    unmount();
+  });
 });
