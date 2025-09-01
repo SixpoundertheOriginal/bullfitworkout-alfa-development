@@ -238,7 +238,33 @@ describe('engine calculators', () => {
       expect(res.totals.timingCoveragePct).toBe(0);
     });
 
-    it('discards extreme rests over 30 min', () => {
+    it('uses next start minus previous completion for rest gaps', () => {
+      const day = '2024-01-01';
+      const ctxByDay = {
+        [day]: {
+          sets: [
+            {
+              startedAt: '2024-01-01T10:00:00Z',
+              completedAt: '2024-01-01T10:00:10Z',
+              hasActualTiming: true,
+            },
+            {
+              startedAt: '2024-01-01T10:01:00Z',
+              completedAt: '2024-01-01T10:01:10Z',
+              hasActualTiming: true,
+            },
+          ],
+          activeMinutes: 0,
+          hasActualTiming: true,
+        },
+      } as any;
+      const res = calcAvgRestSec(ctxByDay);
+      // start2 - complete1 = 50s (not 60s start-start)
+      expect(res.totals.avgRestSec).toBe(50);
+      expect(res.totals.timingCoveragePct).toBe(100);
+    });
+
+    it('ignores outlier rests over 30 min', () => {
       const day = '2024-01-01';
       const ctxByDay = {
         [day]: {
@@ -246,6 +272,11 @@ describe('engine calculators', () => {
             {
               startedAt: '2024-01-01T10:00:00Z',
               completedAt: '2024-01-01T10:00:30Z',
+              hasActualTiming: true,
+            },
+            {
+              startedAt: '2024-01-01T10:05:00Z',
+              completedAt: '2024-01-01T10:05:30Z',
               hasActualTiming: true,
             },
             {
@@ -259,7 +290,8 @@ describe('engine calculators', () => {
         },
       } as any;
       const res = calcAvgRestSec(ctxByDay);
-      expect(res.totals.avgRestSec).toBe(0);
+      // Second interval ~55min should be discarded, leaving 4.5min (270s)
+      expect(res.totals.avgRestSec).toBe(270);
       expect(res.totals.timingCoveragePct).toBe(100);
     });
   });
