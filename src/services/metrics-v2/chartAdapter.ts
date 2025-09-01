@@ -17,6 +17,12 @@ const KEY_MAP: Record<string, string> = {
   density_kg_min: 'density_kg_per_min',
   avgRestSec: 'avg_rest_sec',
   setEfficiencyKgPerMin: 'set_efficiency_kg_per_min',
+  set_count: 'sets',
+  sets_count: 'sets',
+  total_sets: 'sets',
+  rep_count: 'reps',
+  reps_total: 'reps',
+  total_reps: 'reps',
 };
 
 // Mirror camelCase/snake_case keys so consumers can access either form

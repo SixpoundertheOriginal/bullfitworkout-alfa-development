@@ -104,7 +104,7 @@ describe('chartAdapter', () => {
     ]);
     expect(out.series.setEfficiencyKgPerMin).toBe(out.series.set_efficiency_kg_per_min);
     const values = out.series.set_efficiency_kg_per_min.map(p => p.value);
-    expect(values.some(v => Number.isNaN(v as any) || v === Infinity || v === -Infinity)).toBe(false);
+    expect(values.some(v => Number.isNaN(v as number) || v === Infinity || v === -Infinity)).toBe(false);
   });
 
   it('skips rest and efficiency when includeDerived is false', () => {
@@ -120,5 +120,19 @@ describe('chartAdapter', () => {
     expect(out.series).not.toHaveProperty('set_efficiency_kg_per_min');
     expect(out.availableMeasures).not.toContain('avg_rest_sec');
     expect(out.availableMeasures).not.toContain('set_efficiency_kg_per_min');
+  });
+
+  it('maps sets_count and reps_total to canonical keys', () => {
+    const payload = {
+      series: {
+        sets_count: [{ timestamp: '2024-05-01T06:00:00Z', value: 3 }],
+        reps_total: [{ timestamp: '2024-05-01T06:00:00Z', value: 30 }],
+      },
+    };
+    const out = toChartSeries(payload);
+    expect(out.series.sets).toEqual([{ date: '2024-05-01', value: 3 }]);
+    expect(out.series.reps).toEqual([{ date: '2024-05-01', value: 30 }]);
+    expect(out.availableMeasures).toContain('sets');
+    expect(out.availableMeasures).toContain('reps');
   });
 });
