@@ -4,20 +4,21 @@ import { TrainingConfig } from '@/hooks/useTrainingSetupPersistence';
 import { Exercise } from '@/types/exercise';
 import { toast } from "@/hooks/use-toast";
 import React from 'react';
-import { 
-  ExerciseSet, 
-  WorkoutExerciseConfig, 
-  WorkoutExercises, 
-  WorkoutStatus, 
-  WorkoutError, 
-  RestTimerState 
+import {
+  ExerciseSet,
+  WorkoutExerciseConfig,
+  WorkoutExercises,
+  WorkoutStatus,
+  WorkoutError,
+  RestTimerState
 } from '@/types/workout-enhanced';
 import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
-import { 
-  validateWorkoutState, 
-  recoverFromCorruption, 
-  CURRENT_STATE_VERSION, 
-  StateCorruptionIssue 
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import {
+  validateWorkoutState,
+  recoverFromCorruption,
+  CURRENT_STATE_VERSION,
+  StateCorruptionIssue
 } from '@/utils/workoutStateDebug';
 
 // Export types for other components to use
@@ -97,6 +98,7 @@ export interface WorkoutState {
   clearAllRestTimers: () => void;
   setRestTimerMaxSeconds: (maxSeconds: number) => void;
   setCurrentRest: (rest: { startedAt: number; targetSetKey: string } | null) => void;
+  startSet: (exerciseName: string, setIndex: number) => void;
   setSetStartTime: (exerciseId: string, setNumber: number) => void;
   setSetEndTime: (exerciseId: string, setNumber: number) => void;
   updateRestTimerPreferences: (prefs: Partial<RestTimerPreferences>) => void;
@@ -313,52 +315,100 @@ setRestTimerMaxSeconds: (maxSeconds) => set({
 
 setCurrentRest: (currentRest) => set({ currentRest, lastTabActivity: Date.now() }),
 
-setSetStartTime: (exerciseId, setNumber) => set((state) => {
-  const key = `${exerciseId}_${setNumber}`;
-  const timings = new Map(state.setTimings);
-  const current = timings.get(key) || {};
-  // Only record the first interaction time
-  if (!current.startTime) {
-    timings.set(key, { ...current, startTime: Date.now() });
-  }
-  if (state.currentRest && state.currentRest.targetSetKey === key) {
-    const restBefore = Date.now() - state.currentRest.startedAt;
-    const exercisesCopy = { ...state.exercises } as WorkoutExercises;
-    const exerciseData = exercisesCopy[exerciseId];
-    if (exerciseData) {
-      if (Array.isArray(exerciseData)) {
-        exercisesCopy[exerciseId] = exerciseData.map((set, i) =>
-          i + 1 === setNumber
-            ? { ...set, metadata: { ...set.metadata, restBefore } }
-            : set
-        );
-      } else {
-        exercisesCopy[exerciseId] = {
-          ...exerciseData,
-          sets: exerciseData.sets.map((set, i) =>
-            i + 1 === setNumber
-              ? { ...set, metadata: { ...set.metadata, restBefore } }
-              : set
-          ),
-        };
-      }
-    }
-    if (isRestAuditEnabled()) {
-      restAuditLog('freeze_prev_set_rest', {
-        targetSetKey: key,
-        restSeconds: Math.floor(restBefore / 1000),
-        note: 'Computed on next set start'
-      });
-    }
-    return {
-      setTimings: timings,
-      exercises: exercisesCopy,
-      currentRest: null,
-      lastTabActivity: Date.now(),
+startSet: (exerciseName, setIndex) => set((state) => {
+  if (!FEATURE_FLAGS.REST_FREEZE_ON_START) return {};
+  const exerciseData = state.exercises[exerciseName];
+  if (!exerciseData) return {};
+  const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
+  const prevIndex = setIndex - 1;
+  if (prevIndex < 0 || prevIndex >= sets.length) return {};
+  const prevSet = sets[prevIndex];
+  if (!prevSet?.restStartedAt || prevSet.restFrozen) return {};
+  const now = Date.now();
+  const restMs = Math.max(0, now - prevSet.restStartedAt);
+  const updatedPrevSet = { ...prevSet, restMs, restFrozen: true };
+  let updatedExercises: WorkoutExercises;
+  if (Array.isArray(exerciseData)) {
+    updatedExercises = {
+      ...state.exercises,
+      [exerciseName]: sets.map((s, i) => (i === prevIndex ? updatedPrevSet : s)),
+    };
+  } else {
+    updatedExercises = {
+      ...state.exercises,
+      [exerciseName]: {
+        ...exerciseData,
+        sets: sets.map((s, i) => (i === prevIndex ? updatedPrevSet : s)),
+      },
     };
   }
-  return { setTimings: timings, lastTabActivity: Date.now() };
+  if (isRestAuditEnabled()) {
+    restAuditLog(`[Rest] freeze prev set #${prevIndex + 1}: ${restMs}ms (frozen=true)`);
+  }
+  return { exercises: updatedExercises, lastTabActivity: Date.now() };
 }),
+
+setSetStartTime: (exerciseId, setNumber) => {
+  if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
+    get().startSet(exerciseId, setNumber - 1);
+    set((state) => {
+      const key = `${exerciseId}_${setNumber}`;
+      const timings = new Map(state.setTimings);
+      const current = timings.get(key) || {};
+      if (!current.startTime) {
+        timings.set(key, { ...current, startTime: Date.now() });
+      }
+      return { setTimings: timings, currentRest: null, lastTabActivity: Date.now() };
+    });
+    return;
+  }
+  set((state) => {
+    const key = `${exerciseId}_${setNumber}`;
+    const timings = new Map(state.setTimings);
+    const current = timings.get(key) || {};
+    // Only record the first interaction time
+    if (!current.startTime) {
+      timings.set(key, { ...current, startTime: Date.now() });
+    }
+    if (state.currentRest && state.currentRest.targetSetKey === key) {
+      const restBefore = Date.now() - state.currentRest.startedAt;
+      const exercisesCopy = { ...state.exercises } as WorkoutExercises;
+      const exerciseData = exercisesCopy[exerciseId];
+      if (exerciseData) {
+        if (Array.isArray(exerciseData)) {
+          exercisesCopy[exerciseId] = exerciseData.map((set, i) =>
+            i + 1 === setNumber
+              ? { ...set, metadata: { ...set.metadata, restBefore } }
+              : set,
+          );
+        } else {
+          exercisesCopy[exerciseId] = {
+            ...exerciseData,
+            sets: exerciseData.sets.map((set, i) =>
+              i + 1 === setNumber
+                ? { ...set, metadata: { ...set.metadata, restBefore } }
+                : set,
+            ),
+          };
+        }
+      }
+      if (isRestAuditEnabled()) {
+        restAuditLog('freeze_prev_set_rest', {
+          targetSetKey: key,
+          restSeconds: Math.floor(restBefore / 1000),
+          note: 'Computed on next set start',
+        });
+      }
+      return {
+        setTimings: timings,
+        exercises: exercisesCopy,
+        currentRest: null,
+        lastTabActivity: Date.now(),
+      };
+    }
+    return { setTimings: timings, lastTabActivity: Date.now() };
+  });
+},
 
 setSetEndTime: (exerciseId, setNumber) => set((state) => {
   const key = `${exerciseId}_${setNumber}`;
@@ -662,24 +712,46 @@ resetSession: () => {
       handleCompleteSet: (exerciseName, setIndex, data) => set((state) => {
         const newExercises = { ...state.exercises };
         const exerciseData = newExercises[exerciseName];
-        
+        const ts = Date.now();
+        let startedRest = false;
+
         if (Array.isArray(exerciseData)) {
           // Legacy format
-          newExercises[exerciseName] = exerciseData.map((set, i) => 
-            i === setIndex ? { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore } : set
-          );
+          newExercises[exerciseName] = exerciseData.map((set, i) => {
+            if (i === setIndex) {
+              const updated = { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore };
+              if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
+                updated.restStartedAt = ts;
+                startedRest = true;
+              }
+              return updated;
+            }
+            return set;
+          });
         } else if (exerciseData) {
           // New format
           const config = exerciseData as WorkoutExerciseConfig;
           newExercises[exerciseName] = {
             ...config,
-            sets: config.sets.map((set, i) =>
-              i === setIndex ? { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore } : set
-            )
+            sets: config.sets.map((set, i) => {
+              if (i === setIndex) {
+                const updated = { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore };
+                if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
+                  updated.restStartedAt = ts;
+                  startedRest = true;
+                }
+                return updated;
+              }
+              return set;
+            })
           };
         }
-        
-        return { 
+
+        if (startedRest && isRestAuditEnabled()) {
+          restAuditLog(`[Rest] start for set #${setIndex + 1} at ${ts}`);
+        }
+
+        return {
           exercises: newExercises,
           lastTabActivity: Date.now(),
         };
