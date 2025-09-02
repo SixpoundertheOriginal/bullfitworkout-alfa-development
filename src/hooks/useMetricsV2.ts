@@ -5,7 +5,8 @@ import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 import { TONNAGE_ID, AVG_REST_ID, EFF_ID } from '@/pages/analytics/metricIds';
-import { normalizeSeriesKeys } from '@/services/metrics-v2/chartAdapter';
+import { normalizeSeriesKeys, normalizeTotals } from '@/services/metrics-v2/chartAdapter';
+import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 
 // Factory for stable params
 function buildMetricsParams(opts: {
@@ -29,6 +30,8 @@ function buildMetricsParams(opts: {
     bodyweightKg: opts.bodyweightKg ?? 75,
   });
 }
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 // V2 DTO type with required structure
 export type MetricsV2Data = {
@@ -105,29 +108,42 @@ export default function useMetricsV2(
         includeTimePeriodAverages,
         bodyweightKg,
       });
-      return metricsServiceV2
-        .getMetricsV2({
-          userId: userId!,
-          dateRange: { start: startISO!, end: endISO! },
-          includeBodyweightLoads: includeBodyweight,
-          includeTimePeriodAverages,
-          bodyweightKg,
-        })
-        .then((res: any) => {
-          const keyMap: Record<string, string> = {
-            tonnageKg: 'tonnage_kg',
-            durationMin: 'duration_min',
-            densityKgPerMin: 'density_kg_per_min',
-          };
-          if (res?.series) {
-            res.series = Object.fromEntries(
-              Object.entries(res.series).map(([k, v]) => [keyMap[k as keyof typeof keyMap] || k, v])
-            );
-          }
-          const points = res?.series?.[TONNAGE_ID]?.length || 0;
-          console.debug('[MetricsV2][debug] series points:', points);
-          return res as AnalyticsServiceData;
-        });
+        return metricsServiceV2
+          .getMetricsV2({
+            userId: userId!,
+            dateRange: { start: startISO!, end: endISO! },
+            includeBodyweightLoads: includeBodyweight,
+            includeTimePeriodAverages,
+            bodyweightKg,
+          })
+          .then((res: AnalyticsServiceData) => {
+            const keyMap: Record<string, string> = {
+              tonnageKg: 'tonnage_kg',
+              durationMin: 'duration_min',
+              densityKgPerMin: 'density_kg_per_min',
+            };
+            if (res?.series) {
+              res.series = Object.fromEntries(
+                Object.entries(res.series).map(([k, v]) => [keyMap[k as keyof typeof keyMap] || k, v])
+              );
+            }
+            const norm = normalizeTotals(res.totals ?? {});
+            const sets = norm.sets ?? 0;
+            const reps = norm.reps ?? 0;
+            const duration_min = round2(norm.duration_min ?? 0);
+            const tonnage_kg = round2(norm.tonnage_kg ?? 0);
+            let density_kg_per_min = norm.density_kg_per_min;
+            if (density_kg_per_min == null) {
+              density_kg_per_min = duration_min > 0 ? round2(tonnage_kg / duration_min) : 0;
+            } else {
+              density_kg_per_min = round2(density_kg_per_min);
+            }
+            res.totals = { sets, reps, duration_min, tonnage_kg, density_kg_per_min };
+            console.debug('[MetricsV2][debug] totals (canonical)', res.totals);
+            const points = res?.series?.[TONNAGE_ID]?.length || 0;
+            console.debug('[MetricsV2][debug] series points:', points);
+            return res as AnalyticsServiceData;
+          });
     },
     enabled: !!userId && !!startISO && !!endISO,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -209,16 +225,16 @@ export function useMetricsV2Analytics(
         );
 
         const series = {
-          sets: (normalized.sets || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          reps: (normalized.reps || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          durationMin: (normalized.duration_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          tonnageKg: (normalized.tonnage_kg || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
-          densityKgPerMin: (normalized.density_kg_per_min || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          sets: (normalized.sets || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          reps: (normalized.reps || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          durationMin: (normalized.duration_min || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          tonnageKg: (normalized.tonnage_kg || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
+          densityKgPerMin: (normalized.density_kg_per_min || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value })),
           avgRestSec: includeRest
-            ? (normalized[AVG_REST_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            ? (normalized[AVG_REST_ID] || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
             : undefined,
           setEfficiencyKgPerMin: derivedFlag
-            ? (normalized[EFF_ID] || []).map((p: any) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
+            ? (normalized[EFF_ID] || []).map((p: TimeSeriesPoint) => ({ timestamp: `${p.date}T00:00:00.000Z`, value: p.value }))
             : undefined,
         };
 
