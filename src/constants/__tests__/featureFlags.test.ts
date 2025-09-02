@@ -7,6 +7,7 @@ beforeEach(() => {
   localStorage.clear();
   delete process.env.VITE_KPI_ANALYTICS_ENABLED;
   delete process.env.VITE_ANALYTICS_DERIVED_KPIS_ENABLED;
+  delete process.env.VITE_REST_FREEZE_ON_START;
 });
 
 afterAll(async () => {
@@ -21,6 +22,7 @@ describe('featureFlags precedence', () => {
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);
     expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(false);
     expect(FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED).toBe(true);
+    expect(FEATURE_FLAGS.REST_FREEZE_ON_START).toBe(false);
   });
 
   it.skip('env overrides defaults', async () => {
