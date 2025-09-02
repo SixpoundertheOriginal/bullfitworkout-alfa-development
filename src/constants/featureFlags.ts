@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 
 export type FeatureFlags = {
   KPI_ANALYTICS_ENABLED: boolean;
+  KPI_DIAGNOSTICS_ENABLED: boolean;
   ANALYTICS_DERIVED_KPIS_ENABLED: boolean;
   ANALYTICS_V2_ENABLED: boolean;
   SETUP_CHOOSE_EXERCISES_ENABLED: boolean;
@@ -11,6 +12,7 @@ export type FeatureFlags = {
 
 const DEFAULTS: FeatureFlags = {
   KPI_ANALYTICS_ENABLED: true,
+  KPI_DIAGNOSTICS_ENABLED: false,
   ANALYTICS_DERIVED_KPIS_ENABLED: false,
   ANALYTICS_V2_ENABLED: false,
   SETUP_CHOOSE_EXERCISES_ENABLED: true,
@@ -30,7 +32,7 @@ function readLocal(name: keyof FeatureFlags): boolean | undefined {
 
 function readEnv(name: keyof FeatureFlags): boolean | undefined {
   const key = `VITE_${name}`;
-  const raw = (import.meta as any).env?.[key];
+  const raw = (import.meta as unknown as { env?: Record<string, unknown> }).env?.[key];
   return typeof raw === 'string' ? raw === 'true' : undefined;
 }
 
@@ -45,6 +47,7 @@ function resolveFlag(name: keyof FeatureFlags): boolean {
 
 export const FEATURE_FLAGS: FeatureFlags = {
   KPI_ANALYTICS_ENABLED: resolveFlag('KPI_ANALYTICS_ENABLED'),
+  KPI_DIAGNOSTICS_ENABLED: resolveFlag('KPI_DIAGNOSTICS_ENABLED'),
   ANALYTICS_DERIVED_KPIS_ENABLED: resolveFlag('ANALYTICS_DERIVED_KPIS_ENABLED'),
   ANALYTICS_V2_ENABLED: resolveFlag('ANALYTICS_V2_ENABLED'),
   SETUP_CHOOSE_EXERCISES_ENABLED: resolveFlag('SETUP_CHOOSE_EXERCISES_ENABLED'),
@@ -54,7 +57,7 @@ export const FEATURE_FLAGS: FeatureFlags = {
 
 export function setFlagOverride(name: keyof FeatureFlags, value: boolean) {
   overrides[name] = value;
-  (FEATURE_FLAGS as any)[name] = value;
+  (FEATURE_FLAGS as Record<string, boolean>)[name] = value;
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(lsKey(name), String(value));
   }
