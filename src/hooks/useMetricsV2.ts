@@ -5,7 +5,8 @@ import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 import { TONNAGE_ID, AVG_REST_ID, EFF_ID } from '@/pages/analytics/metricIds';
-import { normalizeSeriesKeys, normalizeTotals } from '@/services/metrics-v2/chartAdapter';
+import { normalizeSeriesKeys } from '@/services/metrics-v2/chartAdapter';
+import { toCanonicalTotals } from './useMetricsV2.helpers';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 
 // Factory for stable params
@@ -30,8 +31,6 @@ function buildMetricsParams(opts: {
     bodyweightKg: opts.bodyweightKg ?? 75,
   });
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
 
 // V2 DTO type with required structure
 export type MetricsV2Data = {
@@ -127,19 +126,10 @@ export default function useMetricsV2(
                 Object.entries(res.series).map(([k, v]) => [keyMap[k as keyof typeof keyMap] || k, v])
               );
             }
-            const norm = normalizeTotals(res.totals ?? {});
-            const sets = norm.sets ?? 0;
-            const reps = norm.reps ?? 0;
-            const duration_min = round2(norm.duration_min ?? 0);
-            const tonnage_kg = round2(norm.tonnage_kg ?? 0);
-            let density_kg_per_min = norm.density_kg_per_min;
-            if (density_kg_per_min == null) {
-              density_kg_per_min = duration_min > 0 ? round2(tonnage_kg / duration_min) : 0;
-            } else {
-              density_kg_per_min = round2(density_kg_per_min);
+            res.totals = toCanonicalTotals(res.totals);
+            if (FEATURE_FLAGS?.KPI_DIAGNOSTICS_ENABLED) {
+              console.debug('[MetricsV2][debug] totals (canonical)', res.totals);
             }
-            res.totals = { sets, reps, duration_min, tonnage_kg, density_kg_per_min };
-            console.debug('[MetricsV2][debug] totals (canonical)', res.totals);
             const points = res?.series?.[TONNAGE_ID]?.length || 0;
             console.debug('[MetricsV2][debug] series points:', points);
             return res as AnalyticsServiceData;

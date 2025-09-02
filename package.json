@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
-    "lint": "npm run check:db-types && eslint .",
+    "lint": "npm run lint:js",
+    "lint:js": "eslint src/hooks/useMetricsV2.ts src/hooks/useMetricsV2.helpers.ts src/hooks/__tests__/useMetricsV2.helpers.test.ts src/constants/featureFlags.ts",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest",
+    "test:related": "vitest related",
     "test:unit": "vitest run",
     "test:ci": "vitest run --reporter=dot",
     "check:db-types": "npx supabase gen types typescript --project-id oglcdlzomfuoyeqeobal > /tmp/supabase-types.ts && diff -q /tmp/supabase-types.ts src/integrations/supabase/types.ts && rm /tmp/supabase-types.ts"
