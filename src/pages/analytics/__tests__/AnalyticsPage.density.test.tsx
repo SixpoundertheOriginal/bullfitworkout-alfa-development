@@ -10,12 +10,23 @@ vi.mock('recharts', async () => await import('../../../../tests/mocks/recharts')
 vi.mock('@/constants/featureFlags', () => ({
   useFeatureFlags: () => ({
     KPI_ANALYTICS_ENABLED: true,
+    KPI_DIAGNOSTICS_ENABLED: false,
     ANALYTICS_DERIVED_KPIS_ENABLED: false,
     ANALYTICS_V2_ENABLED: false,
     SETUP_CHOOSE_EXERCISES_ENABLED: false,
     SET_COMPLETE_NOTIFICATIONS_ENABLED: false,
+    REST_FREEZE_ON_START: false,
   }),
   setFlagOverride: vi.fn(),
+  FEATURE_FLAGS: {
+    KPI_ANALYTICS_ENABLED: true,
+    KPI_DIAGNOSTICS_ENABLED: false,
+    ANALYTICS_DERIVED_KPIS_ENABLED: false,
+    ANALYTICS_V2_ENABLED: false,
+    SETUP_CHOOSE_EXERCISES_ENABLED: false,
+    SET_COMPLETE_NOTIFICATIONS_ENABLED: false,
+    REST_FREEZE_ON_START: false,
+  },
 }));
 
 describe('AnalyticsPage density selector', () => {
