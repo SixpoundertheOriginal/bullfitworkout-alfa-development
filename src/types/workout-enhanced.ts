@@ -11,6 +11,10 @@ export interface ExerciseSet {
   weight: number;
   reps: number;
   restTime: number;
+  // Optional rest timing fields for enhanced tracking
+  restStartedAt?: number;
+  restMs?: number;
+  restFrozen?: boolean;
   completed: boolean;
   isEditing: boolean;
   isWarmup?: boolean;
