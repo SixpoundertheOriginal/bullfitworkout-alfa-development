@@ -35,18 +35,32 @@ const KEY_MAP: Record<string, string> = {
   total_reps: 'reps',
 };
 
+export function normalizeTotals(
+  totals: Record<string, number | null | undefined>
+): Record<string, number | null> {
+  const out: Record<string, number | null> = {};
+  for (const [k, v] of Object.entries(totals || {})) {
+    const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
+    if (CANONICAL_KEYS.has(canonical)) {
+      out[canonical] = v as number | null;
+    }
+  }
+  return out;
+}
+
 // Mirror camelCase/snake_case keys so consumers can access either form
 export function normalizeSeriesKeys(series: SeriesMap): SeriesMap;
 export function normalizeSeriesKeys<T>(series: Record<string, T>): Record<string, T>;
 export function normalizeSeriesKeys(series: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...series };
   for (const key of Object.keys(series)) {
+    const val = series[key as keyof typeof series];
     if (key.includes('_')) {
       const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-      if (!(camel in out)) out[camel] = (series as any)[key];
+      if (!(camel in out)) out[camel] = val;
     } else {
       const snake = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-      if (!(snake in out)) out[snake] = (series as any)[key];
+      if (!(snake in out)) out[snake] = val;
     }
   }
   return out;
