@@ -1,5 +1,6 @@
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { useWorkoutStore } from '@/store/workoutStore';
+import { setFlagOverride } from '@/constants/featureFlags';
 
 describe('Store rest freezing flow (failing first)', () => {
   beforeEach(() => {
@@ -45,6 +46,68 @@ describe('Store rest freezing flow (failing first)', () => {
     const sets = Array.isArray(ex) ? ex : ex.sets;
     const finalRest = (sets[2] as any)?.metadata?.restBefore; // where we would expect it to be stored
     expect(Math.round((finalRest || 0) / 1000)).toBe(42);
+  });
+});
+
+describe('REST_FREEZE_ON_START flag', () => {
+  beforeEach(() => {
+    const store = useWorkoutStore.getState();
+    store.resetSession();
+    store.addEnhancedExercise('Bench Press', [
+      { weight: 100, reps: 5, restTime: 60, completed: false, isEditing: false, isWarmup: false },
+      { weight: 100, reps: 5, restTime: 60, completed: false, isEditing: false, isWarmup: false },
+    ]);
+    vi.setSystemTime(1_000);
+    setFlagOverride('REST_FREEZE_ON_START', false);
+  });
+
+  test('freezes previous set rest on startSet', () => {
+    setFlagOverride('REST_FREEZE_ON_START', true);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    vi.setSystemTime(76_000);
+    store.startSet('Bench Press', 1);
+    const set0 = (useWorkoutStore.getState().exercises['Bench Press'] as any).sets[0] as any;
+    expect(set0.restMs).toBe(75_000);
+    expect(set0.restFrozen).toBe(true);
+  });
+
+  test('does not mutate frozen rest on later completeSet', () => {
+    setFlagOverride('REST_FREEZE_ON_START', true);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    vi.setSystemTime(51_000);
+    store.startSet('Bench Press', 1);
+    vi.setSystemTime(120_000);
+    store.handleCompleteSet('Bench Press', 1);
+    const set0 = (useWorkoutStore.getState().exercises['Bench Press'] as any).sets[0] as any;
+    expect(set0.restMs).toBe(50_000);
+    expect(set0.restFrozen).toBe(true);
+  });
+
+  test('startSet is idempotent', () => {
+    setFlagOverride('REST_FREEZE_ON_START', true);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    vi.setSystemTime(51_000);
+    store.startSet('Bench Press', 1);
+    vi.setSystemTime(71_000);
+    store.startSet('Bench Press', 1);
+    const set0 = (useWorkoutStore.getState().exercises['Bench Press'] as any).sets[0] as any;
+    expect(set0.restMs).toBe(50_000);
+    expect(set0.restFrozen).toBe(true);
+  });
+
+  test('flag OFF preserves legacy behavior', () => {
+    setFlagOverride('REST_FREEZE_ON_START', false);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    vi.setSystemTime(61_000);
+    store.startSet('Bench Press', 1);
+    const set0 = (useWorkoutStore.getState().exercises['Bench Press'] as any).sets[0] as any;
+    expect(set0.restMs).toBeUndefined();
+    expect(set0.restFrozen).toBeUndefined();
+    expect(set0.restStartedAt).toBeUndefined();
   });
 });
 
