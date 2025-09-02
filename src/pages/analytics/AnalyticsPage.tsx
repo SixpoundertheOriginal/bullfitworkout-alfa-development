@@ -2,12 +2,9 @@ import React from 'react';
 import type { PerWorkoutMetrics } from '@/services/metrics-v2/dto';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 import { formatKgPerMin, formatSeconds } from './formatters';
-import { setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
+import { FEATURE_FLAGS, setFlagOverride, useFeatureFlags } from '@/constants/featureFlags';
 import {
   TONNAGE_ID,
-  SETS_ID,
-  REPS_ID,
-  DURATION_ID,
   DENSITY_ID,
   AVG_REST_ID,
   EFF_ID,
@@ -112,10 +109,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   };
 
   // V2 Analytics Hook
-  const { data: v2Data, isLoading: v2Loading, error: v2Error } = useMetricsV2Analytics(
-    userId,
-    v2Enabled ? rangeIso : undefined
-  );
+  const v2 = useMetricsV2Analytics(userId, v2Enabled ? rangeIso : undefined);
 
   // Legacy Hook (fallback)
   const { data: fetched, isLoading, error } = useMetricsV2(userId, 
@@ -129,29 +123,28 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   );
 
   const serviceData = data ?? fetched;
-  const totals = serviceData?.totals ?? ({} as Record<string, number>);
 
   const timingQuality = React.useMemo(
     () => {
-      if (v2Enabled && v2Data?.timingMetadata) return v2Data.timingMetadata.quality;
+      if (v2Enabled && v2.data?.timingMetadata) return v2.data.timingMetadata.quality;
       if (!v2Enabled && serviceData?.timingMetadata) return serviceData.timingMetadata.quality;
       return 'low';
     },
-    [v2Enabled, v2Data?.timingMetadata, serviceData?.timingMetadata]
+    [v2Enabled, v2.data?.timingMetadata, serviceData?.timingMetadata]
   );
 
   // Initialize currentMeasure state early
   const [currentMeasure, setCurrentMeasure] = React.useState<MetricId>(TONNAGE_ID);
 
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
-    if (v2Enabled && v2Data) {
-      return toChartSeries(v2Data, derivedEnabled && timingQuality === 'high');
+    if (v2Enabled && v2.data) {
+      return toChartSeries(v2.data, derivedEnabled && timingQuality === 'high');
     }
     const raw = { ...(serviceData?.series ?? {}) };
     if (timingQuality !== 'high') delete raw[AVG_REST_ID];
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
-  }, [v2Enabled, v2Data, serviceData, derivedEnabled, timingQuality]);
+  }, [v2Enabled, v2.data, serviceData, derivedEnabled, timingQuality]);
 
   React.useEffect(() => {
     console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
@@ -201,41 +194,27 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   );
 
   const baseTotals = React.useMemo(
-    () => {
-      if (v2Enabled && v2Data) {
-        return {
-          sets: v2Data.kpis.sets,
-          reps: v2Data.kpis.reps,
-          duration: v2Data.kpis.durationMin,
-          tonnage: v2Data.kpis.tonnageKg,
-        };
-      }
-      return {
-        sets: totals[SETS_ID] ?? 0,
-        reps: totals[REPS_ID] ?? 0,
-        duration: totals[DURATION_ID] ?? 0,
-        tonnage: totals[TONNAGE_ID] ?? 0,
-      };
-    },
-    [v2Enabled, v2Data, totals]
+    () => ({
+      sets: v2.data?.kpis.sets ?? 0,
+      reps: v2.data?.kpis.reps ?? 0,
+      duration: v2.data?.kpis.durationMin ?? 0,
+      tonnage: v2.data?.kpis.tonnageKg ?? 0,
+    }),
+    [v2.data?.kpis]
   );
 
   const kpiTotals = React.useMemo(
-    () => {
-      if (v2Enabled && v2Data) {
-        return {
-          density: v2Data.kpis.densityKgPerMin,
-          avgRestSec: derivedEnabled && timingQuality === 'high' ? v2Data.kpis.avgRestSec ?? 0 : 0,
-          efficiencyKgPerMin: derivedEnabled ? v2Data.kpis.setEfficiencyKgPerMin ?? 0 : 0,
-        };
-      }
-      return {
-        density: totals[DENSITY_ID] ?? 0,
-        avgRestSec: derivedEnabled && timingQuality === 'high' ? totals[AVG_REST_ID] ?? 0 : 0,
-        efficiencyKgPerMin: derivedEnabled ? totals[EFF_ID] ?? 0 : 0,
-      };
-    },
-    [v2Enabled, v2Data, totals, derivedEnabled, timingQuality]
+    () => ({
+      density: v2.data?.kpis.densityKgPerMin ?? 0,
+      avgRestSec:
+        derivedEnabled && timingQuality === 'high'
+          ? v2.data?.kpis.avgRestSec ?? 0
+          : 0,
+      efficiencyKgPerMin: derivedEnabled
+        ? v2.data?.kpis.setEfficiencyKgPerMin ?? 0
+        : 0,
+    }),
+    [v2.data?.kpis, derivedEnabled, timingQuality]
   );
 
   React.useEffect(() => {
@@ -247,10 +226,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }, [availableMeasures, currentMeasure, seriesData]);
 
   if (!data) {
-    if (v2Enabled && v2Loading) {
+    if (v2Enabled && v2.isLoading) {
       return <div data-testid="loading">Loading V2 analytics...</div>;
     }
-    if (v2Enabled && v2Error) {
+    if (v2Enabled && v2.error) {
       return <div data-testid="error">Failed to load V2 analytics</div>;
     }
     if (!v2Enabled && isLoading) {
@@ -259,6 +238,10 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     if (!v2Enabled && error) {
       return <div data-testid="error">Failed to load analytics</div>;
     }
+  }
+
+  if (FEATURE_FLAGS.KPI_DIAGNOSTICS_ENABLED) {
+    console.debug('[cards] kpis', v2.data?.kpis, 'totals', v2.data?.totals);
   }
 
   return (
@@ -493,7 +476,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
           <CollapsibleContent>
             <div className="mt-2 p-4 bg-muted/20 backdrop-blur-sm rounded-lg border border-border/20">
               <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono overflow-x-auto">
-                {v2Data ? JSON.stringify(v2Data, null, 2) : 'No V2 data loaded'}
+                {v2.data ? JSON.stringify(v2.data, null, 2) : 'No V2 data loaded'}
               </pre>
             </div>
           </CollapsibleContent>
