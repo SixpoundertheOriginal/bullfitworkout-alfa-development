@@ -4,6 +4,10 @@ export interface ExerciseSet {
   reps: number;
   duration?: number;
   restTime?: number; // Properly defined restTime property
+  // Optional rest timing fields for enhanced tracking
+  restStartedAt?: number;
+  restMs?: number;
+  restFrozen?: boolean;
   completed: boolean;
   isEditing?: boolean;
   set_number: number;
