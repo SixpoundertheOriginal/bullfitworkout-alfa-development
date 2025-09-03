@@ -2,16 +2,17 @@ export type KpiSpec = {
   key: string;
   label: string;
   section: 'core' | 'derived';
-  formatter: (n: number) => string;
+  formatter: (n?: number) => string;
   flag?: 'ANALYTICS_DERIVED_KPIS_ENABLED';
 };
 
-const formatInt = (n: number): string => {
+const formatInt = (n?: number): string => {
+  if (n === undefined) return 'N/A';
   return n >= 1000 ? `${Math.round(n / 1000)}k` : Math.round(n).toString();
 };
 
-const formatFixed0 = (n: number): string => n.toFixed(0);
-const formatFixed2 = (n: number): string => n.toFixed(2);
+const formatFixed0 = (n?: number): string => (n === undefined ? 'N/A' : n.toFixed(0));
+const formatFixed2 = (n?: number): string => (n === undefined ? 'N/A' : n.toFixed(2));
 
 export const coreKpiSpecs: KpiSpec[] = [
   {
