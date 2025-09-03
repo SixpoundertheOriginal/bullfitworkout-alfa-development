@@ -12,6 +12,8 @@ import {
 } from './metricIds';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import useMetricsV2, { useMetricsV2Analytics } from '@/hooks/useMetricsV2';
+import { useAnalyticsKpiTotals } from '@/hooks/useAnalyticsKpiTotals';
+import { coreKpiSpecs, derivedKpiSpecs } from './kpiSpecs';
 import { getSets, getReps, getDuration, getTonnage, getDensity } from './kpiSelectors';
 import { useAuth } from '@/context/AuthContext';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -194,31 +196,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     [currentMeasure]
   );
 
-  const baseTotals = React.useMemo(
-    () => ({
-      sets: getSets(v2.data, serviceData?.totals),
-      reps: getReps(v2.data, serviceData?.totals),
-      duration: getDuration(v2.data, serviceData?.totals),
-      tonnage: getTonnage(v2.data, serviceData?.totals),
-    }),
-    [v2.data, serviceData?.totals]
-  );
-
-  const kpiTotals = React.useMemo(
-    () => ({
-      density: getDensity(v2.data, serviceData?.totals),
-      avgRestSec:
-        derivedEnabled && timingQuality === 'high'
-          ? v2.data?.kpis.avgRestSec ?? v2.data?.totals?.[AVG_REST_ID] ?? serviceData?.totals?.[AVG_REST_ID] ?? 0
-          : 0,
-      efficiencyKgPerMin: derivedEnabled
-        ? v2.data?.kpis.setEfficiencyKgPerMin ??
-          v2.data?.totals?.[EFF_ID] ??
-          serviceData?.totals?.[EFF_ID] ?? 0
-        : 0,
-    }),
-    [v2.data, serviceData?.totals, derivedEnabled, timingQuality]
-  );
+  const kpiTotals = useAnalyticsKpiTotals(v2.data, serviceData);
 
   React.useEffect(() => {
     console.debug('[chart.props.density]', {
@@ -328,61 +306,40 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
 
       {/* Base KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div data-testid="kpi-sets" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Sets</div>
-          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.sets}</div>
-        </div>
-        <div data-testid="kpi-reps" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Reps</div>
-          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.reps}</div>
-        </div>
-        <div data-testid="kpi-duration" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Duration (min)</div>
-          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{baseTotals.duration}</div>
-        </div>
-        <div data-testid="kpi-tonnage" className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Tonnage (kg)</div>
-          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{Math.round(baseTotals.tonnage)}</div>
-        </div>
+        {coreKpiSpecs.map((spec) => {
+          const value = kpiTotals.baseTotals[spec.key as keyof typeof kpiTotals.baseTotals];
+          return (
+            <div key={spec.key} data-testid={`kpi-${spec.key}`} className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{spec.label}</div>
+              <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
+                {typeof value === 'number' ? spec.formatter(value) : '0'}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Derived KPIs */}
-      {(derivedEnabled && !v2Enabled) && (
+      {derivedEnabled && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div data-testid="kpi-density" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
-              {formatKgPerMin(kpiTotals.density)}
-            </div>
-          </div>
-          {timingQuality === 'high' ? (
-            <div data-testid="kpi-rest" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 hover:border-accent/40 transition-all group">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
-              <div className="text-2xl font-bold text-foreground group-hover:text-accent-foreground transition-colors">{formatSeconds(kpiTotals.avgRestSec)}</div>
-              <div data-testid="rest-confidence" className="text-xs text-muted-foreground mt-1">High timing confidence</div>
-            </div>
-          ) : (
-            <div data-testid="kpi-rest-fallback" className="bg-gradient-to-br from-accent/10 to-accent/5 backdrop-blur-sm p-4 rounded-lg border border-accent/20 opacity-70">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Avg Rest (sec)</div>
-              <div className="text-sm text-muted-foreground">Low timing quality</div>
-            </div>
-          )}
-          <div data-testid="kpi-efficiency" className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm p-4 rounded-lg border border-primary/20 hover:border-primary/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Set Efficiency (kg/min)</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{formatKgPerMin(kpiTotals.efficiencyKgPerMin)}</div>
-          </div>
-        </div>
-      )}
-
-      {/* V2 Density KPI (standalone when V2 enabled) */}
-      {v2Enabled && (
-        <div className="grid grid-cols-1 gap-4">
-          <div data-testid="kpi-density-v2" className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 hover:border-secondary/40 transition-all group">
-            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Density (kg/min) - V2</div>
-            <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
-              {formatKgPerMin(kpiTotals.density)}
-            </div>
-          </div>
+          {derivedKpiSpecs
+            .filter(spec => !spec.flag || ANALYTICS_DERIVED_KPIS_ENABLED)
+            .map((spec) => {
+              const value = kpiTotals.derivedTotals[spec.key as keyof typeof kpiTotals.derivedTotals];
+              const isAvailable = typeof value === 'number';
+              
+              return (
+                <div key={spec.key} data-testid={`kpi-${spec.key}`} className={`
+                  bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 
+                  ${isAvailable ? 'hover:border-secondary/40 transition-all group' : 'opacity-70'}
+                `}>
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{spec.label}</div>
+                  <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
+                    {isAvailable ? spec.formatter(value) : 'N/A'}
+                  </div>
+                </div>
+              );
+            })}
         </div>
       )}
 

@@ -32,6 +32,8 @@ export type Totals = {
   reps_total: number;
   workouts: number;
   duration_min: number;
+  rest_min?: number; // sum of per-workout rest minutes in the window, rounded to 2 decimals
+  active_min?: number; // sum of per-workout active minutes in the window, rounded to 2 decimals
   density_kg_per_min?: number;
   avgRestSec?: number;
   setEfficiencyKgPerMin?: number;

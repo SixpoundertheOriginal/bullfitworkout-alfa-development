@@ -49,21 +49,24 @@ vi.mock('@/components/training/WorkoutSessionLayout', () => ({ WorkoutSessionLay
 beforeEach(() => {
   navigateMock.mockReset();
   openSpy.mockReset();
-  (useLocation as unknown as vi.Mock).mockReturnValue({ state: {}, search: '', pathname: '/training-session' });
-  useWorkoutStore.setState({ exercises: {}, trainingConfig: {} });
+  (useLocation as any).mockReturnValue({ state: {}, search: '', pathname: '/training-session' });
+  useWorkoutStore.setState({ 
+    exercises: {}, 
+    trainingConfig: { trainingType: 'strength', tags: [], duration: 60 }
+  });
   (FEATURE_FLAGS as any).DEBUG_EXERCISE_SELECTOR_OPEN = false;
 });
 
 describe('TrainingSession exercise sheet', () => {
   test('opens when manual intent present', () => {
-    (useLocation as unknown as vi.Mock).mockReturnValue({ state: { manual: true }, search: '', pathname: '/training-session' });
+    (useLocation as any).mockReturnValue({ state: { manual: true }, search: '', pathname: '/training-session' });
     render(<TrainingSessionPage />);
     expect(openSpy.mock.calls.some(([open]) => open)).toBe(true);
     expect(navigateMock).toHaveBeenCalledWith('/training-session', { replace: true });
   });
 
   test('opens when query param present', () => {
-    (useLocation as unknown as vi.Mock).mockReturnValue({ state: {}, search: '?open=exercises', pathname: '/training-session' });
+    (useLocation as any).mockReturnValue({ state: {}, search: '?open=exercises', pathname: '/training-session' });
     render(<TrainingSessionPage />);
     expect(openSpy.mock.calls.some(([open]) => open)).toBe(true);
     expect(navigateMock).toHaveBeenCalledWith('/training-session', { replace: true });
@@ -72,7 +75,7 @@ describe('TrainingSession exercise sheet', () => {
   test('logs when debug flag enabled', () => {
     (FEATURE_FLAGS as any).DEBUG_EXERCISE_SELECTOR_OPEN = true;
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    (useLocation as unknown as vi.Mock).mockReturnValue({ state: { manual: true }, search: '', pathname: '/training-session' });
+    (useLocation as any).mockReturnValue({ state: { manual: true }, search: '', pathname: '/training-session' });
     render(<TrainingSessionPage />);
     expect(logSpy.mock.calls.some(call => call[0] === '[exerciseSheet] open' && call[1]?.source === 'manual')).toBe(true);
     logSpy.mockRestore();
