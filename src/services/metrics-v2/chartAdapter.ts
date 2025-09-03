@@ -1,3 +1,4 @@
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import type { TimeSeriesPoint, SeriesMap } from './types';
 
 type RawPoint = {
@@ -43,6 +44,22 @@ export function normalizeTotals(
     const canonical = KEY_MAP[k] ?? k.replace(/([A-Z])/g, '_$1').toLowerCase();
     if (CANONICAL_KEYS.has(canonical)) {
       out[canonical] = v as number | null;
+    }
+  }
+  if (
+    (out.density_kg_per_min == null || out.density_kg_per_min === 0) &&
+    (out.tonnage_kg ?? 0) > 0 &&
+    (out.duration_min ?? 0) > 0
+  ) {
+    const density =
+      Math.round(((out.tonnage_kg ?? 0) / (out.duration_min ?? 0)) * 100) / 100;
+    out.density_kg_per_min = density;
+    if (FEATURE_FLAGS.KPI_DIAGNOSTICS_ENABLED) {
+      console.debug('[adapter] density fallback applied:', {
+        tonnage_kg: out.tonnage_kg,
+        duration_min: out.duration_min,
+        density,
+      });
     }
   }
   return out;
