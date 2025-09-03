@@ -98,6 +98,26 @@ describe('REST_FREEZE_ON_START flag', () => {
     expect(set0.restFrozen).toBe(true);
   });
 
+  test('fallback freeze when completing set without startSet', () => {
+    setFlagOverride('REST_FREEZE_ON_START', true);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    vi.setSystemTime(30_000);
+    store.handleCompleteSet('Bench Press', 1);
+    const sets = (useWorkoutStore.getState().exercises['Bench Press'] as any).sets as any[];
+    expect(sets[0].restMs).toBe(30_000);
+    expect(sets[0].restFrozen).toBe(true);
+    expect(sets[1].restStartedAt).toBe(30_000);
+  });
+
+  test('setSetStartTime wrapper passes correct index', () => {
+    setFlagOverride('REST_FREEZE_ON_START', true);
+    const state = useWorkoutStore.getState();
+    const spy = vi.spyOn(state, 'startSet');
+    state.setSetStartTime('Bench Press', 2);
+    expect(spy).toHaveBeenCalledWith('Bench Press', 2);
+  });
+
   test('flag OFF preserves legacy behavior', () => {
     setFlagOverride('REST_FREEZE_ON_START', false);
     const store = useWorkoutStore.getState();
