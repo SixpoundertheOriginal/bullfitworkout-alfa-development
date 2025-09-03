@@ -38,7 +38,7 @@ describe('SupabaseMetricsRepository Graceful Degradation', () => {
 
   it('probes timing columns availability correctly', async () => {
     // Test successful probe (timing columns exist)
-    mockClient.select.mockResolvedValueOnce({ error: null, data: [] });
+    mockClient.limit.mockResolvedValueOnce({ error: null, data: [] });
     
     const available = await (repository as any).probeTimingColumns();
     expect(available).toBe(true);
@@ -49,9 +49,9 @@ describe('SupabaseMetricsRepository Graceful Degradation', () => {
 
   it('handles missing timing columns gracefully', async () => {
     // Test probe failure (timing columns missing)
-    mockClient.select.mockResolvedValueOnce({ 
-      error: { message: 'column "timing_quality" does not exist', code: '42703' }, 
-      data: null 
+    mockClient.limit.mockResolvedValueOnce({
+      error: { message: 'column "timing_quality" does not exist', code: '42703' },
+      data: null
     });
     
     const available = await (repository as any).probeTimingColumns();
@@ -93,7 +93,7 @@ describe('SupabaseMetricsRepository Graceful Degradation', () => {
 
   it('returns consistent interface regardless of schema state', async () => {
     // Mock workouts ownership check
-    mockClient.eq.mockResolvedValue({ error: null, data: [{ id: 'w1' }] });
+    mockClient.eq.mockResolvedValueOnce({ error: null, data: [{ id: 'w1' }] });
     
     // Test with timing columns available
     (repository as any).timingColumnsAvailable = true;
