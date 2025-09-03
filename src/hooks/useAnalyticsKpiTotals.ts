@@ -6,9 +6,10 @@ import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+const has = (n?: number) => typeof n === 'number' && n > 0;
 
-function safeDiv(a: number, b: number): number {
-  return b <= 0 ? 0 : a / b;
+function safeDiv(a: number, b?: number): number {
+  return has(b) ? a / (b as number) : 0;
 }
 
 export type AnalyticsKpiTotals = {
@@ -25,12 +26,19 @@ export type AnalyticsKpiTotals = {
     avg_reps_per_set: number;
     avg_tonnage_per_set_kg: number;
     avg_tonnage_per_rep_kg: number;
-    avg_rest_sec: number;
+    avg_rest_sec: number | undefined;
     avg_duration_per_set_min: number;
     set_efficiency_kg_per_min: number;
   }>;
-  diagnostics?: Record<string, { source: string }>;
+  diagnostics?: Record<string, DiagnosticSource>;
 };
+
+type DiagnosticSource =
+  | 'v2'
+  | 'rest_min_per_set'
+  | 'active_min'
+  | 'density_fallback'
+  | 'none';
 
 export function useAnalyticsKpiTotals(
   v2Data?: any,
@@ -70,7 +78,7 @@ export function useAnalyticsKpiTotals(
 
     // Step 2: Compute derived KPIs (only if flag enabled)
     const derivedTotals: AnalyticsKpiTotals['derivedTotals'] = {};
-    const diagnostics: Record<string, { source: string }> = {};
+    const diagnostics: Record<string, DiagnosticSource> = {};
 
     if (ANALYTICS_DERIVED_KPIS_ENABLED) {
       // Derived calculations
@@ -79,33 +87,31 @@ export function useAnalyticsKpiTotals(
       derivedTotals.avg_tonnage_per_rep_kg = safeDiv(tonnage_kg, reps);
       derivedTotals.avg_duration_per_set_min = safeDiv(duration_min, sets);
 
-      // avg_rest_sec with fallback hierarchy
-      if (v2Data?.kpis?.avg_rest_sec != null) {
+      // avg_rest_sec
+      if (has(v2Data?.kpis?.avg_rest_sec)) {
         derivedTotals.avg_rest_sec = v2Data.kpis.avg_rest_sec;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = { source: 'v2' };
-      } else if (normalized.avg_rest_sec != null) {
-        derivedTotals.avg_rest_sec = normalized.avg_rest_sec;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = { source: 'v2' };
-      } else if (rest_min != null) {
-        derivedTotals.avg_rest_sec = rest_min * 60;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = { source: 'computed_fallback' };
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'v2';
+      } else if (has(rest_min) && sets > 0) {
+        derivedTotals.avg_rest_sec = (rest_min as number) * 60 / sets;
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'rest_min_per_set';
       } else {
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = { source: 'none' };
+        derivedTotals.avg_rest_sec = undefined;
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'none';
       }
 
-      // set_efficiency_kg_per_min with fallback hierarchy
-      if (v2Data?.kpis?.set_efficiency_kg_per_min != null) {
+      // set_efficiency_kg_per_min
+      if (has(v2Data?.kpis?.set_efficiency_kg_per_min)) {
         derivedTotals.set_efficiency_kg_per_min = v2Data.kpis.set_efficiency_kg_per_min;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = { source: 'v2' };
-      } else if (normalized.set_efficiency_kg_per_min != null) {
-        derivedTotals.set_efficiency_kg_per_min = normalized.set_efficiency_kg_per_min;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = { source: 'v2' };
-      } else if (active_min != null && active_min > 0) {
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = 'v2';
+      } else if (has(active_min)) {
         derivedTotals.set_efficiency_kg_per_min = safeDiv(tonnage_kg, active_min);
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = { source: 'computed_fallback' };
-      } else {
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = 'active_min';
+      } else if (has(density_kg_per_min)) {
         derivedTotals.set_efficiency_kg_per_min = density_kg_per_min;
-        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = { source: 'computed_fallback' };
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = 'density_fallback';
+      } else {
+        derivedTotals.set_efficiency_kg_per_min = 0;
+        if (KPI_DIAGNOSTICS_ENABLED) diagnostics.set_efficiency_kg_per_min = 'none';
       }
 
       // Round all derived values
@@ -119,13 +125,7 @@ export function useAnalyticsKpiTotals(
 
     // Step 3: Diagnostics logging
     if (KPI_DIAGNOSTICS_ENABLED) {
-      const allMetrics = { ...baseTotals, ...derivedTotals };
-      const debugTable = Object.entries(allMetrics).map(([key, value]) => ({
-        key,
-        value,
-        source: diagnostics[key]?.source || (key in baseTotals ? 'v2' : 'computed')
-      }));
-      console.table(debugTable);
+      console.debug('kpi_diagnostics', diagnostics);
     }
 
     return {

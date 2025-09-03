@@ -86,7 +86,7 @@ describe('useAnalyticsKpiTotals', () => {
         useAnalyticsKpiTotals(v2DataWithFallbacks, undefined)
       );
 
-      expect(result.current.derivedTotals.avg_rest_sec).toBe(600); // 10 * 60
+      expect(result.current.derivedTotals.avg_rest_sec).toBe(60); // (10 * 60) / 10
       expect(result.current.derivedTotals.set_efficiency_kg_per_min).toBe(50); // 1500 / 30
     });
   });
@@ -111,6 +111,7 @@ describe('useAnalyticsKpiTotals', () => {
       expect(result.current.derivedTotals.avg_tonnage_per_set_kg).toBe(0);
       expect(result.current.derivedTotals.avg_tonnage_per_rep_kg).toBe(0);
       expect(result.current.derivedTotals.avg_duration_per_set_min).toBe(0);
+      expect(result.current.derivedTotals.avg_rest_sec).toBeUndefined();
       
       // Check no NaN or Infinity values
       Object.values(result.current.derivedTotals).forEach(value => {
@@ -175,7 +176,38 @@ describe('useAnalyticsKpiTotals', () => {
       );
 
       expect(result.current.diagnostics).toBeDefined();
-      expect(result.current.diagnostics?.avg_rest_sec?.source).toBe('v2');
+      expect(result.current.diagnostics?.avg_rest_sec).toBe('v2');
+      expect(result.current.diagnostics?.set_efficiency_kg_per_min).toBe('density_fallback');
+    });
+  });
+
+  describe('diagnostics for fallback sources', () => {
+    beforeEach(() => {
+      mockUseFeatureFlags.mockReturnValue({
+        ANALYTICS_DERIVED_KPIS_ENABLED: true,
+        KPI_DIAGNOSTICS_ENABLED: true,
+      });
+    });
+
+    it('should record rest_min_per_set and active_min sources', () => {
+      const v2Data = {
+        totals: {
+          sets: 10,
+          reps: 100,
+          duration_min: 40,
+          tonnage_kg: 1500,
+          density_kg_per_min: 37.5,
+          rest_min: 10,
+          active_min: 30,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useAnalyticsKpiTotals(v2Data, undefined)
+      );
+
+      expect(result.current.diagnostics?.avg_rest_sec).toBe('rest_min_per_set');
+      expect(result.current.diagnostics?.set_efficiency_kg_per_min).toBe('active_min');
     });
   });
 });
