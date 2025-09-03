@@ -316,7 +316,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             <div key={spec.key} data-testid={`kpi-${spec.key}`} className="bg-gradient-to-br from-card to-card/70 backdrop-blur-sm p-4 rounded-lg border border-border/30 hover:border-primary/30 transition-all group">
               <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{spec.label}</div>
               <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">
-                {typeof value === 'number' ? spec.formatter(value) : '0'}
+                {spec.formatter(value)}
               </div>
             </div>
           );
@@ -331,15 +331,15 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             .map((spec) => {
               const value = kpiTotals.derivedTotals[spec.key as keyof typeof kpiTotals.derivedTotals];
               const isAvailable = typeof value === 'number';
-              
+
               return (
                 <div key={spec.key} data-testid={`kpi-${spec.key}`} className={`
-                  bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20 
+                  bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm p-4 rounded-lg border border-secondary/20
                   ${isAvailable ? 'hover:border-secondary/40 transition-all group' : 'opacity-70'}
                 `}>
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{spec.label}</div>
                   <div className="text-2xl font-bold text-foreground group-hover:text-secondary transition-colors">
-                    {isAvailable ? spec.formatter(value) : 'N/A'}
+                    {spec.formatter(value)}
                   </div>
                 </div>
               );
