@@ -15,6 +15,7 @@ import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { getDisplayRestLabelByIndex, formatRestForDisplay } from '@/utils/restDisplay';
 import { useWorkoutStore } from '@/store/workoutStore';
+import { restAuditLog, isRestAuditEnabled } from '@/utils/restAudit';
 
 interface SetRowProps {
   setNumber: number;
@@ -107,11 +108,20 @@ export const SetRow = ({
 
   const displayUnit = weightUnit || globalWeightUnit;
   const displayWeight = isEditing ? weight : (isAutoWeight ? calculatedWeight : weight);
-
-  const { setSetStartTime, setSetEndTime } = useWorkoutStore();
-  const handleFirstInteraction = React.useCallback(() => {
-    setSetStartTime(exerciseName, setNumber);
-  }, [exerciseName, setNumber, setSetStartTime]);
+  const hasStartedRef = useRef(false);
+  const { startSet, setSetStartTime, setSetEndTime } = useWorkoutStore();
+  const ensureStarted = React.useCallback(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+    if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
+      startSet(exerciseName, setNumber);
+      if (isRestAuditEnabled()) {
+        restAuditLog('[RestUI] first-startSet');
+      }
+    } else {
+      setSetStartTime(exerciseName, setNumber);
+    }
+  }, [exerciseName, setNumber, startSet, setSetStartTime]);
 
   const formatRestTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -120,14 +130,14 @@ export const SetRow = ({
   };
 
   const handleRestTimeIncrement = (increment: number) => {
-    handleFirstInteraction();
+    ensureStarted();
     if (onRestTimeIncrement) {
       onRestTimeIncrement(increment);
     }
   };
 
   const handleManualRestTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFirstInteraction();
+    ensureStarted();
     if (onRestTimeChange) {
       onRestTimeChange(e);
     }
@@ -242,7 +252,7 @@ export const SetRow = ({
         <div className="grid grid-cols-12 gap-2 items-center">
           <button
             onClick={() => {
-              handleFirstInteraction();
+              ensureStarted();
               onWarmupToggle?.();
             }}
             className={cn(
@@ -258,7 +268,7 @@ export const SetRow = ({
             <button
               type="button"
               onClick={() => {
-                handleFirstInteraction();
+                ensureStarted();
                 onWeightIncrement(-1);
               }}
               className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -273,9 +283,9 @@ export const SetRow = ({
                     min="0"
                     step="any"
                     value={weight}
-                    onFocus={handleFirstInteraction}
+                    onFocus={ensureStarted}
                     onChange={(e) => {
-                      handleFirstInteraction();
+                      ensureStarted();
                       onWeightChange(e);
                       updateWeight(Number(e.target.value));
                     }}
@@ -294,7 +304,7 @@ export const SetRow = ({
             <button
               type="button"
               onClick={() => {
-                handleFirstInteraction();
+                ensureStarted();
                 onWeightIncrement(1);
               }}
               className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -308,7 +318,7 @@ export const SetRow = ({
                 <button
                   type="button"
                   onClick={() => {
-                    handleFirstInteraction();
+                    ensureStarted();
                     onDurationIncrement?.(-5);
                   }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -327,7 +337,7 @@ export const SetRow = ({
                 <button
                   type="button"
                   onClick={() => {
-                    handleFirstInteraction();
+                    ensureStarted();
                     onDurationIncrement?.(5);
                   }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -340,7 +350,7 @@ export const SetRow = ({
                 <button
                   type="button"
                   onClick={() => {
-                    handleFirstInteraction();
+                    ensureStarted();
                     onRepsIncrement(-1);
                   }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -352,9 +362,9 @@ export const SetRow = ({
                   min="0"
                   step="1"
                   value={reps}
-                  onFocus={handleFirstInteraction}
+                  onFocus={ensureStarted}
                   onChange={(e) => {
-                    handleFirstInteraction();
+                    ensureStarted();
                     onRepsChange(e);
                   }}
                   className="workout-number-input text-center value-text px-1 py-2 w-full min-w-0"
@@ -363,7 +373,7 @@ export const SetRow = ({
                 <button
                   type="button"
                   onClick={() => {
-                    handleFirstInteraction();
+                    ensureStarted();
                     onRepsIncrement(1);
                   }}
                   className="h-11 w-11 flex items-center justify-center text-gray-400 hover:text-white bg-gray-800 rounded-full"
@@ -452,7 +462,7 @@ export const SetRow = ({
         <div className="grid grid-cols-12 gap-1 items-center px-1">
           <button
             onClick={() => {
-              handleFirstInteraction();
+              ensureStarted();
               onWarmupToggle?.();
             }}
             className={cn(
@@ -475,7 +485,7 @@ export const SetRow = ({
                       "value-text"
                     )}
                     onClick={() => {
-                      handleFirstInteraction();
+                      ensureStarted();
                       onEdit();
                     }}
                   >
@@ -495,7 +505,7 @@ export const SetRow = ({
             <div 
               className="flex flex-col items-center px-1 py-2 rounded min-h-[44px] hover:bg-gray-800/70 cursor-pointer transition-all duration-200"
               onClick={() => {
-                handleFirstInteraction();
+                ensureStarted();
                 onEdit();
               }}
             >
@@ -534,7 +544,7 @@ export const SetRow = ({
               <Button
                 size="icon"
                 onClick={() => {
-                  handleFirstInteraction();
+                  ensureStarted();
                   onEdit();
                 }}
                 className="h-11 w-11 bg-gray-700 text-gray-300 hover:bg-gray-600"
@@ -542,8 +552,9 @@ export const SetRow = ({
                 <Edit size={20} />
               </Button>
             ) : (
-              <Button 
+              <Button
                 size="icon"
+                onPointerDown={ensureStarted}
                 onClick={handleSetComplete}
                 className="h-11 w-11 bg-gray-800 text-gray-400 hover:bg-green-700 hover:text-white transform transition-all duration-200 hover:scale-105 active:scale-95"
               >
