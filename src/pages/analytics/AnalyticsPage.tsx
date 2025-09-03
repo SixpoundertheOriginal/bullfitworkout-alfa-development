@@ -55,6 +55,7 @@ function loadRange(): Range {
   return { start, end };
 }
 
+// Fixed derivedEnabled references - using feature flags directly
 export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   let userId: string | undefined;
   try {
