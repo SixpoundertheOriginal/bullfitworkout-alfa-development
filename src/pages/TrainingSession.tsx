@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FinishWorkoutDialog } from "@/components/training/FinishWorkoutDialog";
 import { restAuditLog, isRestAuditEnabled } from "@/utils/restAudit";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -99,18 +99,38 @@ const TrainingSessionPage = () => {
   useWorkoutTimer();
   const { play: playBell } = useSound('/sounds/bell.mp3');
   const { play: playTick } = useSound('/sounds/tick.mp3');
-  const isManual = location.state?.manual;
-  const [isAddExerciseSheetOpen, setIsAddExerciseSheetOpen] = useState(!!isManual);
+  const manualIntent = useRef(!!location.state?.manual);
+  const [isAddExerciseSheetOpen, setIsAddExerciseSheetOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showRestTimerModal, setShowRestTimerModal] = useState(false);
   const [restTimerResetSignal, setRestTimerResetSignal] = useState(0);
   const [pageLoaded, setPageLoaded] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
 
+  const openExerciseSheet = (source: 'manual' | 'query' | 'button') => {
+    setIsAddExerciseSheetOpen(true);
+    if (FEATURE_FLAGS.DEBUG_EXERCISE_SELECTOR_OPEN) {
+      console.log('[exerciseSheet] open', { source });
+    }
+  };
+
   const exerciseCount = Object.keys(storeExercises).length;
   const hasExercises = exerciseCount > 0;
-  
+
   useEffect(() => { setPageLoaded(true); }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const fromQuery = params.get('open') === 'exercises';
+    if (manualIntent.current || fromQuery) {
+      if (FEATURE_FLAGS.DEBUG_EXERCISE_SELECTOR_OPEN) {
+        console.log('[exerciseSheet] intent consumed', manualIntent.current ? 'manual' : 'query');
+      }
+      openExerciseSheet(manualIntent.current ? 'manual' : 'query');
+      navigate(location.pathname, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (Object.keys(storeExercises).length > 0 && workoutStatus === 'saving') {
@@ -140,11 +160,11 @@ const TrainingSessionPage = () => {
     }
     
     // Redirect to setup if accessed without proper config
-    if (pageLoaded && workoutStatus === 'idle' && !hasExercises && !trainingConfig && !isManual) {
+    if (pageLoaded && workoutStatus === 'idle' && !hasExercises && !trainingConfig && !manualIntent.current) {
       console.log('⚠️ Redirecting to setup wizard - empty session');
       navigate('/');
     }
-  }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate, isManual]);
+  }, [pageLoaded, workoutStatus, hasExercises, startWorkout, trainingConfig, navigate]);
 
   useEffect(() => {
     if (location.state?.trainingConfig && !isActive) {
@@ -815,13 +835,13 @@ const TrainingSessionPage = () => {
             }}
             onShowRestTimer={() => {}}
             onResetRestTimer={() => {}}
-            onOpenAddExercise={() => setIsAddExerciseSheetOpen(true)}
+            onOpenAddExercise={() => openExerciseSheet('button')}
             setExercises={setStoreExercises}
           />
 
           <div className="mt-8 text-center">
             <Button
-              onClick={() => setIsAddExerciseSheetOpen(true)}
+              onClick={() => openExerciseSheet('button')}
               variant="gradient"
               size="lg"
               shape="pill"
