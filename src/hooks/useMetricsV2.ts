@@ -5,7 +5,7 @@ import type { AnalyticsServiceData } from '@/pages/analytics/AnalyticsPage';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { DEFS_VERSION } from '@/services/metrics-v2/registry';
 import { TONNAGE_ID, AVG_REST_ID, EFF_ID } from '@/pages/analytics/metricIds';
-import { normalizeSeriesKeys } from '@/services/metrics-v2/chartAdapter';
+import { normalizeSeriesKeys, normalizeTotals } from '@/services/metrics-v2/chartAdapter';
 import { toCanonicalTotals } from './useMetricsV2.helpers';
 import type { TimeSeriesPoint } from '@/services/metrics-v2/types';
 
@@ -50,9 +50,15 @@ export type MetricsV2Data = {
   kpis: {
     sets: number;
     reps: number;
-    durationMin: number;
-    tonnageKg: number;
-    densityKgPerMin: number;
+    duration_min: number;
+    tonnage_kg: number;
+    density_kg_per_min: number;
+    avg_rest_sec?: number;
+    set_efficiency_kg_per_min?: number | null;
+    // deprecated camelCase aliases
+    durationMin?: number;
+    tonnageKg?: number;
+    densityKgPerMin?: number;
     avgRestSec?: number;
     setEfficiencyKgPerMin?: number | null;
   };
@@ -67,6 +73,7 @@ export type MetricsV2Data = {
     setEfficiencyKgPerMin?: { timestamp: string; value: number }[];
   };
   timingMetadata?: { coveragePct: number; quality: 'high' | 'medium' | 'low' };
+  totals?: Record<string, number>;
   error?: string;
 };
 
@@ -177,22 +184,32 @@ export function useMetricsV2Analytics(
 
         const durationMs = performance.now() - t0;
         
-        // Transform to V2 DTO format with 2-decimal rounding
-        const sets = response.totals?.sets_count ?? 0;
-        const reps = response.totals?.reps_total ?? 0;
-        const durationMin = Math.round((response.totals?.duration_min ?? 0) * 100) / 100;
-        const tonnageKg = Math.round((response.totals?.tonnage_kg ?? 0) * 100) / 100;
-        const densityKgPerMin = durationMin > 0
-          ? Math.round((tonnageKg / durationMin) * 100) / 100
-          : 0;
+        // Canonicalize totals and apply 2-decimal rounding
+        const norm = normalizeTotals(response.totals || {});
+        const round2 = (n: number) => Math.round(n * 100) / 100;
+        const duration_min = round2(norm.duration_min ?? 0);
+        const tonnage_kg = round2(norm.tonnage_kg ?? 0);
+        const density_kg_per_min = round2(
+          norm.density_kg_per_min ?? tonnage_kg / Math.max(duration_min, 0.01)
+        );
+        const totals = {
+          sets: norm.sets ?? 0,
+          reps: norm.reps ?? 0,
+          duration_min,
+          tonnage_kg,
+          density_kg_per_min,
+        };
+        if (FEATURE_FLAGS.KPI_DIAGNOSTICS_ENABLED) {
+          console.debug('[MetricsV2][debug] totals (canonical)', totals);
+        }
         const timingMetadata = response.timingMetadata;
         const derivedFlag = FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED;
         const includeRest = derivedFlag && timingMetadata?.quality === 'high';
-        const avgRestSec = includeRest
-          ? Math.round((response.totals?.[AVG_REST_ID] ?? 0) * 100) / 100
+        const avg_rest_sec = includeRest
+          ? round2(norm[AVG_REST_ID] ?? 0)
           : undefined;
-        const setEfficiencyKgPerMin = derivedFlag
-          ? Math.round((response.totals?.[EFF_ID] ?? 0) * 100) / 100
+        const set_efficiency_kg_per_min = derivedFlag
+          ? round2(norm[EFF_ID] ?? 0)
           : undefined;
 
         const keyMap: Record<string, string> = {
@@ -243,15 +260,12 @@ export function useMetricsV2Analytics(
             tz: 'Europe/Warsaw',
           },
           kpis: {
-            sets,
-            reps,
-            durationMin,
-            tonnageKg,
-            densityKgPerMin,
-            ...(includeRest ? { avgRestSec } : {}),
-            ...(derivedFlag ? { setEfficiencyKgPerMin } : {}),
+            ...totals,
+            ...(includeRest ? { avg_rest_sec } : {}),
+            ...(derivedFlag ? { set_efficiency_kg_per_min } : {}),
           },
           series,
+          totals,
           timingMetadata,
         };
 
@@ -266,8 +280,12 @@ export function useMetricsV2Analytics(
           unit: 'kg',
           fromCache,
           durationMs,
-          counts: { sets, reps, workouts: response.totals?.workouts ?? 0, days: response.series?.tonnage_kg?.length ?? 0 },
-          kpis: { tonnageKg, durationMin, densityKgPerMin },
+          counts: { sets: totals.sets, reps: totals.reps, workouts: response.totals?.workouts ?? 0, days: response.series?.tonnage_kg?.length ?? 0 },
+          kpis: {
+            tonnage_kg: totals.tonnage_kg,
+            duration_min: totals.duration_min,
+            density_kg_per_min: totals.density_kg_per_min,
+          },
           status: 'success',
         });
 
@@ -310,10 +328,17 @@ export function useMetricsV2Analytics(
           kpis: {
             sets: 0,
             reps: 0,
-            durationMin: 0,
-            tonnageKg: 0,
-            densityKgPerMin: 0,
-            ...(derivedFlag ? { avgRestSec: 0, setEfficiencyKgPerMin: 0 } : {}),
+            duration_min: 0,
+            tonnage_kg: 0,
+            density_kg_per_min: 0,
+            ...(derivedFlag ? { avg_rest_sec: 0, set_efficiency_kg_per_min: 0 } : {}),
+          },
+          totals: {
+            sets: 0,
+            reps: 0,
+            duration_min: 0,
+            tonnage_kg: 0,
+            density_kg_per_min: 0,
           },
           error: errorMessage,
         };
