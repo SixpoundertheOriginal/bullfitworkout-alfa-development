@@ -11,7 +11,8 @@ import {
   type MetricId,
 } from './metricIds';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import useMetricsV2, { useMetricsV2Analytics, type MetricsV2Data } from '@/hooks/useMetricsV2';
+import useMetricsV2, { useMetricsV2Analytics } from '@/hooks/useMetricsV2';
+import { getSets, getReps, getDuration, getTonnage, getDensity } from './kpiSelectors';
 import { useAuth } from '@/context/AuthContext';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Switch } from '@/components/ui/switch';
@@ -195,26 +196,28 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
 
   const baseTotals = React.useMemo(
     () => ({
-      sets: v2.data?.kpis.sets ?? 0,
-      reps: v2.data?.kpis.reps ?? 0,
-      duration: v2.data?.kpis.durationMin ?? 0,
-      tonnage: v2.data?.kpis.tonnageKg ?? 0,
+      sets: getSets(v2.data, serviceData?.totals),
+      reps: getReps(v2.data, serviceData?.totals),
+      duration: getDuration(v2.data, serviceData?.totals),
+      tonnage: getTonnage(v2.data, serviceData?.totals),
     }),
-    [v2.data?.kpis]
+    [v2.data, serviceData?.totals]
   );
 
   const kpiTotals = React.useMemo(
     () => ({
-      density: v2.data?.kpis.densityKgPerMin ?? 0,
+      density: getDensity(v2.data, serviceData?.totals),
       avgRestSec:
         derivedEnabled && timingQuality === 'high'
-          ? v2.data?.kpis.avgRestSec ?? 0
+          ? v2.data?.kpis.avgRestSec ?? v2.data?.totals?.[AVG_REST_ID] ?? serviceData?.totals?.[AVG_REST_ID] ?? 0
           : 0,
       efficiencyKgPerMin: derivedEnabled
-        ? v2.data?.kpis.setEfficiencyKgPerMin ?? 0
+        ? v2.data?.kpis.setEfficiencyKgPerMin ??
+          v2.data?.totals?.[EFF_ID] ??
+          serviceData?.totals?.[EFF_ID] ?? 0
         : 0,
     }),
-    [v2.data?.kpis, derivedEnabled, timingQuality]
+    [v2.data, serviceData?.totals, derivedEnabled, timingQuality]
   );
 
   React.useEffect(() => {
