@@ -176,11 +176,12 @@ const clearAllStorage = () => {
 };
 
 // Freeze the previous set's rest if it hasn't been frozen yet
-const ensurePrevRestFrozen = (
+export const ensurePrevRestFrozen = (
   exercise: WorkoutExerciseConfig | ExerciseSet[],
   nextIndex: number,
   now: number
 ): WorkoutExerciseConfig | ExerciseSet[] => {
+  if (!FEATURE_FLAGS.REST_FREEZE_ON_START) return exercise;
   const sets = Array.isArray(exercise) ? exercise : exercise.sets;
   const prevIndex = nextIndex - 1;
   if (prevIndex < 0 || prevIndex >= sets.length) return exercise;
