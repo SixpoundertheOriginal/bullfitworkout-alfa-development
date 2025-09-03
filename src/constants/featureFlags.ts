@@ -8,6 +8,7 @@ export type FeatureFlags = {
   SETUP_CHOOSE_EXERCISES_ENABLED: boolean;
   SET_COMPLETE_NOTIFICATIONS_ENABLED: boolean;
   REST_FREEZE_ON_START: boolean;
+  DEBUG_EXERCISE_SELECTOR_OPEN: boolean;
 };
 
 const DEFAULTS: FeatureFlags = {
@@ -18,6 +19,7 @@ const DEFAULTS: FeatureFlags = {
   SETUP_CHOOSE_EXERCISES_ENABLED: true,
   SET_COMPLETE_NOTIFICATIONS_ENABLED: false,
   REST_FREEZE_ON_START: false,
+  DEBUG_EXERCISE_SELECTOR_OPEN: false,
 };
 
 const overrides: Partial<FeatureFlags> = {};
@@ -53,6 +55,7 @@ export const FEATURE_FLAGS: FeatureFlags = {
   SETUP_CHOOSE_EXERCISES_ENABLED: resolveFlag('SETUP_CHOOSE_EXERCISES_ENABLED'),
   SET_COMPLETE_NOTIFICATIONS_ENABLED: resolveFlag('SET_COMPLETE_NOTIFICATIONS_ENABLED'),
   REST_FREEZE_ON_START: resolveFlag('REST_FREEZE_ON_START'),
+  DEBUG_EXERCISE_SELECTOR_OPEN: resolveFlag('DEBUG_EXERCISE_SELECTOR_OPEN'),
 };
 
 export function setFlagOverride(name: keyof FeatureFlags, value: boolean) {
