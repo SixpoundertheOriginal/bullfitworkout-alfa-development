@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { useWorkoutStore } from '@/store/workoutStore';
+import { useWorkoutStore, ensurePrevRestFrozen } from '@/store/workoutStore';
 import { setFlagOverride } from '@/constants/featureFlags';
 
 describe('Store rest freezing flow (failing first)', () => {
@@ -128,6 +128,37 @@ describe('REST_FREEZE_ON_START flag', () => {
     expect(set0.restMs).toBeUndefined();
     expect(set0.restFrozen).toBeUndefined();
     expect(set0.restStartedAt).toBeUndefined();
+  });
+
+  test('setSetStartTime legacy path records start and restBefore without freezing', () => {
+    setFlagOverride('REST_FREEZE_ON_START', false);
+    const store = useWorkoutStore.getState();
+    store.handleCompleteSet('Bench Press', 0);
+    useWorkoutStore.setState({ currentRest: { startedAt: 1_000, targetSetKey: 'Bench Press_2' } });
+    vi.setSystemTime(41_000);
+    store.setSetStartTime('Bench Press', 2);
+    const state = useWorkoutStore.getState();
+    const timings = state.setTimings;
+    expect(timings.get('Bench Press_2')?.startTime).toBe(41_000);
+    const sets = (state.exercises['Bench Press'] as any).sets as any[];
+    expect(sets[1].metadata.restBefore).toBe(40_000);
+    expect(sets[0].restMs).toBeUndefined();
+    expect(sets[0].restFrozen).toBeUndefined();
+  });
+
+  test('ensurePrevRestFrozen exits early when flag disabled', () => {
+    setFlagOverride('REST_FREEZE_ON_START', false);
+    const exercise = {
+      sets: [
+        { restStartedAt: 1_000 },
+        { weight: 100, reps: 5 },
+      ],
+    } as any;
+    const result = ensurePrevRestFrozen(exercise, 1, 5_000);
+    expect(result).toBe(exercise);
+    const prev = (result as any).sets[0];
+    expect(prev.restMs).toBeUndefined();
+    expect(prev.restFrozen).toBeUndefined();
   });
 });
 
