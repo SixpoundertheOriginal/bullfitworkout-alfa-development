@@ -209,5 +209,98 @@ describe('useAnalyticsKpiTotals', () => {
       expect(result.current.diagnostics?.avg_rest_sec).toBe('rest_min_per_set');
       expect(result.current.diagnostics?.set_efficiency_kg_per_min).toBe('active_min');
     });
+
+    it.each([undefined, 0])(
+      'should compute density fallback when density is %s',
+      density => {
+        const v2Data = {
+          totals: {
+            tonnage_kg: 15000,
+            duration_min: 300,
+            ...(density !== undefined ? { density_kg_per_min: density } : {}),
+          },
+        };
+
+        const { result } = renderHook(() =>
+          useAnalyticsKpiTotals(v2Data, undefined)
+        );
+
+        expect(result.current.baseTotals.density_kg_per_min).toBe(50);
+        expect(
+          result.current.derivedTotals.set_efficiency_kg_per_min
+        ).toBe(50);
+        expect(
+          result.current.diagnostics?.set_efficiency_kg_per_min
+        ).toBe('density_fallback');
+      }
+    );
+
+    it('should fallback to rest_min_per_set when v2 avg_rest_sec is zero', () => {
+      const v2Data = {
+        totals: {
+          sets: 50,
+          rest_min: 100,
+        },
+        kpis: {
+          avg_rest_sec: 0,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useAnalyticsKpiTotals(v2Data, undefined)
+      );
+
+      expect(result.current.derivedTotals.avg_rest_sec).toBe(120);
+      expect(result.current.diagnostics?.avg_rest_sec).toBe(
+        'rest_min_per_set'
+      );
+    });
+
+    it(
+      'should fallback to active_min when v2 set_efficiency_kg_per_min is zero',
+      () => {
+        const v2Data = {
+          totals: {
+            tonnage_kg: 15000,
+            active_min: 300,
+          },
+          kpis: {
+            set_efficiency_kg_per_min: 0,
+          },
+        };
+
+        const { result } = renderHook(() =>
+          useAnalyticsKpiTotals(v2Data, undefined)
+        );
+
+        expect(
+          result.current.derivedTotals.set_efficiency_kg_per_min
+        ).toBe(50);
+        expect(
+          result.current.diagnostics?.set_efficiency_kg_per_min
+        ).toBe('active_min');
+      }
+    );
+
+    it('should use density when active_min is missing', () => {
+      const v2Data = {
+        totals: {
+          tonnage_kg: 15000,
+          duration_min: 300,
+          density_kg_per_min: 50,
+        },
+      };
+
+      const { result } = renderHook(() =>
+        useAnalyticsKpiTotals(v2Data, undefined)
+      );
+
+      expect(
+        result.current.derivedTotals.set_efficiency_kg_per_min
+      ).toBe(50);
+      expect(
+        result.current.diagnostics?.set_efficiency_kg_per_min
+      ).toBe('density_fallback');
+    });
   });
 });
