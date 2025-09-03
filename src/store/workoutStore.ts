@@ -175,6 +175,34 @@ const clearAllStorage = () => {
   }
 };
 
+// Freeze the previous set's rest if it hasn't been frozen yet
+const ensurePrevRestFrozen = (
+  exercise: WorkoutExerciseConfig | ExerciseSet[],
+  nextIndex: number,
+  now: number
+): WorkoutExerciseConfig | ExerciseSet[] => {
+  const sets = Array.isArray(exercise) ? exercise : exercise.sets;
+  const prevIndex = nextIndex - 1;
+  if (prevIndex < 0 || prevIndex >= sets.length) return exercise;
+  const prevSet = sets[prevIndex] as any;
+  if (prevSet?.restStartedAt == null) return exercise;
+  if (prevSet.restFrozen) {
+    if (isRestAuditEnabled()) {
+      restAuditLog('[Rest] skip write; already frozen');
+    }
+    return exercise;
+  }
+  const restMs = Math.max(0, now - prevSet.restStartedAt);
+  const updatedPrev = { ...prevSet, restMs, restFrozen: true };
+  const updatedSets = sets.map((s, i) => (i === prevIndex ? updatedPrev : s));
+  if (isRestAuditEnabled()) {
+    restAuditLog(`[Rest] freeze prev set #${prevIndex + 1}: ${restMs}ms (frozen=true)`);
+  }
+  return Array.isArray(exercise)
+    ? updatedSets
+    : { ...exercise, sets: updatedSets };
+};
+
 // Create the persistent store
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
@@ -315,42 +343,25 @@ setRestTimerMaxSeconds: (maxSeconds) => set({
 
 setCurrentRest: (currentRest) => set({ currentRest, lastTabActivity: Date.now() }),
 
-startSet: (exerciseName, setIndex) => set((state) => {
+startSet: (exerciseName, nextIndex) => set((state) => {
   if (!FEATURE_FLAGS.REST_FREEZE_ON_START) return {};
   const exerciseData = state.exercises[exerciseName];
   if (!exerciseData) return {};
-  const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
-  const prevIndex = setIndex - 1;
-  if (prevIndex < 0 || prevIndex >= sets.length) return {};
-  const prevSet = sets[prevIndex];
-  if (!prevSet?.restStartedAt || prevSet.restFrozen) return {};
   const now = Date.now();
-  const restMs = Math.max(0, now - prevSet.restStartedAt);
-  const updatedPrevSet = { ...prevSet, restMs, restFrozen: true };
-  let updatedExercises: WorkoutExercises;
-  if (Array.isArray(exerciseData)) {
-    updatedExercises = {
-      ...state.exercises,
-      [exerciseName]: sets.map((s, i) => (i === prevIndex ? updatedPrevSet : s)),
-    };
-  } else {
-    updatedExercises = {
-      ...state.exercises,
-      [exerciseName]: {
-        ...exerciseData,
-        sets: sets.map((s, i) => (i === prevIndex ? updatedPrevSet : s)),
-      },
-    };
-  }
+  const updatedExercise = ensurePrevRestFrozen(exerciseData, nextIndex, now);
+  const exercises =
+    updatedExercise === exerciseData
+      ? state.exercises
+      : { ...state.exercises, [exerciseName]: updatedExercise };
   if (isRestAuditEnabled()) {
-    restAuditLog(`[Rest] freeze prev set #${prevIndex + 1}: ${restMs}ms (frozen=true)`);
+    restAuditLog(`[Rest] startSet nextIndex=${nextIndex}`);
   }
-  return { exercises: updatedExercises, lastTabActivity: Date.now() };
+  return { exercises, lastTabActivity: now };
 }),
 
 setSetStartTime: (exerciseId, setNumber) => {
   if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
-    get().startSet(exerciseId, setNumber - 1);
+    get().startSet(exerciseId, setNumber);
     set((state) => {
       const key = `${exerciseId}_${setNumber}`;
       const timings = new Map(state.setTimings);
@@ -711,25 +722,35 @@ resetSession: () => {
       
       handleCompleteSet: (exerciseName, setIndex, data) => set((state) => {
         const newExercises = { ...state.exercises };
-        const exerciseData = newExercises[exerciseName];
+        let exerciseData = newExercises[exerciseName];
         const ts = Date.now();
         let startedRest = false;
 
+        if (FEATURE_FLAGS.REST_FREEZE_ON_START && exerciseData) {
+          const updated = ensurePrevRestFrozen(exerciseData, setIndex, ts);
+          newExercises[exerciseName] = updated as any;
+          exerciseData = updated;
+        }
+
         if (Array.isArray(exerciseData)) {
-          // Legacy format
           newExercises[exerciseName] = exerciseData.map((set, i) => {
             if (i === setIndex) {
               const updated = { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore };
               if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
-                updated.restStartedAt = ts;
-                startedRest = true;
+                if ((set as any).restFrozen) {
+                  if (isRestAuditEnabled()) {
+                    restAuditLog('[Rest] skip write; already frozen');
+                  }
+                } else {
+                  updated.restStartedAt = ts;
+                  startedRest = true;
+                }
               }
               return updated;
             }
             return set;
           });
         } else if (exerciseData) {
-          // New format
           const config = exerciseData as WorkoutExerciseConfig;
           newExercises[exerciseName] = {
             ...config,
@@ -737,8 +758,14 @@ resetSession: () => {
               if (i === setIndex) {
                 const updated = { ...set, completed: true, failurePoint: data?.failurePoint, formScore: data?.formScore };
                 if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
-                  updated.restStartedAt = ts;
-                  startedRest = true;
+                  if ((set as any).restFrozen) {
+                    if (isRestAuditEnabled()) {
+                      restAuditLog('[Rest] skip write; already frozen');
+                    }
+                  } else {
+                    updated.restStartedAt = ts;
+                    startedRest = true;
+                  }
                 }
                 return updated;
               }
