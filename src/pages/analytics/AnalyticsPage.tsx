@@ -64,10 +64,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     userId = undefined;
   }
 
-  const { ANALYTICS_DERIVED_KPIS_ENABLED, ANALYTICS_V2_ENABLED } = useFeatureFlags();
-  const [derivedEnabled, setDerivedEnabled] = React.useState<boolean>(
-    ANALYTICS_DERIVED_KPIS_ENABLED
-  );
+  const { ANALYTICS_DERIVED_KPIS_ENABLED, ANALYTICS_V2_ENABLED, KPI_DIAGNOSTICS_ENABLED } = useFeatureFlags();
   const [v2Enabled, setV2Enabled] = React.useState<boolean>(ANALYTICS_V2_ENABLED);
   const [testerPanelOpen, setTesterPanelOpen] = React.useState<boolean>(false);
   const [range, setRange] = React.useState<Range>(() => loadRange());
@@ -119,7 +116,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
     v2Enabled ? undefined : {
       startISO: rangeIso.startISO,
       endISO: rangeIso.endISO,
-      includeBodyweightLoads: derivedEnabled,
+      includeBodyweightLoads: ANALYTICS_DERIVED_KPIS_ENABLED,
       includeTimePeriodAverages: true,
       bodyweightKg: 75, // TODO: Get from user profile
     }
@@ -141,25 +138,32 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
 
   const { series: seriesData, availableMeasures } = React.useMemo(() => {
     if (v2Enabled && v2.data) {
-      return toChartSeries(v2.data, derivedEnabled && timingQuality === 'high');
+      return toChartSeries(v2.data, ANALYTICS_DERIVED_KPIS_ENABLED && timingQuality === 'high');
     }
     const raw = { ...(serviceData?.series ?? {}) };
     if (timingQuality !== 'high') delete raw[AVG_REST_ID];
     const measures = Object.keys(raw).filter(k => raw[k]?.length);
     return { series: raw, availableMeasures: measures };
-  }, [v2Enabled, v2.data, serviceData, derivedEnabled, timingQuality]);
+  }, [v2Enabled, v2.data, serviceData, ANALYTICS_DERIVED_KPIS_ENABLED, timingQuality]);
 
   React.useEffect(() => {
-    console.debug('[AnalyticsPage] render, derivedKpis=', derivedEnabled);
-  }, [derivedEnabled]);
+    if (KPI_DIAGNOSTICS_ENABLED) {
+      console.debug('[AnalyticsPage] Feature flags status:', {
+        ANALYTICS_DERIVED_KPIS_ENABLED,
+        ANALYTICS_V2_ENABLED,
+        v2Enabled,
+        derivedKpisVisible: ANALYTICS_DERIVED_KPIS_ENABLED
+      });
+    }
+  }, [ANALYTICS_DERIVED_KPIS_ENABLED, ANALYTICS_V2_ENABLED, v2Enabled, KPI_DIAGNOSTICS_ENABLED]);
 
   const baseIds = React.useMemo(() => ['tonnage_kg', 'sets', 'reps', 'duration_min', 'density_kg_per_min'], []);
 
   React.useEffect(() => {
-    if (!derivedEnabled && !baseIds.includes(currentMeasure)) {
+    if (!ANALYTICS_DERIVED_KPIS_ENABLED && !baseIds.includes(currentMeasure)) {
       setCurrentMeasure(TONNAGE_ID);
     }
-  }, [derivedEnabled, currentMeasure, baseIds]);
+  }, [ANALYTICS_DERIVED_KPIS_ENABLED, currentMeasure, baseIds]);
 
   const resetRef = React.useRef(false);
   React.useEffect(() => {
@@ -179,9 +183,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   const unavailable = series.length === 0;
   const dropdownOptions = React.useMemo(() => {
     const derivedIds = timingQuality === 'high' ? [AVG_REST_ID, EFF_ID] : [EFF_ID];
-    const ids = derivedEnabled ? [...baseIds, ...derivedIds] : baseIds;
+    const ids = ANALYTICS_DERIVED_KPIS_ENABLED ? [...baseIds, ...derivedIds] : baseIds;
     return ids.filter(id => availableMeasures.includes(id));
-  }, [availableMeasures, derivedEnabled, baseIds, timingQuality]);
+  }, [availableMeasures, ANALYTICS_DERIVED_KPIS_ENABLED, baseIds, timingQuality]);
 
   const formatValue = React.useCallback(
     (n: number) => {
@@ -257,9 +261,8 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
             <div className="flex items-center gap-3">
               <Switch
                 id="derived-toggle"
-                checked={derivedEnabled}
+                checked={ANALYTICS_DERIVED_KPIS_ENABLED}
                 onCheckedChange={(v) => {
-                  setDerivedEnabled(v);
                   setFlagOverride('ANALYTICS_DERIVED_KPIS_ENABLED', v);
                 }}
                 className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
@@ -320,7 +323,7 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
       </div>
 
       {/* Derived KPIs */}
-      {derivedEnabled && (
+      {ANALYTICS_DERIVED_KPIS_ENABLED && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {derivedKpiSpecs
             .filter(spec => !spec.flag || ANALYTICS_DERIVED_KPIS_ENABLED)
