@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useWorkoutStore } from '@/store/workoutStore';
+import { useEnhancedRestAnalytics } from '@/hooks/useEnhancedRestAnalytics';
+import { registerRestTimer, stopCurrentTimer, getCurrentTimer } from '@/utils/timerCoordinator';
 
 export const useGlobalRestTimers = () => {
   const {
@@ -9,7 +11,13 @@ export const useGlobalRestTimers = () => {
     updateRestTimerElapsed,
     getRestTimerState,
     clearAllRestTimers,
+    setCurrentRest,
   } = useWorkoutStore();
+
+  // Integration with enhanced analytics to prevent duplicate systems
+  const {
+    startRestTimer: startEnhancedRestTimer,
+  } = useEnhancedRestAnalytics();
 
   // Track the currently active exercise to manage rest timers intelligently
   const [activeExerciseName, setActiveExerciseName] = useState<string | null>(null);
@@ -43,23 +51,36 @@ export const useGlobalRestTimers = () => {
     startRestTimer(timerId, targetTime);
   }, [startRestTimer, activeExerciseName, extractExerciseFromTimerId, stopAllTimersForExercise]);
 
-  // Start timer for a specific exercise (smart version)
+  // Start timer for a specific exercise (smart version with analytics integration and singleton enforcement)
   const startTimerForExercise = useCallback((exerciseName: string, setNumber: number, targetTime: number) => {
-    // Stop all timers from other exercises
-    if (activeExerciseName && activeExerciseName !== exerciseName) {
-      stopAllTimersForExercise(activeExerciseName);
-    }
+    const timerId = generateTimerId(exerciseName, setNumber);
+    
+    // Use timer coordinator to ensure only one timer is active at a time
+    registerRestTimer(timerId, exerciseName, setNumber, targetTime, 'global');
+    
+    // Stop all existing timers to prevent concurrent execution
+    clearAllRestTimers();
     
     // Set the new active exercise
     setActiveExerciseName(exerciseName);
     
-    const timerId = generateTimerId(exerciseName, setNumber);
+    // Start the store-based timer (UI display)
     startRestTimer(timerId, targetTime);
-  }, [startRestTimer, activeExerciseName, stopAllTimersForExercise]);
+    
+    // Start the enhanced analytics timer (data tracking)
+    startEnhancedRestTimer(exerciseName, setNumber, targetTime);
+    
+    // Set current rest state for compatibility with existing code
+    setCurrentRest({
+      startedAt: Date.now(),
+      targetSetKey: `${exerciseName}_${setNumber}`,
+    });
+  }, [startRestTimer, startEnhancedRestTimer, setCurrentRest, clearAllRestTimers, setActiveExerciseName, generateTimerId]);
 
   // Stop a specific rest timer
   const stopTimer = useCallback((timerId: string) => {
     stopRestTimer(timerId);
+    stopCurrentTimer(); // Also notify coordinator
   }, [stopRestTimer]);
 
   // Update elapsed time for a specific timer
@@ -72,10 +93,13 @@ export const useGlobalRestTimers = () => {
     return getRestTimerState(timerId);
   }, [getRestTimerState]);
 
-  // Clear all timers
+  // Clear all timers (both store and analytics)
   const clearAllTimers = useCallback(() => {
     clearAllRestTimers();
-  }, [clearAllRestTimers]);
+    stopCurrentTimer(); // Notify coordinator
+    setActiveExerciseName(null);
+    setCurrentRest(null);
+  }, [clearAllRestTimers, setCurrentRest]);
 
   // Generate unique timer ID for exercise + set combination
   const generateTimerId = useCallback((exerciseName: string, setNumber: number) => {

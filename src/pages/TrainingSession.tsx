@@ -66,13 +66,8 @@ const TrainingSessionPage = () => {
     currentRest
   } = useWorkoutStore();
 
-  const {
-    startRestTimer: startEnhancedRestTimer,
-    endRestTimer: endEnhancedRestTimer,
-    getRestAnalytics,
-    getCurrentRestTime,
-    getOptimalRestSuggestion,
-  } = useEnhancedRestAnalytics();
+  // Enhanced rest analytics are now handled by useGlobalRestTimers hook
+  // to prevent duplicate timer instances
 
   // Transform exercises for useWorkoutSave hook (expects simple Record<string, ExerciseSet[]>)
   const exercisesForSave = Object.fromEntries(
@@ -310,18 +305,13 @@ const TrainingSessionPage = () => {
         });
       }
 
-      // Start rest timer for next set if there is one
-      const exerciseData = storeExercises[exerciseName];
-      const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
-      if (setIndex < sets.length - 1) {
-        const nextSetRestTime = sets[setIndex + 1]?.restTime || 60;
-        startEnhancedRestTimer(exerciseName, setIndex + 2, nextSetRestTime);
-        setCurrentRest({
-          startedAt: Date.now(),
-          targetSetKey: `${exerciseName}_${setIndex + 2}`,
-        });
-        if (isRestAuditEnabled()) {
-          restAuditLog('start_next_set', {
+      // Rest timer is now handled by ExerciseList component to prevent duplicates
+      // Analytics tracking still maintained via useEnhancedRestAnalytics hook
+      if (isRestAuditEnabled()) {
+        const exerciseData = storeExercises[exerciseName];
+        const sets = Array.isArray(exerciseData) ? exerciseData : exerciseData.sets;
+        if (setIndex < sets.length - 1) {
+          restAuditLog('set_completed_with_next_set', {
             exerciseName,
             nextSetIndex: setIndex + 2,
             plannedRestSeconds: sets[setIndex + 1]?.restTime ?? null,
