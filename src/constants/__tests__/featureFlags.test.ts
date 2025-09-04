@@ -7,6 +7,7 @@ beforeEach(() => {
   localStorage.clear();
   delete process.env.VITE_KPI_ANALYTICS_ENABLED;
   delete process.env.VITE_ANALYTICS_DERIVED_KPIS_ENABLED;
+  delete process.env.VITE_ANALYTICS_V2_ENABLED;
   delete process.env.VITE_REST_FREEZE_ON_START;
   delete process.env.VITE_DEBUG_EXERCISE_SELECTOR_OPEN;
 });
@@ -19,10 +20,11 @@ afterAll(async () => {
 });
 
 describe('featureFlags precedence', () => {
-  it('uses defaults when no overrides', async () => {
+  it('uses dev defaults when no overrides', async () => {
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);
-    expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(false);
+    expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(true);
+    expect(FEATURE_FLAGS.ANALYTICS_V2_ENABLED).toBe(true);
     expect(FEATURE_FLAGS.SETUP_CHOOSE_EXERCISES_ENABLED).toBe(true);
     expect(FEATURE_FLAGS.REST_FREEZE_ON_START).toBe(false);
     expect(FEATURE_FLAGS.DEBUG_EXERCISE_SELECTOR_OPEN).toBe(false);
@@ -47,6 +49,12 @@ describe('featureFlags precedence', () => {
     localStorage.setItem('bf_flag_ANALYTICS_DERIVED_KPIS_ENABLED', 'true');
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(true);
+  });
+
+  it('localStorage overrides dev default', async () => {
+    localStorage.setItem('bf_flag_ANALYTICS_V2_ENABLED', 'false');
+    const { FEATURE_FLAGS } = await import(modulePath);
+    expect(FEATURE_FLAGS.ANALYTICS_V2_ENABLED).toBe(false);
   });
 
   it('setFlagOverride overrides all', async () => {

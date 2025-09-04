@@ -22,6 +22,14 @@ const DEFAULTS: FeatureFlags = {
   DEBUG_EXERCISE_SELECTOR_OPEN: false,
 };
 
+const isDev = import.meta.env.MODE !== 'production';
+const devTrueFlags: Array<keyof FeatureFlags> = [
+  'KPI_ANALYTICS_ENABLED',
+  'ANALYTICS_V2_ENABLED',
+  'ANALYTICS_DERIVED_KPIS_ENABLED',
+  'KPI_DIAGNOSTICS_ENABLED',
+];
+
 const overrides: Partial<FeatureFlags> = {};
 
 const lsKey = (name: keyof FeatureFlags) => `bf_flag_${name}`;
@@ -44,6 +52,7 @@ function resolveFlag(name: keyof FeatureFlags): boolean {
   if (local !== undefined) return local;
   const env = readEnv(name);
   if (env !== undefined) return env;
+  if (isDev && devTrueFlags.includes(name)) return true;
   return DEFAULTS[name];
 }
 
