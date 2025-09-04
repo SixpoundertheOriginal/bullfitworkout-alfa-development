@@ -9,6 +9,8 @@ export function toCanonicalTotals(rawTotals: any): {
   duration_min: number;
   tonnage_kg: number;
   density_kg_per_min: number;
+  avg_rest_sec: number;
+  set_efficiency_kg_per_min: number;
 } {
   const norm = normalizeTotals(rawTotals ?? {});
   const sets = norm.sets ?? 0;
@@ -21,5 +23,18 @@ export function toCanonicalTotals(rawTotals: any): {
   } else {
     density_kg_per_min = round2(density_kg_per_min);
   }
-  return { sets, reps, duration_min, tonnage_kg, density_kg_per_min };
+  
+  // Canonical totals must include all required metrics per invariant
+  const avg_rest_sec = round2(norm.avg_rest_sec ?? 0);
+  const set_efficiency_kg_per_min = round2(norm.set_efficiency_kg_per_min ?? density_kg_per_min);
+  
+  return { 
+    sets, 
+    reps, 
+    duration_min, 
+    tonnage_kg, 
+    density_kg_per_min,
+    avg_rest_sec,
+    set_efficiency_kg_per_min
+  };
 }

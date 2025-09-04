@@ -89,7 +89,9 @@ export function restCoveragePct(ctxByDay: Record<string, DayContext>): number {
     possible += potential;
     explicit += ctx.restMs?.length ?? 0;
   }
-  return possible > 0 ? +(100 * explicit / possible).toFixed(2) : 0;
+  const pct = possible > 0 ? (100 * explicit / possible) : 0;
+  // Clamp coverage percentage to 0-100% per invariant
+  return +Math.max(0, Math.min(pct, 100)).toFixed(2);
 }
 
 // Future path when per-set seconds are reliable

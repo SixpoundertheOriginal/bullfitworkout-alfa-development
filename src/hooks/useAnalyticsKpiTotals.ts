@@ -55,8 +55,8 @@ export function useAnalyticsKpiTotals(
     const reps = normalized.reps ?? 0;
     const duration_min = round2(normalized.duration_min ?? 0);
     const tonnage_kg = round2(normalized.tonnage_kg ?? 0);
-    const rest_min = normalized.rest_min ? round2(normalized.rest_min) : undefined;
-    const active_min = normalized.active_min ? round2(normalized.active_min) : undefined;
+    const rest_min = normalized.rest_min !== null && normalized.rest_min !== undefined ? round2(normalized.rest_min) : undefined;
+    const active_min = normalized.active_min !== null && normalized.active_min !== undefined ? round2(normalized.active_min) : undefined;
     
     // Density fallback calculation
     let density_kg_per_min = normalized.density_kg_per_min;
@@ -87,15 +87,16 @@ export function useAnalyticsKpiTotals(
       derivedTotals.avg_tonnage_per_rep_kg = safeDiv(tonnage_kg, reps);
       derivedTotals.avg_duration_per_set_min = safeDiv(duration_min, sets);
 
-      // avg_rest_sec
+      // avg_rest_sec - must always be present per invariant, use 0 when no data available
       if (has(v2Data?.kpis?.avg_rest_sec)) {
         derivedTotals.avg_rest_sec = v2Data.kpis.avg_rest_sec;
         if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'v2';
-      } else if (has(rest_min) && sets > 0) {
-        derivedTotals.avg_rest_sec = (rest_min as number) * 60 / sets;
+      } else if (rest_min !== undefined && sets > 0) {
+        derivedTotals.avg_rest_sec = round2((rest_min * 60) / sets);
         if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'rest_min_per_set';
       } else {
-        derivedTotals.avg_rest_sec = undefined;
+        // Per invariant: all analytics hooks must emit canonical totals, use 0 when no data
+        derivedTotals.avg_rest_sec = 0;
         if (KPI_DIAGNOSTICS_ENABLED) diagnostics.avg_rest_sec = 'none';
       }
 

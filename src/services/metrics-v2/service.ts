@@ -41,7 +41,9 @@ function computePctOfSetsWithNonNullRest(
     explicit += withRest
     if (total > 1) possible += total - 1
   }
-  return possible > 0 ? +((explicit / possible) * 100).toFixed(2) : 0
+  const pct = possible > 0 ? (explicit / possible) * 100 : 0
+  // Clamp coverage percentage to 0-100% per invariant
+  return +Math.max(0, Math.min(pct, 100)).toFixed(2)
 }
 
 export const metricsServiceV2 = {
@@ -280,7 +282,7 @@ export const metricsServiceV2 = {
           [REPS_ID]: totalReps,
           workouts: totalWorkouts,
           [DURATION_ID]: durationMin,
-          [AVG_REST_ID]: (out.totals as any)[AVG_REST_ID] ?? (out.totals as any).avgRestSec ?? 0,
+          [AVG_REST_ID]: (out.totals as any)[AVG_REST_ID] ?? (out.totals as any).avgRestSec ?? undefined,
           [EFF_ID]: (out.totals as any)[EFF_ID] ?? (out.totals as any).setEfficiencyKgPerMin ?? 0,
         },
         series: {
