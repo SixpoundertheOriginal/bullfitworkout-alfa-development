@@ -66,6 +66,9 @@ export const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ data }) => {
   }
 
   const { ANALYTICS_DERIVED_KPIS_ENABLED, ANALYTICS_V2_ENABLED, KPI_DIAGNOSTICS_ENABLED } = useFeatureFlags();
+  if (import.meta.env.DEV) {
+    console.debug('[AnalyticsPage] Flags in dev:', FEATURE_FLAGS);
+  }
   const [v2Enabled, setV2Enabled] = React.useState<boolean>(ANALYTICS_V2_ENABLED);
   const [testerPanelOpen, setTesterPanelOpen] = React.useState<boolean>(false);
   const [range, setRange] = React.useState<Range>(() => loadRange());
