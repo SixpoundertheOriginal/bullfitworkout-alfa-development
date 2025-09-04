@@ -20,7 +20,7 @@ afterAll(async () => {
 });
 
 describe('featureFlags precedence', () => {
-  it('uses dev defaults when no overrides', async () => {
+  it('uses defaults when no overrides', async () => {
     const { FEATURE_FLAGS } = await import(modulePath);
     expect(FEATURE_FLAGS.KPI_ANALYTICS_ENABLED).toBe(true);
     expect(FEATURE_FLAGS.ANALYTICS_DERIVED_KPIS_ENABLED).toBe(true);
