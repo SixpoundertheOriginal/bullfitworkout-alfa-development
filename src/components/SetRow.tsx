@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CompactRestTimer } from '@/components/CompactRestTimer';
 import { useRestTimeAnalytics } from '@/hooks/useRestTimeAnalytics';
 import { useGlobalRestTimers } from '@/hooks/useGlobalRestTimers';
+import { usePredictiveRestTimeWithState } from '@/hooks/usePredictiveRestTime';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { getDisplayRestLabelByIndex, formatRestForDisplay } from '@/utils/restDisplay';
 import { useWorkoutStore } from '@/store/workoutStore';
@@ -155,6 +156,9 @@ export const SetRow = ({
   // Generate unique timer ID for this set
   const timerId = generateTimerId(exerciseName, setNumber);
   const restTimerActive = isTimerActive(timerId);
+  
+  // Predictive rest time display for immediate UX feedback
+  const predictiveRest = usePredictiveRestTimeWithState(exerciseName, setNumber, restTime);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setSwipeStartX(e.touches[0].clientX);
@@ -522,8 +526,26 @@ export const SetRow = ({
             </div>
           </div>
           <div className="col-span-2 flex flex-col items-center text-gray-400 px-1">
-            <Timer size={14} className="text-purple-400" />
+            <Timer size={14} className={`${predictiveRest.isTimerActive ? 'text-purple-400 animate-pulse' : 'text-purple-400'}`} />
             {(() => {
+              // Use predictive rest time if available, otherwise fall back to legacy display
+              if (predictiveRest.displayRestTime) {
+                return (
+                  <span 
+                    className={`font-mono text-xs text-white transition-all duration-200 ${predictiveRest.className}`}
+                    style={{ opacity: predictiveRest.opacity }}
+                    aria-label={predictiveRest.ariaLabel}
+                    title={predictiveRest.isPredicted ? 'Live timer - updates in real-time' : 'Recorded rest time'}
+                  >
+                    {predictiveRest.displayRestTime}
+                    {predictiveRest.isPredicted && (
+                      <span className="ml-1 text-[10px] text-purple-300">●</span>
+                    )}
+                  </span>
+                );
+              }
+              
+              // Legacy fallback for first set or when no timer data
               const label = getDisplayRestLabelByIndex(restTime, setNumber - 1);
               if (label.type === 'start') {
                 return (

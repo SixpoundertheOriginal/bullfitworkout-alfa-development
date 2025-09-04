@@ -9,6 +9,8 @@ export type FeatureFlags = {
   SET_COMPLETE_NOTIFICATIONS_ENABLED: boolean;
   REST_FREEZE_ON_START: boolean;
   DEBUG_EXERCISE_SELECTOR_OPEN: boolean;
+  PREDICTIVE_REST_DISPLAY: boolean;
+  REST_TIMER_ANIMATIONS_ENABLED: boolean;
 };
 
 const DEFAULTS: FeatureFlags = {
@@ -20,6 +22,8 @@ const DEFAULTS: FeatureFlags = {
   SET_COMPLETE_NOTIFICATIONS_ENABLED: false,
   REST_FREEZE_ON_START: false,
   DEBUG_EXERCISE_SELECTOR_OPEN: false,
+  PREDICTIVE_REST_DISPLAY: true,
+  REST_TIMER_ANIMATIONS_ENABLED: true,
 };
 
 const isDev = import.meta.env.MODE !== 'production';
@@ -65,6 +69,8 @@ export const FEATURE_FLAGS: FeatureFlags = {
   SET_COMPLETE_NOTIFICATIONS_ENABLED: resolveFlag('SET_COMPLETE_NOTIFICATIONS_ENABLED'),
   REST_FREEZE_ON_START: resolveFlag('REST_FREEZE_ON_START'),
   DEBUG_EXERCISE_SELECTOR_OPEN: resolveFlag('DEBUG_EXERCISE_SELECTOR_OPEN'),
+  PREDICTIVE_REST_DISPLAY: resolveFlag('PREDICTIVE_REST_DISPLAY'),
+  REST_TIMER_ANIMATIONS_ENABLED: resolveFlag('REST_TIMER_ANIMATIONS_ENABLED'),
 };
 
 export function setFlagOverride(name: keyof FeatureFlags, value: boolean) {
