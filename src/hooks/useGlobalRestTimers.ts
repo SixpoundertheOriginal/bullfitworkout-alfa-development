@@ -57,30 +57,53 @@ export const useGlobalRestTimers = () => {
   }, [startRestTimer, activeExerciseName, extractExerciseFromTimerId, stopAllTimersForExercise]);
 
   // Start timer for a specific exercise (smart version with analytics integration and singleton enforcement)
-  const startTimerForExercise = useCallback((exerciseName: string, setNumber: number, targetTime: number) => {
-    const timerId = generateTimerId(exerciseName, setNumber);
-    
-    // Use timer coordinator to ensure only one timer is active at a time
-    registerRestTimer(timerId, exerciseName, setNumber, targetTime, 'global');
-    
-    // Stop all existing timers to prevent concurrent execution
-    clearAllRestTimers();
-    
-    // Set the new active exercise
-    setActiveExerciseName(exerciseName);
-    
-    // Start the store-based timer (UI display)
-    startRestTimer(timerId, targetTime);
-    
-    // Start the enhanced analytics timer (data tracking)
-    startEnhancedRestTimer(exerciseName, setNumber, targetTime);
-    
-    // Set current rest state for compatibility with existing code
-    setCurrentRest({
-      startedAt: Date.now(),
-      targetSetKey: `${exerciseName}_${setNumber}`,
-    });
-  }, [startRestTimer, startEnhancedRestTimer, setCurrentRest, clearAllRestTimers, setActiveExerciseName, generateTimerId]);
+  const startTimerForExercise = useCallback(
+    (
+      exerciseName: string,
+      nextSetIndex: number,
+      targetTime: number,
+      targetSetKey?: string
+    ) => {
+      const timerId = generateTimerId(exerciseName, nextSetIndex);
+      const expectedKey = `${exerciseName}_${nextSetIndex}`;
+      const key = targetSetKey || expectedKey;
+      if (targetSetKey && targetSetKey !== expectedKey) {
+        console.warn('Timer target key mismatch:', {
+          provided: targetSetKey,
+          expected: expectedKey,
+        });
+      }
+
+      // Use timer coordinator to ensure only one timer is active at a time
+      registerRestTimer(timerId, exerciseName, nextSetIndex, targetTime, 'global');
+
+      // Stop all existing timers to prevent concurrent execution
+      clearAllRestTimers();
+
+      // Set the new active exercise
+      setActiveExerciseName(exerciseName);
+
+      // Start the store-based timer (UI display)
+      startRestTimer(timerId, targetTime);
+
+      // Start the enhanced analytics timer (data tracking)
+      startEnhancedRestTimer(exerciseName, nextSetIndex, targetTime);
+
+      // Set current rest state for compatibility with existing code
+      setCurrentRest({
+        startedAt: Date.now(),
+        targetSetKey: key,
+      });
+    },
+    [
+      startRestTimer,
+      startEnhancedRestTimer,
+      setCurrentRest,
+      clearAllRestTimers,
+      setActiveExerciseName,
+      generateTimerId,
+    ]
+  );
 
   // Stop a specific rest timer
   const stopTimer = useCallback((timerId: string) => {

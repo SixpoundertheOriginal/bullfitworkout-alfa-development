@@ -21,9 +21,9 @@ export function calcWorkoutDensityKgPerMin(tonnageKg: number, durationMin: numbe
  * @param setCount Number of sets
  * @returns Average rest per set in seconds, undefined if no sets or no rest data
  */
-export function calcAvgRestPerSession(restSecTotal: number, setCount: number): number | undefined {
-  if (setCount <= 0) return undefined;
-  if (restSecTotal <= 0) return undefined; // No rest data available
+export function calcAvgRestPerSession(restSecTotal: number, setCount: number): number {
+  if (setCount <= 0) return 0;
+  if (restSecTotal <= 0) return 0; // No rest data available
   return Math.floor(restSecTotal / setCount);
 }
 

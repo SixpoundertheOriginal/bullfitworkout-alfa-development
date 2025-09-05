@@ -20,6 +20,7 @@ import {
   CURRENT_STATE_VERSION,
   StateCorruptionIssue
 } from '@/utils/workoutStateDebug';
+import { RestTimingValidationService } from '@/services/RestTimingValidationService';
 
 // Export types for other components to use
 export type { ExerciseSet, WorkoutExerciseConfig, WorkoutExercises, WorkoutStatus, WorkoutError, RestTimerState };
@@ -207,7 +208,63 @@ export const ensurePrevRestFrozen = (
 // Create the persistent store
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      const recordRestTimeImmediately = (
+        exerciseId: string,
+        setIndex: number,
+        durationMs: number
+      ) => {
+        const state = get();
+        const exercise = state.exercises[exerciseId];
+        if (!exercise) return;
+        const sets = Array.isArray(exercise)
+          ? [...exercise]
+          : [...exercise.sets];
+        const existing = sets[setIndex] as any;
+        const existingRest = existing?.metadata?.restBefore;
+        const validation = RestTimingValidationService.validateRestTime(
+          exerciseId,
+          setIndex,
+          durationMs,
+          existingRest
+        );
+        if (!validation.isValid) {
+          console.warn('Invalid rest time', validation.errors);
+          return;
+        }
+        const restBefore = validation.sanitizedValue!;
+        if (
+          existingRest &&
+          Math.abs(restBefore - existingRest) >
+            Math.max(5000, existingRest * 0.05)
+        ) {
+          console.warn('Attempting to overwrite rest time with significantly different value:', {
+            exerciseId,
+            setIndex,
+            existing: existingRest,
+            new: restBefore,
+          });
+          return;
+        }
+        sets[setIndex] = {
+          ...existing,
+          metadata: {
+            ...existing?.metadata,
+            restBefore,
+            restRecordedAt: Date.now(),
+          },
+        };
+        const updatedExercises = Array.isArray(exercise)
+          ? { ...state.exercises, [exerciseId]: sets }
+          : { ...state.exercises, [exerciseId]: { ...exercise, sets } };
+        set({ exercises: updatedExercises });
+        console.debug('Rest recorded immediately:', {
+          exerciseId,
+          setIndex,
+          durationMs: restBefore,
+        });
+      };
+      return {
       exercises: {},
       activeExercise: null,
       elapsedTime: 0,
@@ -361,62 +418,40 @@ startSet: (exerciseName, nextIndex) => set((state) => {
 }),
 
 setSetStartTime: (exerciseId, setNumber) => {
+  const key = `${exerciseId}_${setNumber}`;
+  const state = get();
+  if (state.currentRest && state.currentRest.targetSetKey === key) {
+    const restDuration = Date.now() - state.currentRest.startedAt;
+    const prevSetIndex = setNumber - 1;
+    if (prevSetIndex >= 0) {
+      recordRestTimeImmediately(exerciseId, prevSetIndex, restDuration);
+    }
+    set({ currentRest: null });
+    if (isRestAuditEnabled()) {
+      restAuditLog('freeze_prev_set_rest', {
+        targetSetKey: key,
+        restSeconds: Math.floor(restDuration / 1000),
+        note: 'Computed on next set start',
+      });
+    }
+  }
   if (FEATURE_FLAGS.REST_FREEZE_ON_START) {
     get().startSet(exerciseId, setNumber);
     set((state) => {
-      const key = `${exerciseId}_${setNumber}`;
       const timings = new Map(state.setTimings);
       const current = timings.get(key) || {};
       if (!current.startTime) {
         timings.set(key, { ...current, startTime: Date.now() });
       }
-      return { setTimings: timings, currentRest: null, lastTabActivity: Date.now() };
+      return { setTimings: timings, lastTabActivity: Date.now() };
     });
     return;
   }
   set((state) => {
-    const key = `${exerciseId}_${setNumber}`;
     const timings = new Map(state.setTimings);
     const current = timings.get(key) || {};
-    // Only record the first interaction time
     if (!current.startTime) {
       timings.set(key, { ...current, startTime: Date.now() });
-    }
-    if (state.currentRest && state.currentRest.targetSetKey === key) {
-      const restBefore = Date.now() - state.currentRest.startedAt;
-      const exercisesCopy = { ...state.exercises } as WorkoutExercises;
-      const exerciseData = exercisesCopy[exerciseId];
-      if (exerciseData) {
-        if (Array.isArray(exerciseData)) {
-          exercisesCopy[exerciseId] = exerciseData.map((set, i) =>
-            i + 1 === setNumber
-              ? { ...set, metadata: { ...set.metadata, restBefore } }
-              : set,
-          );
-        } else {
-          exercisesCopy[exerciseId] = {
-            ...exerciseData,
-            sets: exerciseData.sets.map((set, i) =>
-              i + 1 === setNumber
-                ? { ...set, metadata: { ...set.metadata, restBefore } }
-                : set,
-            ),
-          };
-        }
-      }
-      if (isRestAuditEnabled()) {
-        restAuditLog('freeze_prev_set_rest', {
-          targetSetKey: key,
-          restSeconds: Math.floor(restBefore / 1000),
-          note: 'Computed on next set start',
-        });
-      }
-      return {
-        setTimings: timings,
-        exercises: exercisesCopy,
-        currentRest: null,
-        lastTabActivity: Date.now(),
-      };
     }
     return { setTimings: timings, lastTabActivity: Date.now() };
   });
