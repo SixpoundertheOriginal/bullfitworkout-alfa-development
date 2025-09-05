@@ -36,6 +36,11 @@ export const useGlobalRestTimers = () => {
     });
   }, [activeRestTimers, stopRestTimer, extractExerciseFromTimerId]);
 
+  // Generate unique timer ID for exercise + set combination (moved up to avoid TDZ)
+  const generateTimerId = useCallback((exerciseName: string, setNumber: number) => {
+    return `${exerciseName}_set_${setNumber}`;
+  }, []);
+
   // Start a new rest timer (with exercise awareness)
   const startTimer = useCallback((timerId: string, targetTime: number) => {
     const exerciseName = extractExerciseFromTimerId(timerId);
@@ -101,10 +106,7 @@ export const useGlobalRestTimers = () => {
     setCurrentRest(null);
   }, [clearAllRestTimers, setCurrentRest]);
 
-  // Generate unique timer ID for exercise + set combination
-  const generateTimerId = useCallback((exerciseName: string, setNumber: number) => {
-    return `${exerciseName}_set_${setNumber}`;
-  }, []);
+
 
   // Check if a timer exists and is active
   const isTimerActive = useCallback((timerId: string) => {
