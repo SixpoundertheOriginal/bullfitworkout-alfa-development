@@ -963,11 +963,11 @@ clearWorkoutState: () => {
           return fixed;
         });
       },
-}),
-{
-  name: 'workout-storage',
-  storage: createJSONStorage(() => localStorage),
-  partialize: (state) => {
+    },
+    {
+      name: 'workout-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => {
     // First check: Don't persist saved or explicitly ended workouts
     if (state.workoutStatus === 'saved' || state.explicitlyEnded) {
       console.log('🚫 Not persisting saved/ended workout - clearing sessionStorage');
@@ -1230,8 +1230,7 @@ clearWorkoutState: () => {
       }
     };
   }
-}
-)
+  )
 );
 
 export const useWorkoutPageVisibility = () => {
