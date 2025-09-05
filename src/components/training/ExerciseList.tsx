@@ -196,10 +196,16 @@ export const ExerciseList: React.FC<ExerciseListProps> = ({
               // Set this exercise as active and start smart rest timer
               setActiveExerciseName(exerciseName);
               
-              // Start rest timer after completing the set using smart timer
+              // Start rest timer for the next set
               const set = sets[setIndex];
               if (set && set.restTime && set.restTime > 0) {
-                startTimerForExercise(exerciseName, setIndex + 1, set.restTime);
+                const targetSetKey = `${exerciseName}_${setIndex + 1}`;
+                startTimerForExercise(
+                  exerciseName,
+                  setIndex + 1,
+                  set.restTime,
+                  targetSetKey
+                );
               }
             }}
             onDeleteExercise={() => onDeleteExercise(exerciseName)}
