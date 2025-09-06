@@ -1231,7 +1231,7 @@ clearWorkoutState: () => {
       }
     };
   }
-}
+  }
 ));
 
 export const useWorkoutPageVisibility = () => {
