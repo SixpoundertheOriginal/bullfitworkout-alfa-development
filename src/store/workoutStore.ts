@@ -1230,6 +1230,10 @@ clearWorkoutState: () => {
       }
     };
   },
+  {
+    name: 'workout-store',
+    version: 1
+  }
   )
 );
 
