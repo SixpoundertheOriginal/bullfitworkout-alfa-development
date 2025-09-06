@@ -963,8 +963,9 @@ clearWorkoutState: () => {
           return fixed;
         });
       },
-    },
-    {
+    };
+  },
+  {
       name: 'workout-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => {
