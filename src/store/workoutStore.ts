@@ -873,7 +873,7 @@ resetSession: () => {
         };
       }),
       
-validateCurrentState: () => {
+      validateCurrentState: () => {
   const state = get();
   const validation = validateWorkoutState(state);
   return validation.issues;
@@ -1230,12 +1230,8 @@ clearWorkoutState: () => {
       }
     };
   },
-  {
-    name: 'workout-store',
-    version: 1
   }
-  )
-);
+));
 
 export const useWorkoutPageVisibility = () => {
   const { isActive, isPaused, pausedAt, totalPausedMs, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
