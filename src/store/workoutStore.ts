@@ -1226,12 +1226,12 @@ clearWorkoutState: () => {
               description: "Your workout has been restored successfully"
             });
           }, 1000);
-        }
+         }
       }
     };
   }
-  )
-);
+  }
+));
 
 export const useWorkoutPageVisibility = () => {
   const { isActive, isPaused, pausedAt, totalPausedMs, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
