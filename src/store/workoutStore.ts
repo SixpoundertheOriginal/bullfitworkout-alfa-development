@@ -1229,9 +1229,9 @@ clearWorkoutState: () => {
         }
       }
     };
-  },
   }
-));
+  )
+);
 
 export const useWorkoutPageVisibility = () => {
   const { isActive, isPaused, pausedAt, totalPausedMs, setElapsedTime, startTime, activeRestTimers, updateRestTimerElapsed } = useWorkoutStore();
